@@ -2,7 +2,7 @@
    Crossflag Auth — persistent browser session
    ========================================== */
 
-const API_BASE = "https://api.crossflag.org";
+const API_BASE = "https://tg-crypto-exchanger.inkosssator.workers.dev";
 
 const AUTH_TOKEN_KEY = "crossflag_user_token";
 const AUTH_USER_KEY  = "crossflag_user";

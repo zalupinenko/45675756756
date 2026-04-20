@@ -121,10 +121,10 @@
   function getWorkerBase(){
     const fromLS = normBase(localStorage.getItem("worker_base") || "");
     // если не сохраняли — fallback на тот же что в admin.html
-    return fromLS || "https://api.crossflag.org";
+    return fromLS || "https://tg-crypto-exchanger.inkosssator.workers.dev";
   }
 
-  const WORKER_BASE = "https://api.crossflag.org";
+  const WORKER_BASE = "https://tg-crypto-exchanger.inkosssator.workers.dev";
   const statusBox = document.getElementById("statusBox");
   const logList = document.getElementById("logList");
   const sellList = document.getElementById("sellList");

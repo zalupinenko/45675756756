@@ -1,6 +1,6 @@
 (function(){
   const KEY = "cf_active_deals";
-  const API_BASE = "https://api.crossflag.org";
+  const API_BASE = "https://tg-crypto-exchanger.inkosssator.workers.dev";
   const TTL = 24 * 60 * 60 * 1000;
 
   function read(){
