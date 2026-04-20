@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="description" content="Crossflag — онлайн обменник криптовалют. Покупка и продажа USDT за рубли по актуальному курсу. Безопасные сделки, поддержка и прозрачные условия." />
+  <meta name="robots" content="index,follow" />
+  <meta name="keywords" content="crossflag, обменник криптовалют, купить usdt, продать usdt, обмен usdt рубли, usdt rub" />
+  <link rel="canonical" href="https://crossflag.org/" />
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+
+  <title>Crossflag — обменник криптовалют | Купить и продать USDT</title>
+
+  <style>
+    :root{
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+
+      --card: rgba(15, 26, 48, 0.52);
+      --border: rgba(255,255,255,.12);
+
+      --buy:#16a34a;
+      --sell:#ef4444;
+
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+
+    html,body{ height:100%; }
+    body{
+  margin:0;
+  color:var(--text);
+  background:#071022;
+
+  overflow-y:auto;
+  overflow-x:hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+       /* hide scrollbar but keep scroll */
+html, body{
+  scrollbar-width: none;      /* Firefox */
+  -ms-overflow-style: none;   /* old Edge */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar{
+  width: 0;
+  height: 0;
+  display: none;              /* Chrome/Safari/WebView */
+}
+
+
+
+    /* ===== ВИДЕО ФОН ===== */
+    .bg{
+      position:fixed;
+      inset:0;
+      z-index:-3;
+      overflow:hidden;
+    }
+    .bg video{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      transform:scale(1.02);
+    }
+
+    /* затемнение */
+    .overlay{
+      position:fixed;
+      inset:0;
+      z-index:-2;
+      background:
+        radial-gradient(900px 600px at 50% 20%, rgba(60,120,255,.18), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(7,16,34,.82), rgba(7,16,34,.90));
+      pointer-events:none;
+    }
+
+    /* центр */
+    .page{
+      min-height:100svh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:
+        calc(16px + env(safe-area-inset-top))
+        16px
+        calc(132px + env(safe-area-inset-bottom))
+        16px;
+      box-sizing:border-box;
+    }
+
+    .wrap{ width:100%; max-width:520px; }
+
+    /* карточка */
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 14px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .title{
+      font-weight:1000;
+      font-size:16px;
+      margin-bottom:10px;
+    }
+
+        .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      gap:10px;
+      padding:14px 14px 0;
+    }
+    .back{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:950;
+      padding:10px 12px;
+      border-radius:999px;
+      cursor:pointer;
+      text-decoration:none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      white-space:nowrap;
+    }
+.row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      margin-bottom:10px;
+    }
+
+    .label{ font-weight:950; }
+    .pill{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      padding:6px 10px;
+      border-radius:999px;
+      font-weight:950;
+      font-size:12px;
+    }
+
+    .value{
+      font-weight:1000;
+      font-size:26px;
+    }
+
+    .buttons{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+      margin-top:12px;
+    }
+
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:14px 12px;
+      font-weight:1000;
+      font-size:18px;
+      color:#fff;
+      cursor:pointer;
+      box-shadow: 0 10px 26px rgba(0,0,0,.30);
+    }
+    .btn.buy{ background: var(--buy); }
+    .btn.sell{ background: var(--sell); }
+
+    .footer{
+      margin-top:10px;
+      font-size:12px;
+      color: rgba(233,240,255,.70);
+      font-weight:850;
+    }
+
+    /* кнопка запуска видео на мобиле */
+    .playOverlay{
+      position:fixed;
+      left:50%;
+      bottom: calc(18px + env(safe-area-inset-bottom));
+      transform:translateX(-50%);
+      z-index:20;
+      display:none;
+    }
+    .playBtn{
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(15,26,48,.55);
+      color:#fff;
+      font-weight:1000;
+      padding:10px 14px;
+      border-radius:999px;
+      backdrop-filter: blur(10px);
+      cursor:pointer;
+    }
+
+.resumeBox{
+  width:min(920px, calc(100% - 28px));
+  margin: 0 auto 14px;
+  display:none;
+}
+.resumeCard{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:14px 16px;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(15, 26, 48, 0.52);
+  box-shadow: 0 18px 50px rgba(0,0,0,.32);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.resumeMain{ min-width:0; flex:1 1 auto; }
+.resumeTitle{ font-size:14px; line-height:1.25; font-weight:1000; color:#fff; margin-bottom:4px; }
+.resumeText{ font-size:12px; line-height:1.45; font-weight:900; color:rgba(233,240,255,.72); }
+.resumeActions{ display:flex; align-items:center; gap:10px; flex:0 0 auto; }
+.resumeGo, .resumeClose{
+  border:1px solid rgba(255,255,255,.14);
+  color:#fff;
+  cursor:pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.resumeGo{
+  border:none;
+  border-radius:14px;
+  padding:12px 18px;
+  font-weight:1000;
+  background:linear-gradient(180deg,#4d7cff,#2d5bff);
+  box-shadow:0 10px 24px rgba(45,91,255,.22);
+  white-space:nowrap;
+}
+.resumeClose{ width:42px; height:42px; border-radius:14px; background:rgba(255,255,255,.06); font-size:20px; flex:0 0 42px; }
+@media(max-width:560px){
+  .resumeBox{ width:min(920px, calc(100% - 24px)); margin:0 auto 12px; }
+  .resumeCard{
+    flex-direction:column;
+    align-items:stretch;
+    justify-content:flex-start;
+    gap:12px;
+    padding:14px;
+  }
+  .resumeMain{ width:100%; }
+  .resumeActions{
+    width:100%;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 42px;
+    align-items:center;
+    gap:10px;
+  }
+  .resumeGo{
+    width:100%;
+    min-height:42px;
+    padding:12px 14px;
+  }
+  .resumeClose{
+    width:42px;
+    height:42px;
+    margin:0;
+    justify-self:end;
+  }
+}
+
+/* ===== КНОПКИ СНАРУЖИ (как основная плашка) ===== */
+    .outerActions{
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .outerBtn{
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 18px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: var(--card);
+      box-shadow: 0 18px 50px rgba(0,0,0,.35);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: rgba(233,240,255,.95);
+      font-weight: 1000;
+      font-size: 16px;
+      cursor:pointer;
+      position:relative;
+    }
+
+    .outerBtn:hover{
+      background: rgba(15, 26, 48, 0.62);
+      border-color: rgba(255,255,255,.16);
+    }
+
+    .outerBtn:active{
+      transform: translateY(1px);
+    }
+
+    /* === Индикатор активных сделок === */
+    #activeDealsDot{
+      display:none;
+      width:8px;
+      height:8px;
+      margin-left:8px;
+      border-radius:50%;
+      background:#ef4444;
+      vertical-align:middle;
+      animation: activeDealPulse 1.2s infinite;
+    }
+
+    #activeDealsDot.on{
+      display:inline-block;
+    }
+
+    @keyframes activeDealPulse{
+      0%{ box-shadow:0 0 0 0 rgba(239,68,68,.6); }
+      70%{ box-shadow:0 0 0 8px rgba(239,68,68,0); }
+      100%{ box-shadow:0 0 0 0 rgba(239,68,68,0); }
+    }
+
+    /* ===== Restore prompt (index only) ===== */
+  
+
+    .bottomNav{
+      position:fixed;
+      left:0; right:0;
+      bottom:0;
+      z-index:999;
+      padding:10px 14px calc(10px + env(safe-area-inset-bottom)) 14px;
+      background: linear-gradient(180deg, rgba(7,16,34,0), rgba(7,16,34,.72) 35%, rgba(7,16,34,.92));
+    }
+    .navBar{
+      max-width:1180px;
+      margin:0 auto;
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(15,26,48,.62);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      padding:8px;
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:6px;
+    }
+    .navItem{
+      border-radius:18px;
+      padding:10px 8px;
+      text-align:center;
+      cursor:pointer;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      color: rgba(233,240,255,.74);
+      font-weight:950;
+      font-size:12px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:6px;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease, color .18s ease;
+    }
+    .navItem svg{ width:20px; height:20px; opacity:.95; }
+    .navItem.active{
+      background: linear-gradient(180deg, rgba(45,91,255,.35), rgba(31,63,179,.22));
+      border: 1px solid rgba(45,91,255,.30);
+      color: rgba(233,240,255,.95);
+    }
+    .navItem:hover,
+    .navItem:focus-visible{
+      transform: translateY(-2px);
+      background: rgba(255,255,255,.04);
+      color: rgba(233,240,255,.92);
+    }
+    .navItem:active{ transform: translateY(1px); }
+
+</style>
+
+  <style id="cfPageTransitionStyle">
+    html.cfPageEntering body{
+      opacity:0;
+      transform:translateY(8px);
+    }
+    html.cfPageEntering body.cfPageReady{
+      opacity:1;
+      transform:none;
+      transition:opacity .22s ease, transform .22s ease;
+    }
+    body.cfPageLeaving{
+      opacity:0;
+      transform:translateY(8px);
+      transition:opacity .18s ease, transform .18s ease;
+      pointer-events:none;
+    }
+    @media (prefers-reduced-motion: reduce){
+      html.cfPageEntering body,
+      html.cfPageEntering body.cfPageReady,
+      body.cfPageLeaving{
+        opacity:1 !important;
+        transform:none !important;
+        transition:none !important;
+      }
+    }
+  </style>
+
+</head>
+
+
+<script>
+(function initCrossflagPageTransition(){
+  try { document.documentElement.classList.add('cfPageEntering'); } catch(e) {}
+  const markReady = () => {
+    try { document.body.classList.add('cfPageReady'); } catch(e) {}
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(markReady), { once:true });
+  } else {
+    requestAnimationFrame(markReady);
+  }
+  window.cfNavigate = function(href){
+    if (!href) return;
+    if (window.__cfNavigating) return;
+    window.__cfNavigating = true;
+    try { document.body.classList.add('cfPageLeaving'); } catch(e) {}
+    window.setTimeout(() => { location.href = href; }, 170);
+  };
+})();
+</script>
+
+<body>
+  <!-- ВИДЕО -->
+  <div class="bg">
+    <video id="bgVideo" autoplay muted loop playsinline preload="auto" poster="./bg.jpg">
+      <source src="./bg.mp4" type="video/mp4">
+    </video>
+  </div>
+  <div class="overlay"></div>
+
+  <div class="playOverlay" id="playOverlay">
+    <button class="playBtn" id="playBtn">▶ Включить фон</button>
+  </div>
+
+  <!-- КАРТОЧКА -->
+  <div class="page">
+    <div class="wrap">
+      <div class="resumeBox" id="resumeBox">
+        <div class="resumeCard">
+          <div class="resumeMain">
+            <div class="resumeTitle">Продолжить с последнего места?</div>
+            <div class="resumeText">Найдена активная страница сделки за последние 24 часа.</div>
+          </div>
+          <div class="resumeActions">
+            <button class="resumeGo" id="resumeGo" type="button">Продолжить</button>
+            <button class="resumeClose" id="resumeClose" type="button" aria-label="Закрыть">×</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="title">Первый БТ обменник криптовалюты</div>
+
+        <h1 style="margin:0 0 10px 0; font-size:0; line-height:0; height:0; overflow:hidden;">
+          Crossflag — обменник криптовалют
+        </h1>
+
+        <div style="margin:0 0 10px 0; color:rgba(233,240,255,.72); font-size:12px; line-height:1.5;">
+          Crossflag — мини-обменник для покупки и продажи USDT за рубли.
+          Мы показываем актуальные предложения и помогаем провести сделку с поддержкой на каждом этапе.
+        </div>
+
+        <div class="row">
+          <div class="label">Пара</div>
+          <div class="pill">USDT/RUB</div>
+        </div>
+
+        <div class="row">
+          <div class="label">Купить</div>
+          <div class="value" id="buyRate">—</div>
+        </div>
+
+        <div class="row">
+          <div class="label">Продать</div>
+          <div class="value" id="sellRate">—</div>
+        </div>
+
+        <div class="buttons">
+          <button class="btn buy" id="buyBtn">Купить</button>
+          <button class="btn sell" id="sellBtn">Продать</button>
+        </div>
+
+        <div class="footer" id="updated">Обновлено: —</div>
+      </div>
+
+      <!-- кнопки вне основной плашки -->
+      <div class="outerActions">
+</div>
+
+    </div>
+  </div>
+
+<script>
+  const WORKER_BASE = "https://api.crossflag.org";
+
+  // ===== AUTH helpers =====
+  const USER_TOKEN_KEY = "user_token";
+
+  function getUserToken(){
+    try { return (localStorage.getItem(USER_TOKEN_KEY) || "").trim(); } catch { return ""; }
+  }
+  function setUserToken(t){
+    try { localStorage.setItem(USER_TOKEN_KEY, String(t||"")); } catch {}
+  }
+
+  async function authMe(){
+    const tok = getUserToken();
+    if (!tok) return null;
+    try{
+      const res = await fetch(WORKER_BASE + "/api/public/auth/me", {
+        method: "GET",
+        headers: { "X-User-Token": tok }
+      });
+      const j = await res.json().catch(()=>null);
+      if (!res.ok || !j || !j.ok) return null;
+      return j.user || null;
+    }catch{
+      return null;
+    }
+  }
+
+  function goAuth(returnUrl){
+    const back = returnUrl || (location.pathname + location.search);
+    try { sessionStorage.setItem("auth_return", back); } catch {}
+    location.href = "./auth.html?return=" + encodeURIComponent(back);
+  }
+
+  const buyEl = document.getElementById("buyRate");
+  const sellEl = document.getElementById("sellRate");
+  const updatedEl = document.getElementById("updated");
+
+  function fmt(n){
+    const v = Number(n);
+    if (!Number.isFinite(v)) return "—";
+    return v.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
+  }
+
+  function bestBuy(offers){
+    let m = Infinity;
+    for (const o of (offers || [])) {
+      const r = Number(o.rate);
+      if (Number.isFinite(r) && r > 0) m = Math.min(m, r);
+    }
+    return m === Infinity ? null : m;
+  }
+
+  function bestSell(offers){
+    let m = -Infinity;
+    for (const o of (offers || [])) {
+      const r = Number(o.rate);
+      if (Number.isFinite(r) && r > 0) m = Math.max(m, r);
+    }
+    return m === -Infinity ? null : m;
+  }
+
+  async function loadRates(){
+  try{
+    const [b, s] = await Promise.all([
+      fetch(WORKER_BASE + "/api/public/buy_offers", { cache: "no-store" }).then(r => r.json()).catch(()=>null),
+      fetch(WORKER_BASE + "/api/public/sell_offers", { cache: "no-store" }).then(r => r.json()).catch(()=>null),
+    ]);
+
+    let buyBest  = (b && b.ok) ? bestBuy(b.offers || []) : null;
+    const sellBest = (s && s.ok) ? bestSell(s.offers || []) : null;
+
+    // ✅ FALLBACK: если в BUY стакане нет заявок — берем курс как на buy.html ("запрос суммы")
+    // buy.html у тебя берет /api/public/rapira_rate и добавляет +1% на фронте
+    if (buyBest == null) {
+      try{
+        const rr = await fetch(WORKER_BASE + "/api/public/rapira_rate", { cache: "no-store" }).then(r => r.json());
+        if (rr && rr.ok && Number.isFinite(Number(rr.rate)) && Number(rr.rate) > 0) {
+          buyBest = Number(rr.rate) * 1.01; // +1% как на Buy
+        }
+      }catch{}
+    }
+
+    buyEl.textContent  = buyBest == null ? "—" : fmt(buyBest);
+    sellEl.textContent = sellBest == null ? "—" : fmt(sellBest);
+
+    const now = new Date();
+    updatedEl.textContent = "Обновлено: " + now.toLocaleString("ru-RU");
+  }catch(e){}
+}
+
+  loadRates();
+  setInterval(loadRates, 10000);
+
+  /* видео на мобиле */
+  const video = document.getElementById("bgVideo");
+  const overlay = document.getElementById("playOverlay");
+  const btn = document.getElementById("playBtn");
+
+  function isMobile(){
+    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  }
+
+  setTimeout(async ()=>{
+    try{ await video.play(); }
+    catch{ if(isMobile()) overlay.style.display="block"; }
+  },200);
+
+  btn.onclick = async ()=>{
+    await video.play();
+    overlay.style.display="none";
+  };
+
+  // === Индикатор активных сделок ===
+  (function(){
+    const dot = document.getElementById("activeDealsDot");
+    if (!dot) return;
+    try{
+      const s = localStorage.getItem("cf_active_deals");
+      const a = s ? JSON.parse(s) : [];
+      if (Array.isArray(a) && a.length > 0) dot.classList.add("on");
+      else dot.classList.remove("on");
+    }catch{}
+  })();
+  try{ localStorage.removeItem("cf_last_page_v1"); }catch(_){ }
+
+  // P2P agreement gate
+  function p2pAgreed(){
+    try{ return localStorage.getItem("cf_p2p_agreed") === "1"; }catch(_){ return false; }
+  }
+  function goP2P(dest){
+    if (!p2pAgreed()){
+      location.href = "./reglament.html?agree=1&return=" + encodeURIComponent(dest);
+      return;
+    }
+    location.href = dest;
+  }
+  const buyBtn = document.getElementById("buyBtn");
+  const sellBtn = document.getElementById("sellBtn");
+  if (buyBtn) buyBtn.onclick = () => goP2P("buy.html");
+  if (sellBtn) sellBtn.onclick = () => goP2P("sell.html");
+
+</script>
+<script src="./resume-helper.js"></script>
+<script>
+(async function(){
+  const box = document.getElementById("resumeBox");
+  const go = document.getElementById("resumeGo");
+  const close = document.getElementById("resumeClose");
+  if (!box || !go || !close) return;
+
+  function normUrl(url){
+    try{
+      const u = new URL(url, location.origin);
+      return (u.pathname || "") + (u.search || "") + (u.hash || "");
+    }catch(_){ return String(url || ""); }
+  }
+
+  function readSellDraftResume(){
+    try{
+      const raw = sessionStorage.getItem("cf_last_sell_resume_draft") || localStorage.getItem("cf_last_sell_resume_draft") || "";
+      if (!raw) return null;
+      const rec = JSON.parse(raw);
+      if (!rec || !rec.url || !rec.ts) return null;
+      if ((Date.now() - Number(rec.ts || 0)) > 24 * 60 * 60 * 1000) return null;
+      return rec;
+    }catch(_){ return null; }
+  }
+
+  const buyRec = window.CrossflagResume ? await window.CrossflagResume.findLatestActive("BUY") : null;
+  const sellRec = window.CrossflagResume ? await window.CrossflagResume.findLatestActive("SELL") : null;
+  const sellDraftRec = readSellDraftResume();
+  const candidates = [buyRec, sellRec, sellDraftRec].filter(Boolean).sort((a,b)=>Number(b.ts||0)-Number(a.ts||0));
+  const rec = candidates[0] || null;
+  if (!rec || !rec.url) return;
+  if (normUrl(rec.url) === normUrl(location.pathname + location.search + location.hash)) return;
+  box.style.display = "block";
+  go.onclick = () => { if (window.CrossflagResume && window.CrossflagResume.open) return window.CrossflagResume.open(rec); location.href = rec.url; };
+  close.onclick = () => { box.style.display = "none"; };
+})();
+</script>
+
+
+  <div class="bottomNav">
+    <div class="navBar">
+      <div class="navItem" id="navWallet">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4.5 8.5h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-14a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2Z" stroke="rgba(233,240,255,.92)" stroke-width="2"/><path d="M16 13h3" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/></svg>
+        Кошелёк
+      </div>
+      <div class="navItem active" id="navTrade">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h13" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/><path d="M14 4l3 3-3 3" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 17H7" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/><path d="M10 20l-3-3 3-3" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        P2P
+      </div>
+      <div class="navItem" id="navBonus">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.8c3 2.1 5.8 2.1 9.2 0v9.3c0 6.2-4.4 9.3-9.2 9.3S2.8 18.3 2.8 12.1V2.8c3.4 2.1 6.2 2.1 9.2 0Z" stroke="rgba(233,240,255,.92)" stroke-width="2"/><path d="M9.2 12.1 11 14l4.8-5" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Бонусы
+      </div>
+      <div class="navItem" id="navHistory">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 8v5l3 2" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/><path d="M21 12a9 9 0 1 1-3-6.7" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/></svg>
+        История
+      </div>
+    </div>
+  </div>
+
+<script>
+(function initBottomNav(){
+  const params = new URLSearchParams(location.search);
+  const wb = params.get('wb') || localStorage.getItem('worker_base') || localStorage.getItem('WORKER_BASE') || '';
+  const withWb = (href) => {
+    if (!wb) return href;
+    return href + (href.includes('?') ? '&' : '?') + 'wb=' + encodeURIComponent(wb);
+  };
+  const go = (href) => { const next = withWb(href); if (window.cfNavigate) return window.cfNavigate(next); location.href = next; };
+  const navWallet = document.getElementById('navWallet');
+  const navTrade = document.getElementById('navTrade');
+  const navBonus = document.getElementById('navBonus');
+  const navHistory = document.getElementById('navHistory');
+  if (navWallet) navWallet.onclick = () => go('./qr.html');
+  if (navTrade) navTrade.onclick = () => go('./trade.html');
+  if (navBonus) navBonus.onclick = () => go('./bonuses.html');
+  if (navHistory) navHistory.onclick = () => go('./history.html');
+})();
+</script>
+</body>
+</html>

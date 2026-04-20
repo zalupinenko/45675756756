@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Crossflag · Админка · Пользователи</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:#0f1a30;
+      --border:#223255;
+      --text:#e9f0ff;
+      --muted:#a9b6d6;
+      --accent:#5eead4;
+      --warn:#fbbf24;
+      --bad:#fb7185;
+      --ok:#34d399;
+      --chip:#0b1b33;
+      --shadow: 0 12px 30px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background: radial-gradient(1200px 700px at 15% 0%, rgba(45,91,255,.18), rgba(0,0,0,0) 60%),
+                  radial-gradient(900px 650px at 80% 90%, rgba(52,211,153,.12), rgba(0,0,0,0) 65%),
+                  #071022;
+      color:var(--text);
+      min-height:100vh;
+    }
+    .wrap{ max-width:1100px; margin:0 auto; padding:18px 14px 30px; }
+    .top{
+      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+    .title{
+      font-weight:1000;
+      letter-spacing:.2px;
+      font-size:20px;
+    }
+    .hint{ color:var(--muted); font-weight:850; font-size:12px; margin-top:4px; }
+    .bar{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      background: rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:16px;
+      padding:10px;
+      box-shadow: var(--shadow);
+    }
+    input{
+      flex:1;
+      min-width:240px;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+      color:var(--text);
+      outline:none;
+      font-weight:900;
+    }
+    input::placeholder{ color: rgba(169,182,214,.65); font-weight:850; }
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:12px 14px;
+      background: linear-gradient(180deg, #2d5bff, #1f3fb3);
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow: 0 10px 26px rgba(0,0,0,.30);
+      white-space:nowrap;
+    }
+    .btnGhost{
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:14px;
+      padding:12px 14px;
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      white-space:nowrap;
+      text-decoration:none;
+      display:inline-flex; align-items:center; justify-content:center;
+    }
+
+    .grid{ display:grid; grid-template-columns: 1fr; gap:12px; margin-top:14px; }
+    .card{
+      background: rgba(15,26,48,.62);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:18px;
+      box-shadow: var(--shadow);
+      padding:12px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .row{
+      display:flex; gap:12px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;
+    }
+    .left{ min-width:240px; }
+    .name{
+      font-weight:1000;
+      font-size:16px;
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+    }
+    .tag{
+      display:inline-flex;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.03);
+      font-weight:1000;
+      font-size:12px;
+    }
+    .tag.ok{ border-color: rgba(52,211,153,.35); background: rgba(52,211,153,.10); }
+    .tag.bad{ border-color: rgba(251,113,133,.35); background: rgba(251,113,133,.10); }
+
+    .meta{
+      margin-top:6px;
+      color: rgba(233,240,255,.82);
+      font-weight:850;
+      font-size:12px;
+      line-height:1.4;
+    }
+    .meta span{ color: var(--muted); font-weight:900; }
+
+    .right{
+      display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap; justify-content:flex-end;
+      min-width:280px;
+    }
+    .noteBox{
+      width:320px;
+      max-width:100%;
+      display:flex;
+      gap:8px;
+      flex-direction:column;
+    }
+    textarea{
+      width:100%;
+      min-height:70px;
+      resize:vertical;
+      padding:10px 10px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+      color:var(--text);
+      outline:none;
+      font-weight:850;
+      font-size:13px;
+    }
+    .btnMini{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:1000;
+      border-radius:12px;
+      padding:10px 12px;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .btnMini.ok{ border-color: rgba(52,211,153,.35); background: rgba(52,211,153,.10); }
+    .btnMini.bad{ border-color: rgba(251,113,133,.35); background: rgba(251,113,133,.10); }
+
+    .statusBox{
+      margin-top:12px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+      font-weight:900;
+      font-size:13px;
+      white-space:pre-line;
+      display:none;
+    }
+    .statusBox.show{ display:block; }
+    .statusBox.bad{ border-color: rgba(251,113,133,.35); background: rgba(251,113,133,.10); }
+    .statusBox.ok{ border-color: rgba(52,211,153,.35); background: rgba(52,211,153,.10); }
+
+    /* ✅ добавлено: компактный блок управления балансом */
+    .balBox{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      border-radius:14px;
+      padding:10px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .balBox .line{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      font-weight:900;
+      font-size:12px;
+      color: rgba(233,240,255,.86);
+    }
+    .balBox .line span{ color: var(--muted); font-weight:900; }
+    .balBox input{
+      min-width:0;
+      width:100%;
+      padding:10px 10px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.22);
+      color:var(--text);
+      outline:none;
+      font-weight:900;
+    }
+    .balBtns{ display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div class="title">Пользователи</div>
+        <div class="hint">Список пользователей, бан/разбан и заметки.</div>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a class="btnGhost" id="backBtn" href="./admin-attempts.html">← Назад</a>
+        <button class="btn" id="reloadBtn">Обновить</button>
+      </div>
+    </div>
+
+    <div class="bar">
+      <input id="q" placeholder="Поиск по username / id..." />
+      <button class="btnGhost" id="applyBtn">Найти</button>
+    </div>
+
+    <!-- ✅ добавлено: суммарный баланс -->
+    <div class="card" id="sumCard" style="margin-top:12px;">
+      <div class="row" style="align-items:center;">
+        <div class="left">
+          <div class="name">
+            <span>Суммарный баланс кошельков</span>
+            <span class="tag ok" id="sumTag">—</span>
+          </div>
+          <div class="meta" id="sumMeta">
+            <div><span>Пользователей всего:</span> —</div>
+            <div><span>В выборке:</span> —</div>
+          </div>
+        </div>
+
+        <div class="right" style="min-width:320px;">
+          <div class="balBox" style="width:100%;">
+            <div class="line">
+              <span>Сумма (все):</span>
+              <b id="sumAll">—</b>
+            </div>
+            <div class="line">
+              <span>Сумма (по поиску):</span>
+              <b id="sumFiltered">—</b>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ✅ конец блока -->
+
+    <div class="statusBox" id="statusBox">—</div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+<script>
+const WORKER_BASE = String(
+  new URLSearchParams(location.search).get("wb") ||
+  localStorage.getItem("worker_base") ||
+  localStorage.getItem("WORKER_BASE") ||
+  "https://api.crossflag.org"
+).replace(/\/+$/, "");
+
+// back keeps wb
+(function(){
+  const wb = new URLSearchParams(location.search).get("wb") || "";
+  const b = document.getElementById("backBtn");
+  if (b) b.href = "./admin-attempts.html" + (wb ? ("?wb=" + encodeURIComponent(wb)) : "");
+})();
+
+function getAdminToken(){
+  return (localStorage.getItem("ADMIN_TOKEN") || localStorage.getItem("admin_token") || "").trim();
+}
+
+async function apiJson(path, method="GET", body=null){
+  const tok = getAdminToken();
+  if (!tok) throw new Error("Нет ADMIN_TOKEN в localStorage (ADMIN_TOKEN или admin_token).");
+
+  // ⚠️ если открыто как file:// — браузер часто блокирует fetch
+  if (location.protocol === "file:") {
+    throw new Error("Страница открыта как file://. Открой через сайт (https://...) или локальный сервер. Иначе будет Failed to fetch.");
+  }
+
+  let res;
+  try{
+    res = await fetch(WORKER_BASE + path, {
+      method,
+      headers: {
+        "Content-Type":"application/json",
+        "X-Admin-Token": tok
+      },
+      body: body ? JSON.stringify(body) : null,
+      cache: "no-store"
+    });
+  }catch(e){
+    // это и есть классический "Failed to fetch"
+    throw new Error(
+      "Failed to fetch: нет доступа к " + (WORKER_BASE + path) +
+      "\nПричины: CORS в Worker, неверный WORKER_BASE, VPN/сеть, блокировка браузером."
+    );
+  }
+
+  const text = await res.text();
+  let j;
+  try{ j = JSON.parse(text); }
+  catch { throw new Error("Ответ не JSON (HTTP " + res.status + "): " + text.slice(0,200)); }
+
+  if (!res.ok || !j.ok) throw new Error(j.error || ("HTTP " + res.status));
+  return j;
+}
+
+const grid = document.getElementById("grid");
+const statusBox = document.getElementById("statusBox");
+const q = document.getElementById("q");
+const reloadBtn = document.getElementById("reloadBtn");
+const applyBtn = document.getElementById("applyBtn");
+
+function setStatus(t, kind){
+  statusBox.textContent = t;
+  statusBox.className = "statusBox show " + (kind || "");
+}
+
+function ts(x){
+  try{
+    const d = new Date(Number(x));
+    return isNaN(d.getTime()) ? "—" : d.toLocaleString("ru-RU");
+  }catch{ return "—"; }
+}
+
+function fmtUsdtE6(e6){
+  if (typeof e6 === "undefined" || e6 === null) return "—";
+  const n = Number(e6 || 0);
+  return (n/1e6).toFixed(6) + " USDT";
+}
+
+let all = [];
+
+/* ✅ добавлено: подсчёт сумм */
+const sumAllEl = document.getElementById("sumAll");
+const sumFilteredEl = document.getElementById("sumFiltered");
+const sumMetaEl = document.getElementById("sumMeta");
+const sumTagEl = document.getElementById("sumTag");
+
+function sumWalletE6(list){
+  let s = 0;
+  for (const u of (list || [])){
+    const v = Number(u.walletBalanceUsdtE6 || 0);
+    if (Number.isFinite(v)) s += v;
+  }
+  return s;
+}
+
+function renderSums(listFiltered){
+  const totalUsers = all.length;
+  const filteredUsers = listFiltered.length;
+
+  const allE6 = sumWalletE6(all);
+  const filtE6 = sumWalletE6(listFiltered);
+
+  if (sumAllEl) sumAllEl.textContent = fmtUsdtE6(allE6);
+  if (sumFilteredEl) sumFilteredEl.textContent = fmtUsdtE6(filtE6);
+
+  if (sumMetaEl){
+    sumMetaEl.innerHTML = `
+      <div><span>Пользователей всего:</span> ${totalUsers}</div>
+      <div><span>В выборке:</span> ${filteredUsers}</div>
+    `;
+  }
+
+  if (sumTagEl){
+    sumTagEl.textContent = (filteredUsers === totalUsers) ? "ALL" : "FILTERED";
+    sumTagEl.className = "tag " + ((filteredUsers === totalUsers) ? "ok" : "");
+  }
+}
+/* ✅ конец добавления */
+
+function render(){
+  const needle = String(q.value||"").trim().toLowerCase();
+  const list = needle
+    ? all.filter(u =>
+        String(u.username||"").toLowerCase().includes(needle) ||
+        String(u.id||"").includes(needle)
+      )
+    : all;
+
+  /* ✅ добавлено */
+  renderSums(list);
+
+  grid.innerHTML = "";
+
+  if (!list.length){
+    grid.innerHTML = `
+      <div class="card">
+        <div class="meta">
+          <span>Пусто.</span> Нет пользователей или поиск ничего не нашёл.
+        </div>
+      </div>`;
+    return;
+  }
+
+  for (const u of list){
+    const banned = !!u.banned;
+    const bs = u.buyStats || {};
+    const buyBannedUntil = Number(u.buyBannedUntil || 0);
+    const buyBanned = buyBannedUntil > Date.now();
+    const bCompleted = Number(bs.totalCompleted || 0);
+    const bCancelled = Number(bs.totalCancelled || 0);
+    const bExcused = Number(bs.totalCancelledExcused || 0);
+    const bTotal = bCompleted + bCancelled;
+    const bRate = bTotal > 0 ? Math.round(bCompleted / bTotal * 100) : 100;
+    const bConsec = Number(bs.consecutiveCancels || 0);
+    const trustScore = Number(u.trustScore || 0);
+    const trustTier = Number(u.trustTier ?? -1);
+    const tierLabels = ["🆕 Новичок", "⭐ Знакомый", "💎 Надёжный", "🏅 Доверенный", "🔱 Элита"];
+    const tierColors = ["#9fb0d4", "#60a5fa", "#34d399", "#fbbf24", "#a78bfa"];
+    const tierLabel = trustTier >= 0 ? (tierLabels[trustTier] || String(trustTier)) : "—";
+    const tierColor = trustTier >= 0 ? (tierColors[trustTier] || "#9fb0d4") : "#9fb0d4";
+
+    const el = document.createElement("div");
+    el.className = "card";
+
+    el.innerHTML = `
+      <div class="row">
+        <div class="left">
+          <div class="name">
+            <span>@${u.username || "—"}</span>
+            <span class="tag ${banned ? "bad" : "ok"}">
+              ${banned ? "BANNED" : "OK"}
+            </span>
+            ${buyBanned ? '<span class="tag bad" style="background:rgba(251,113,133,.15);">BUY BAN</span>' : ''}
+          </div>
+
+          <div class="meta">
+            <div><span>ID:</span> ${u.id || "—"}</div>
+            <div><span>Баланс кошелька:</span> ${fmtUsdtE6(u.walletBalanceUsdtE6)}</div>
+            <div><span>Реф. баланс:</span>
+              ${(u.ref && typeof u.ref.balanceUsdtE6!=="undefined")
+                ? ((Number(u.ref.balanceUsdtE6||0)/1e6).toFixed(6)+" USDT")
+                : "—"}
+            </div>
+            <div><span>Создан:</span> ${ts(u.createdAt)}</div>
+            <div><span>Последний раз:</span> ${ts(u.lastSeenAt || u.updatedAt)}</div>
+          </div>
+
+          <div class="meta" style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,.08);">
+            <div style="font-weight:900; margin-bottom:4px; color:var(--accent);">Buy-статистика:</div>
+            <div><span>Tier:</span> <b style="color:${tierColor}">${tierLabel}</b></div>
+            <div><span>Trust Score:</span> <b style="color:${tierColor}">${trustScore}</b></div>
+            <div><span>Выполнено:</span> <b>${bCompleted}</b></div>
+            <div><span>Отменено (засчитано):</span> <b style="color:${bCancelled > 0 ? 'var(--bad)' : 'inherit'}">${bCancelled}</b></div>
+            <div><span>Отменено (оправдано):</span> <b>${bExcused}</b></div>
+            <div><span>Completion rate:</span> <b style="color:${bRate < 50 && bTotal > 0 ? 'var(--bad)' : 'var(--ok)'}">${bRate}%</b></div>
+            <div><span>Отмен подряд:</span> <b style="color:${bConsec >= 2 ? 'var(--bad)' : 'inherit'}">${bConsec}</b></div>
+            ${buyBanned ? '<div><span>Buy бан до:</span> <b style="color:var(--bad)">' + ts(buyBannedUntil) + '</b></div>' : ''}
+          </div>
+        </div>
+
+        <div class="right">
+          <div class="noteBox">
+
+            <textarea data-u="${u.username||""}"
+              placeholder="Заметка админа...">${u.note || ""}</textarea>
+
+            <div class="balBox">
+              <div class="line">
+                <span>Кошелёк (USDT):</span>
+                <b>${fmtUsdtE6(u.walletBalanceUsdtE6)}</b>
+              </div>
+
+              <input type="number"
+                     step="0.000001"
+                     placeholder="Сумма USDT"
+                     data-bal="${u.username||""}" />
+
+              <div class="balBtns">
+                <button class="btnMini ok"
+                        data-act="baladd"
+                        data-u="${u.username||""}">
+                  Начислить
+                </button>
+
+                <button class="btnMini bad"
+                        data-act="balsub"
+                        data-u="${u.username||""}">
+                  Списать
+                </button>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+              <button class="btnMini ok"
+                      data-act="save"
+                      data-u="${u.username||""}">
+                Сохранить
+              </button>
+
+              <button class="btnMini ${banned ? "ok" : "bad"}"
+                      data-act="ban"
+                      data-u="${u.username||""}"
+                      data-ban="${banned ? "0" : "1"}">
+                ${banned ? "Разбанить" : "Забанить"}
+              </button>
+
+              <button class="btnMini ${buyBanned ? "ok" : "bad"}"
+                      data-act="buyban"
+                      data-u="${u.username||""}"
+                      data-buyban="${buyBanned ? "0" : "1"}"
+                      style="font-size:11px;">
+                ${buyBanned ? "Разбан покупки" : "Бан покупки 3д"}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    `;
+
+    grid.appendChild(el);
+  }
+}
+
+grid.addEventListener("click", async (e)=>{
+  const btn = e.target.closest("button");
+  if (!btn) return;
+
+  const act = btn.dataset.act;
+  const username = btn.dataset.u;
+  if (!username) return;
+
+  try{
+    // ✅ сохранить note
+    if (act === "save"){
+      const ta = grid.querySelector(`textarea[data-u="${CSS.escape(username)}"]`);
+      const note = ta ? ta.value : "";
+      await apiJson("/api/admin/users/" + encodeURIComponent(username), "PATCH", { note });
+      const it = all.find(x => (x.username||"") === username);
+      if (it) it.note = note;
+      setStatus("Сохранено ✅", "ok");
+      return;
+    }
+
+    // ✅ бан/разбан
+    if (act === "ban"){
+      const banned = btn.dataset.ban === "1";
+      const ta = grid.querySelector(`textarea[data-u="${CSS.escape(username)}"]`);
+      const note = ta ? ta.value : "";
+      await apiJson("/api/admin/users/" + encodeURIComponent(username), "PATCH", { banned, note });
+      const it = all.find(x => (x.username||"") === username);
+      if (it){
+        it.banned = banned;
+        it.note = note;
+      }
+      setStatus(banned ? "Пользователь забанен ✅" : "Пользователь разбанен ✅", "ok");
+      render();
+      return;
+    }
+
+    // ✅ бан/разбан покупки
+    if (act === "buyban"){
+      const doBan = btn.dataset.buyban === "1";
+      const buyBannedUntil = doBan ? (Date.now() + 3 * 24 * 60 * 60 * 1000) : 0;
+      const buyBanReason = doBan ? "ADMIN_MANUAL" : "";
+      await apiJson("/api/admin/users/" + encodeURIComponent(username), "PATCH", { buyBannedUntil, buyBanReason });
+      const it = all.find(x => (x.username||"") === username);
+      if (it){
+        it.buyBannedUntil = buyBannedUntil;
+        it.buyBanReason = buyBanReason;
+      }
+      setStatus(doBan ? "Бан покупки на 3 дня ✅" : "Бан покупки снят ✅", "ok");
+      render();
+      return;
+    }
+
+    // ✅ баланс +/-
+    if (act === "baladd" || act === "balsub"){
+      const inp = grid.querySelector(`input[data-bal="${CSS.escape(username)}"]`);
+      const amt = Number(String(inp ? inp.value : "").replace(",", "."));
+
+      if (!Number.isFinite(amt) || amt <= 0){
+        setStatus("Введи корректную сумму USDT.", "bad");
+        return;
+      }
+
+      const delta = (act === "baladd") ? amt : -amt;
+      const deltaE6 = Math.round(delta * 1e6);
+
+      await apiJson(
+        "/api/admin/users/" + encodeURIComponent(username) + "/balance/adjust",
+        "POST",
+        { deltaUsdtE6: deltaE6 }
+      );
+
+      const it = all.find(x => (x.username||"") === username);
+      if (it){
+        it.walletBalanceUsdtE6 = Number(it.walletBalanceUsdtE6 || 0) + deltaE6;
+      }
+
+      setStatus("Баланс обновлён ✅", "ok");
+      render();
+      return;
+    }
+
+  }catch(err){
+    setStatus("Ошибка: " + (err.message || String(err)), "bad");
+  }
+});
+
+async function load(){
+  try{
+    setStatus("Загрузка... (" + WORKER_BASE + ")", "");
+    const j = await apiJson("/api/admin/users", "GET");
+    all = Array.isArray(j.users) ? j.users : [];
+    setStatus("Подключено ✅ Пользователей: " + all.length, "ok");
+    render();
+  }catch(err){
+    setStatus("Ошибка: " + (err.message || String(err)), "bad");
+  }
+}
+
+reloadBtn.onclick = load;
+applyBtn.onclick = render;
+q.addEventListener("keydown", e => { if (e.key === "Enter") render(); });
+
+load();
+</script>
+</body>
+</html>

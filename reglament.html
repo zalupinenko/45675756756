@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Crossflag - Регламент P2P</title>
+  <style>
+    :root{
+      --bg:#071022;
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+      --card: rgba(15, 26, 48, 0.55);
+      --border: rgba(255,255,255,.12);
+      --blue:#2d5bff;
+      --blue2:#1f3fb3;
+      --ok:#22c55e;
+      --radius: 22px;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; margin:0; }
+    body{
+      color:var(--text);
+      background:var(--bg);
+      overflow-x:hidden;
+      overflow-y:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    html::-webkit-scrollbar, body::-webkit-scrollbar{ width:0; height:0; display:none; }
+    html, body{ scrollbar-width:none; -ms-overflow-style:none; }
+
+    .overlay{
+      position:fixed; inset:0; z-index:-2; pointer-events:none;
+      background:
+        radial-gradient(980px 620px at 50% -120px, rgba(45,91,255,.18), rgba(0,0,0,0) 64%),
+        radial-gradient(920px 620px at 85% 90%, rgba(34,197,94,.08), rgba(0,0,0,0) 58%),
+        linear-gradient(180deg, rgba(7,16,34,.56), rgba(7,16,34,.78));
+    }
+
+    .wrap{
+      max-width:600px;
+      margin:0 auto;
+      padding:
+        calc(14px + env(safe-area-inset-top))
+        16px
+        calc(40px + env(safe-area-inset-bottom))
+        16px;
+    }
+
+    .header{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:18px;
+    }
+    .backBtn{
+      width:38px; height:38px; border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.06);
+      color:rgba(233,240,255,.92);
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; flex:0 0 auto;
+      -webkit-tap-highlight-color:transparent;
+      transition: transform .18s ease, background .18s ease;
+    }
+    .backBtn:hover{ transform:translateY(-2px); background:rgba(255,255,255,.09); }
+    .backBtn:active{ transform:translateY(1px); }
+
+    .headerTitle{
+      font-weight:1000; font-size:17px; letter-spacing:.2px;
+    }
+
+    .card{
+      border-radius:var(--radius);
+      border:1px solid var(--border);
+      background:var(--card);
+      box-shadow:0 18px 50px rgba(0,0,0,.45);
+      padding:22px 18px;
+      backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
+      margin-bottom:16px;
+    }
+
+    .docTitle{
+      font-weight:1000; font-size:16px; text-align:center;
+      margin-bottom:20px; line-height:1.4;
+      color:rgba(233,240,255,.95);
+    }
+
+    .section{
+      margin-bottom:18px;
+    }
+    .sectionTitle{
+      font-weight:1000; font-size:14px;
+      color:rgba(45,91,255,.85);
+      margin-bottom:10px;
+      padding-bottom:6px;
+      border-bottom:1px solid rgba(45,91,255,.15);
+    }
+
+    .clause{
+      font-size:13px;
+      line-height:1.65;
+      color:rgba(233,240,255,.78);
+      margin-bottom:8px;
+      padding-left:4px;
+    }
+    .clause strong{
+      color:rgba(233,240,255,.92);
+      font-weight:900;
+    }
+
+    .intro{
+      font-size:13px;
+      line-height:1.65;
+      color:rgba(233,240,255,.65);
+      margin-bottom:18px;
+      font-style:italic;
+    }
+
+    /* Agreement section */
+    .agreeBox{
+      display:none;
+      margin-top:20px;
+      padding:18px;
+      border-radius:18px;
+      border:1px solid rgba(45,91,255,.25);
+      background:rgba(45,91,255,.06);
+    }
+    .agreeBox.show{ display:block; }
+
+    .checkRow{
+      display:flex;
+      align-items:flex-start;
+      gap:12px;
+      cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .checkRow input[type="checkbox"]{
+      width:22px; height:22px; flex:0 0 auto;
+      margin:2px 0 0 0;
+      accent-color:var(--blue);
+      cursor:pointer;
+    }
+    .checkLabel{
+      font-size:13px;
+      font-weight:800;
+      line-height:1.5;
+      color:rgba(233,240,255,.85);
+    }
+
+    .continueBtn{
+      display:block;
+      width:100%;
+      margin-top:14px;
+      padding:16px;
+      border:none;
+      border-radius:16px;
+      background:var(--blue);
+      color:#fff;
+      font-weight:1000;
+      font-size:15px;
+      cursor:pointer;
+      opacity:.35;
+      pointer-events:none;
+      transition: opacity .2s ease, transform .15s ease;
+    }
+    .continueBtn.active{
+      opacity:1;
+      pointer-events:auto;
+    }
+    .continueBtn.active:hover{ transform:translateY(-2px); }
+    .continueBtn.active:active{ transform:translateY(1px); }
+
+    /* Scrolled-to-bottom hint */
+    .scrollHint{
+      text-align:center;
+      font-size:11px;
+      font-weight:800;
+      color:rgba(245,158,11,.7);
+      margin-bottom:8px;
+      display:none;
+    }
+    .scrollHint.show{ display:block; }
+  </style>
+</head>
+<body>
+  <div class="overlay"></div>
+  <div class="wrap">
+    <div class="header">
+      <button class="backBtn" id="backBtn" type="button" aria-label="Назад">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M15 19l-7-7 7-7" stroke="rgba(233,240,255,.9)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="headerTitle">Регламент P2P</div>
+    </div>
+
+    <div class="card" id="docCard">
+      <div class="docTitle">
+        Регламент проведения P2P-операций<br>в Crossflag
+      </div>
+
+      <div class="intro">
+        Настоящий регламент определяет порядок проведения сделок по покупке и продаже цифровых активов через сервис Crossflag. Использование сервиса означает согласие пользователя с настоящими правилами и обязательство их соблюдать.
+      </div>
+
+      <!-- 1. Общие положения -->
+      <div class="section">
+        <div class="sectionTitle">1. Общие положения</div>
+        <div class="clause"><strong>1.1.</strong> Сервис Crossflag вправе устанавливать обязательные требования к порядку проведения сделок, подтверждению платежей, предоставлению документов и проверке операций.</div>
+        <div class="clause"><strong>1.2.</strong> В целях безопасности, предотвращения мошенничества, соблюдения внутренних процедур контроля и защиты участников сделок сервис вправе запрашивать у пользователя дополнительные сведения и подтверждающие материалы.</div>
+        <div class="clause"><strong>1.3.</strong> Пользователь обязан действовать добросовестно, не совершать действий, способных ввести в заблуждение другую сторону сделки, сервис или платёжные организации.</div>
+        <div class="clause"><strong>1.4.</strong> Crossflag вправе временно ограничить доступ к отдельным функциям сервиса, заморозить баланс, ограничить вывод средств, ограничить доступ к P2P-разделу либо полностью прекратить обслуживание пользователя при выявлении нарушений настоящего регламента, признаков мошенничества, обхода правил сервиса или предоставления недостоверных сведений.</div>
+      </div>
+
+      <!-- 2. Правила при покупке криптовалюты -->
+      <div class="section">
+        <div class="sectionTitle">2. Правила при покупке криптовалюты</div>
+        <div class="clause"><strong>2.1.</strong> Пользователю запрещается самостоятельно связываться с получателем, указанным в платёжных реквизитах по сделке, если иное прямо не предусмотрено сервисом.</div>
+        <div class="clause"><strong>2.2.</strong> Пользователь обязан осуществлять перевод только после внимательной проверки реквизитов, суммы и условий сделки в интерфейсе сервиса.</div>
+        <div class="clause"><strong>2.3.</strong> По запросу сервиса пользователь обязан предоставить подтверждение оплаты. В качестве подтверждения могут быть затребованы: видеозапись из банковского приложения или личного кабинета; скриншоты истории операции; банковская выписка; PDF-чек; фотография устройства с открытым личным кабинетом банка и актуальной страницей сделки.</div>
+        <div class="clause"><strong>2.4.</strong> В качестве основного подтверждения оплаты пользователь обязан прикладывать только оригинальные, неотредактированные документы и чеки. Приоритетным форматом подтверждения является оригинальный PDF-чек, сформированный банком.</div>
+        <div class="clause"><strong>2.5.</strong> Запрещается направлять отредактированные, обрезанные, поддельные, смонтированные или иным образом искажённые документы, скриншоты и подтверждения платежа.</div>
+        <div class="clause"><strong>2.6.</strong> При наличии сомнений в подлинности доказательств оплаты, обстоятельствах перевода, источнике средств или характере операции сервис вправе временно приостановить зачисление цифровых активов и провести дополнительную проверку. Срок такой проверки определяется сложностью ситуации, при этом сервис со своей стороны стремится завершать проверку в максимально короткий срок, как правило в пределах нескольких часов.</div>
+        <div class="clause"><strong>2.7.</strong> При выявлении нарушения правил покупки, в том числе предоставления недостоверных либо фальшивых подтверждений, сервис вправе временно либо бессрочно: ограничить вывод средств; ограничить доступ к P2P-операциям; заблокировать аккаунт; удерживать спорные средства до завершения проверки.</div>
+      </div>
+
+      <!-- 3. Правила при продаже криптовалюты -->
+      <div class="section">
+        <div class="sectionTitle">3. Правила при продаже криптовалюты</div>
+        <div class="clause"><strong>3.1.</strong> Пользователь, продающий цифровые активы, обязан своевременно отслеживать поступающие платежи и подтверждать их получение в рамках сделки.</div>
+        <div class="clause"><strong>3.2.</strong> Пользователь обязан проверять фактическое зачисление денежных средств по своему банковскому счёту или в банковском приложении, а не исходя исключительно из сообщений, скриншотов или устных заверений другой стороны.</div>
+        <div class="clause"><strong>3.3.</strong> По запросу сервиса пользователь обязан предоставить подтверждение отсутствия или наличия поступления платежа. В качестве подтверждения могут быть затребованы: видеозапись из банковского приложения; скриншот истории операций; банковская выписка; оригинальный PDF-документ, сформированный банком.</div>
+        <div class="clause"><strong>3.4.</strong> В случае если сервис установит, что пользователь умышленно не подтверждает поступившие платежи, затягивает подтверждение без достаточных оснований либо действует недобросовестно, сервис вправе временно заморозить баланс пользователя, ограничить его доступ к P2P-разделу и провести внутреннюю проверку.</div>
+        <div class="clause"><strong>3.5.</strong> Пользователь обязан предоставлять сервису достоверные сведения о статусе поступления денежных средств. Предоставление ложной информации рассматривается как нарушение регламента.</div>
+      </div>
+
+      <!-- 4. Дополнительные правила P2P-операций -->
+      <div class="section">
+        <div class="sectionTitle">4. Дополнительные правила P2P-операций</div>
+        <div class="clause"><strong>4.1.</strong> Все платежи по P2P-сделкам должны совершаться строго на сумму, указанную в сделке. Перевод суммы, отличающейся от суммы сделки без предварительного согласования через сервис, не допускается.</div>
+        <div class="clause"><strong>4.2.</strong> При совершении банковского перевода запрещается указывать в комментарии к платежу упоминания криптовалюты, биржи, обмена, USDT, BTC и иные формулировки, которые могут повлечь блокировку или дополнительную проверку со стороны банка. Если сервисом предусмотрены отдельные инструкции по назначению платежа, пользователь обязан их соблюдать.</div>
+        <div class="clause"><strong>4.3.</strong> Сервис вправе запросить у пользователя дополнительную верификацию личности, происхождения средств, источника платежа, а также любые разумно необходимые подтверждения для проведения внутренней проверки операции.</div>
+        <div class="clause"><strong>4.4.</strong> Пользователь обязан содействовать разрешению спорной ситуации, своевременно отвечать на запросы сервиса и предоставлять запрашиваемые материалы в полном объёме.</div>
+        <div class="clause"><strong>4.5.</strong> Отказ от предоставления документов, затягивание ответа, уклонение от проверки либо предоставление неполных данных может являться основанием для временного ограничения операций, заморозки баланса или прекращения обслуживания.</div>
+        <div class="clause"><strong>4.6.</strong> Сервис вправе отклонить, приостановить или отменить сделку при наличии признаков мошенничества, подозрительной активности, нарушения регламента, технических ошибок, а также в иных случаях, когда завершение сделки может создать риск для сервиса или участников.</div>
+      </div>
+
+      <!-- 5. Ответственность пользователя -->
+      <div class="section">
+        <div class="sectionTitle">5. Ответственность пользователя</div>
+        <div class="clause"><strong>5.1.</strong> Пользователь несёт личную ответственность за достоверность предоставленных сведений, корректность платёжной информации и подлинность предоставляемых подтверждений.</div>
+        <div class="clause"><strong>5.2.</strong> Пользователь несёт ответственность за сохранность доступа к своему аккаунту, банковским приложениям и иным средствам авторизации.</div>
+        <div class="clause"><strong>5.3.</strong> Любые попытки подделки документов, искажения информации о платеже, манипуляций со статусами сделок либо предоставления ложных сведений рассматриваются как грубое нарушение настоящего регламента.</div>
+      </div>
+
+      <!-- 6. Заключительные положения -->
+      <div class="section">
+        <div class="sectionTitle">6. Заключительные положения</div>
+        <div class="clause"><strong>6.1.</strong> Crossflag оставляет за собой право изменять и дополнять настоящий регламент в любое время. Актуальная редакция публикуется в интерфейсе сервиса или в официальных каналах проекта.</div>
+        <div class="clause"><strong>6.2.</strong> Во всех спорных ситуациях сервис исходит из необходимости обеспечения безопасности сделок, защиты добросовестных участников и соблюдения внутренних процедур контроля.</div>
+        <div class="clause"><strong>6.3.</strong> Решения о временных ограничениях, заморозке средств, дополнительной проверке и восстановлении доступа принимаются сервисом на основании имеющихся данных по конкретной ситуации.</div>
+      </div>
+    </div>
+
+    <!-- Agreement block (only in agree mode) -->
+    <div class="scrollHint" id="scrollHint">Прокрутите вниз, чтобы прочитать весь регламент</div>
+    <div class="agreeBox" id="agreeBox">
+      <label class="checkRow" id="checkRow">
+        <input type="checkbox" id="agreeCheck" />
+        <span class="checkLabel">Я ознакомлен(-а) с регламентом проведения P2P-операций в Crossflag и принимаю все его условия</span>
+      </label>
+      <button class="continueBtn" id="continueBtn" type="button">Продолжить</button>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const params = new URLSearchParams(location.search);
+  const agreeMode = params.get("agree") === "1";
+  const returnUrl = params.get("return") || "./trade.html";
+
+  const backBtn = document.getElementById("backBtn");
+  const agreeBox = document.getElementById("agreeBox");
+  const scrollHint = document.getElementById("scrollHint");
+  const agreeCheck = document.getElementById("agreeCheck");
+  const continueBtn = document.getElementById("continueBtn");
+
+  // Back button
+  backBtn.onclick = () => {
+    if (agreeMode) {
+      location.href = returnUrl;
+    } else {
+      history.back();
+    }
+  };
+
+  if (!agreeMode) return;
+
+  // Agreement mode
+  agreeBox.classList.add("show");
+
+  // Track if user scrolled to bottom
+  let hasScrolledToBottom = false;
+  function checkScroll(){
+    const scrollY = window.scrollY || window.pageYOffset;
+    const windowH = window.innerHeight;
+    const docH = document.documentElement.scrollHeight;
+    if (scrollY + windowH >= docH - 60) {
+      hasScrolledToBottom = true;
+      scrollHint.classList.remove("show");
+    }
+  }
+  // Show scroll hint initially
+  setTimeout(() => {
+    const docH = document.documentElement.scrollHeight;
+    if (docH > window.innerHeight + 100) {
+      scrollHint.classList.add("show");
+    }
+  }, 300);
+
+  window.addEventListener("scroll", checkScroll, { passive:true });
+  checkScroll();
+
+  agreeCheck.onchange = () => {
+    if (agreeCheck.checked) {
+      continueBtn.classList.add("active");
+    } else {
+      continueBtn.classList.remove("active");
+    }
+  };
+
+  continueBtn.onclick = () => {
+    if (!agreeCheck.checked) return;
+    try {
+      localStorage.setItem("cf_p2p_agreed", "1");
+    } catch(_){}
+    location.href = returnUrl;
+  };
+})();
+</script>
+</body>
+</html>

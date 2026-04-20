@@ -1,0 +1,20 @@
+name = "tg-crypto-exchanger"
+main = "worker.js"
+compatibility_date = "2024-09-01"
+
+[[kv_namespaces]]
+binding = "DB"
+id = "b69cd9c8b0d84e46ac15dd49532d0f3d"
+
+[[d1_databases]]
+binding = "us_bal_wal"
+database_name = "us_bal_wal"
+database_id = "3e4a547f-2ebc-4b3e-95f3-7326449724fc"
+
+[[durable_objects.bindings]]
+name = "RESERVATIONS_DO"
+class_name = "ReservationsDO"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ReservationsDO"]

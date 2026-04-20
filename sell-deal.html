@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Crossflag · Сделка · Продажа</title>
+
+  <style>
+    :root{
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+      --card: rgba(15, 26, 48, 0.52);
+      --border: rgba(255,255,255,.12);
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+      --btn:#2d5bff;
+      --btn2:#1f3fb3;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+    *,*::before,*::after{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0; color:var(--text); background:#071022;
+      overflow-x:hidden; overflow-y:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .overlay{
+      position:fixed; inset:0; z-index:-2;
+      background:
+        radial-gradient(1100px 700px at 50% -220px, rgba(45,91,255,.22), rgba(0,0,0,0) 65%),
+        radial-gradient(900px 600px at 85% 85%, rgba(34,197,94,.10), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(7,16,34,.84), rgba(7,16,34,.94));
+      pointer-events:none;
+    }
+    .page{
+      min-height:100svh;
+      display:flex; justify-content:center; align-items:flex-start;
+      padding: calc(16px + env(safe-area-inset-top)) 16px calc(22px + env(safe-area-inset-bottom)) 16px;
+    }
+    .wrap{ width:100%; max-width:980px; }
+    .card{
+      position:relative;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 14px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      overflow:hidden;
+    }
+    .card::before{
+      content:"";
+      position:absolute; inset:-60px; z-index:0;
+      background:
+        radial-gradient(520px 180px at 35% 20%, rgba(45,91,255,.18), rgba(0,0,0,0) 60%),
+        radial-gradient(520px 180px at 75% 90%, rgba(34,197,94,.10), rgba(0,0,0,0) 60%);
+      filter: blur(18px);
+      pointer-events:none;
+    }
+    .card > *{ position:relative; z-index:1; }
+
+    .top{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; flex-wrap:wrap; margin-bottom:12px;
+    }
+    .title{ font-weight:1000; font-size:16px; }
+    .back{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff; font-weight:950;
+      padding:10px 12px; border-radius:999px;
+      cursor:pointer; text-decoration:none; white-space:nowrap;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap:10px;
+      margin-bottom:12px;
+    }
+    @media(max-width:900px){ .grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media(max-width:520px){ .grid{ grid-template-columns: 1fr; } }
+
+    .cell{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      overflow:hidden;
+      min-width:0;
+    }
+    .label{ color:var(--muted); font-size:12px; font-weight:950; margin-bottom:6px; }
+    .value{ font-weight:1000; font-size:16px; word-break:break-word; overflow-wrap:anywhere; }
+
+    .section{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      margin-bottom:12px;
+      min-width:0;
+    }
+    .sectionTitle{ font-weight:1000; margin-bottom:10px; display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+
+    .tag{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.03);
+      font-weight:1000;
+      font-size:12px;
+    }
+    .tag.ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.10); }
+    .tag.bad{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.10); }
+    .tag.warn{ border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.10); }
+
+    .row{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    @media(max-width:700px){ .row{ grid-template-columns:1fr; } }
+    .row > div{ min-width:0; }
+
+    select, input{
+      width:100%;
+      max-width:100%;
+      min-width:0;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      color:var(--text);
+      outline:none;
+      font-weight:1000;
+      font-size:15px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      display:block;
+    }
+    input::placeholder{ color: rgba(159,176,212,.65); font-weight:900; }
+
+    .hint{
+      color: rgba(233,240,255,.78);
+      font-size:12px;
+      font-weight:850;
+      line-height:1.45;
+    }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:12px 18px;
+      background: linear-gradient(180deg, var(--btn), var(--btn2));
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow: 0 10px 26px rgba(0,0,0,.30);
+      min-width: 190px;
+      position:relative;
+    }
+    .btnGhost{
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:14px;
+      padding:12px 18px;
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      min-width: 190px;
+    }
+    .btn:disabled{ opacity:.7; cursor:not-allowed; box-shadow:none; }
+
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+    .loading{ pointer-events:none; opacity:.88; }
+    .loading::after{
+      content:"";
+      position:absolute;
+      top:50%;
+      right:12px;
+      width:16px;
+      height:16px;
+      margin-top:-8px;
+      border-radius:999px;
+      border:2px solid rgba(255,255,255,.25);
+      border-top-color: rgba(255,255,255,.95);
+      animation: spin .9s linear infinite;
+    }
+
+    .status{
+      margin-top:10px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+      font-weight:950;
+      font-size:13px;
+      white-space:pre-line;
+      display:none;
+    }
+    .status.show{ display:block; }
+    .status.ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.10); }
+    .status.bad{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.10); }
+    .status.warn{ border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.10); }
+
+    /* progress */
+    .barWrap{
+      width:100%;
+      height:14px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      overflow:hidden;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    .bar{
+      height:100%;
+      width:0%;
+      border-radius:999px;
+      background: linear-gradient(90deg, rgba(34,197,94,.75), rgba(45,91,255,.70));
+      transition: width .35s ease;
+    }
+
+    .list{
+      margin-top:10px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      overflow:hidden;
+    }
+    .item{
+      padding:10px 12px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.16);
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      font-weight:950;
+      font-size:13px;
+    }
+    .item:last-child{ border-bottom:0; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12px; color:#cfe0ff; }
+  </style>
+</head>
+
+<body>
+  <div class="overlay"></div>
+
+  <div class="page">
+    <div class="wrap">
+      <div class="card">
+        <div class="top">
+          <div class="title">Продажа · Сделка</div>
+          <a class="back" id="backBtn" href="./sell-check.html">← Назад</a>
+        </div>
+
+        <div class="grid">
+          <div class="cell">
+            <div class="label">Сумма (RUB)</div>
+            <div class="value" id="amountRubV">—</div>
+          </div>
+          <div class="cell">
+            <div class="label">Курс</div>
+            <div class="value" id="rateV">—</div>
+          </div>
+          <div class="cell">
+            <div class="label">USDT</div>
+            <div class="value" id="usdtV">—</div>
+          </div>
+          <div class="cell">
+            <div class="label">Статус</div>
+            <div class="value" id="statusV">—</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="sectionTitle">
+            <span>Прогресс выплаты</span>
+            <span class="tag warn" id="tag">—</span>
+          </div>
+
+          <div class="row">
+            <div>
+              <div class="label">Уже получено</div>
+              <div class="value" id="paidV">—</div>
+            </div>
+            <div>
+              <div class="label">Осталось</div>
+              <div class="value" id="remainV">—</div>
+            </div>
+          </div>
+
+          <div class="barWrap"><div class="bar" id="bar"></div></div>
+          <div class="hint" style="margin-top:8px;">
+            Ниже вписывайте частичные суммы поступлений.
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <div>
+              <div class="label">Добавить сумму (RUB)</div>
+              <input id="partInput" inputmode="decimal" placeholder="Например: 3005" />
+            </div>
+            <div style="display:flex; align-items:end; gap:10px; flex-wrap:wrap;">
+              <button class="btn" id="addPartBtn" type="button" disabled>Добавить</button>
+              <button class="btnGhost" id="reloadBtn" type="button">Обновить</button>
+            </div>
+          </div>
+
+          <div class="status warn" id="statusBox">—</div>
+
+          <div class="sectionTitle" style="margin-top:12px;">
+            <span>История частичных выплат</span>
+            <span class="hint" id="partsHint">—</span>
+          </div>
+          <div class="list" id="partsList"></div>
+        </div>
+
+        <div class="section">
+          <div class="sectionTitle">
+            <span>Замена реквизитов</span>
+            <button class="btnGhost" id="editReqBtn" type="button">Изменить реквизиты</button>
+          </div>
+
+          <div class="row">
+            <div>
+              <div class="label">Способ</div>
+              <div class="value" id="payMethodV">—</div>
+            </div>
+            <div>
+              <div class="label">Номер</div>
+              <div class="value mono" id="payNumberV">—</div>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <div class="label">Банк</div>
+              <div class="value" id="payBankV">—</div>
+            </div>
+            <div>
+              <div class="label">ФИО</div>
+              <div class="value" id="payFioV">—</div>
+            </div>
+          </div>
+
+          <div class="hint">
+            Если реквизиты заблокировали или вы хотите получить платежи на разные карты, то можно указать новые.
+          </div>
+
+          <div id="editReqBox" style="display:none; margin-top:12px;">
+            <div class="row">
+              <div>
+                <div class="label">Способ</div>
+                <select id="payMethod">
+                  <option value="SBP">СБП</option>
+                  <option value="CARD">Карта</option>
+                </select>
+              </div>
+              <div>
+                <div class="label">Номер</div>
+                <input id="payNumber" placeholder="+7… или номер карты" />
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <div class="label">Банк</div>
+                <input id="payBank" placeholder="Например: Т-Банк" />
+              </div>
+              <div>
+                <div class="label">ФИО получателя</div>
+                <input id="payFio" placeholder="Иванов Иван Иванович" />
+              </div>
+            </div>
+            <div class="actions">
+              <button class="btnGhost" id="cancelReqBtn" type="button">Отмена</button>
+              <button class="btn" id="saveReqBtn" type="button" disabled>Сохранить</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+<script>
+  /* ===== AUTH / API HEADERS (FIX) ===== */
+const API_BASE =
+  new URLSearchParams(location.search).get('wb') ||
+  new URLSearchParams(location.search).get('api') ||
+  localStorage.getItem('WORKER_BASE') ||
+  'https://api.crossflag.org';
+
+const USER_TOKEN =
+  localStorage.getItem('CF_USER_TOKEN') ||
+  localStorage.getItem('user_token') ||
+  localStorage.getItem('crossflag_user_token') ||
+  localStorage.getItem('USER_TOKEN') ||
+  localStorage.getItem('userToken') ||
+  localStorage.getItem('cf_user_token') ||
+  '';
+
+const AUTH_HEADERS = USER_TOKEN
+  ? { 'Authorization': 'Bearer ' + USER_TOKEN }
+  : {};
+  
+  const WORKER_BASE = String(
+    localStorage.getItem("worker_base") ||
+    localStorage.getItem("WORKER_BASE") ||
+    "https://rapira-rates-proxy.kireeshka73.workers.dev"
+  ).replace(/\/+$/, "");
+
+  function getParam(name){
+    try { return new URL(location.href).searchParams.get(name) || ""; }
+    catch { return ""; }
+  }
+
+  function persist(dealId, secret){
+    try { sessionStorage.setItem("sell_deal_id", dealId); } catch {}
+    try { sessionStorage.setItem("sell_deal_secret", secret); } catch {}
+    try { localStorage.setItem("sell_deal_id", dealId); } catch {}
+    try { localStorage.setItem("sell_deal_secret", secret); } catch {}
+  }
+
+  function restore(){
+    let dealId = (getParam("dealId") || getParam("id") || getParam("deal") || "").trim();
+    let secret = (getParam("secret") || getParam("s") || "").trim();
+    try {
+      if (!dealId) dealId = (sessionStorage.getItem("sell_deal_id") || "").trim();
+      if (!secret) secret = (sessionStorage.getItem("sell_deal_secret") || "").trim();
+    } catch {}
+    try {
+      if (!dealId) dealId = (localStorage.getItem("sell_deal_id") || "").trim();
+      if (!secret) secret = (localStorage.getItem("sell_deal_secret") || "").trim();
+    } catch {}
+    if (dealId && secret) persist(dealId, secret);
+    return { dealId, secret };
+  }
+
+  async function apiJson(path, method, body){
+    const res = await fetch(WORKER_BASE + path, {
+      method,
+      headers:{ "Content-Type":"application/json", ...AUTH_HEADERS },
+      body: body ? JSON.stringify(body) : null
+    });
+    const text = await res.text();
+    let j;
+    try{ j = JSON.parse(text); }catch{ throw new Error("Ответ не JSON: " + text.slice(0,200)); }
+    if (!res.ok || !j.ok) throw new Error(j.error || ("HTTP " + res.status));
+    return j;
+  }
+
+  function fmtRub(n){ return Number(n).toLocaleString("ru-RU") + " ₽"; }
+  function fmtRate(n){ return Number(n).toLocaleString("ru-RU", { maximumFractionDigits: 2 }) + " RUB/USDT"; }
+  function fmtUsdt(n){ return Number(n).toLocaleString("ru-RU", { maximumFractionDigits: 6 }) + " USDT"; }
+
+  function ruStatus(s){
+    const x = String(s||"").toUpperCase();
+    if (x === "WAIT_CRYPTO" || x === "WAITING_CRYPTO") return "Ожидаем крипту";
+    if (x === "CRYPTO_RECEIVED") return "Крипта получена";
+    if (x === "CHECK_REQUIRED") return "Требуется доп. проверка";
+    if (x === "CHECK_SUBMITTED") return "Проверка отправлена";
+    if (x === "CRYPTO_NOT_RECEIVED") return "Крипта не поступила";
+    if (x === "PAYOUT_PROGRESS") return "Выплата частями";
+    if (x === "DONE" || x === "COMPLETED" || x === "SUCCESS") return "Завершено";
+    if (x === "CANCELED" || x === "CANCELLED") return "Отменено";
+    return x || "—";
+  }
+
+  function setTag(st){
+    const tag = document.getElementById("tag");
+    const x = String(st||"").toUpperCase();
+    tag.textContent = ruStatus(x);
+    tag.className = "tag " + ((x === "DONE" || x === "COMPLETED" || x === "SUCCESS") ? "ok" : (x === "CRYPTO_NOT_RECEIVED" ? "bad" : "warn"));
+  }
+
+  function setStatus(text, kind){
+    const box = document.getElementById("statusBox");
+    box.textContent = text;
+    box.className = "status show " + (kind || "warn");
+  }
+
+  function setLoading(btn, on){
+    if (!btn) return;
+    if (on){
+      btn.classList.add("loading");
+      btn.dataset._txt = btn.textContent;
+      btn.textContent = "Отправка…";
+      btn.disabled = true;
+    }else{
+      btn.classList.remove("loading");
+      btn.textContent = btn.dataset._txt || btn.textContent;
+      btn.disabled = false;
+    }
+  }
+
+  const amountRubV = document.getElementById("amountRubV");
+  const rateV = document.getElementById("rateV");
+  const usdtV = document.getElementById("usdtV");
+  const statusV = document.getElementById("statusV");
+
+  const paidV = document.getElementById("paidV");
+  const remainV = document.getElementById("remainV");
+  const bar = document.getElementById("bar");
+
+  const partInput = document.getElementById("partInput");
+  const addPartBtn = document.getElementById("addPartBtn");
+  const reloadBtn = document.getElementById("reloadBtn");
+
+  const partsList = document.getElementById("partsList");
+  const partsHint = document.getElementById("partsHint");
+
+  const payMethodV = document.getElementById("payMethodV");
+  const payNumberV = document.getElementById("payNumberV");
+  const payBankV = document.getElementById("payBankV");
+  const payFioV = document.getElementById("payFioV");
+
+  const editReqBtn = document.getElementById("editReqBtn");
+  const editReqBox = document.getElementById("editReqBox");
+  const cancelReqBtn = document.getElementById("cancelReqBtn");
+  const saveReqBtn = document.getElementById("saveReqBtn");
+
+  const payMethod = document.getElementById("payMethod");
+  const payNumber = document.getElementById("payNumber");
+  const payBank = document.getElementById("payBank");
+  const payFio = document.getElementById("payFio");
+
+  let DEAL_ID = "";
+  let SECRET = "";
+  let DEAL = null;
+
+  function tsToRu(ts){
+    try{
+      const d = new Date(Number(ts));
+      return d.toLocaleString("ru-RU");
+    }catch{ return ""; }
+  }
+
+  function renderParts(payouts){
+    partsList.innerHTML = "";
+    const arr = Array.isArray(payouts) ? payouts.slice().reverse() : [];
+
+    if (!arr.length){
+      partsList.innerHTML = `<div class="item"><span class="hint">Пока нет записей</span><span class="mono">—</span></div>`;
+      partsHint.textContent = "—";
+      return;
+    }
+
+    partsHint.textContent = arr.length + " записей";
+    for (const p of arr){
+      const el = document.createElement("div");
+      el.className = "item";
+      el.innerHTML = `<span>${fmtRub(p.amountRub || 0)}</span><span class="mono">${tsToRu(p.ts)}</span>`;
+      partsList.appendChild(el);
+    }
+  }
+
+  function applyDeal(d){
+    DEAL = d;
+
+    const st = String(d.status || "").toUpperCase();
+    setTag(st);
+
+    // 🔎 Если админ запросил дополнительную проверку — отправляем на страницу проверки
+    if (st === "CHECK_REQUIRED") {
+      const qs = new URLSearchParams({ dealId: DEAL_ID, secret: SECRET });
+      location.href = "./sell-extra-check.html?" + qs.toString();
+      return;
+    }
+
+    amountRubV.textContent = fmtRub(d.amountRub || 0);
+    rateV.textContent = fmtRate(d.rate || 0);
+    usdtV.textContent = fmtUsdt(d.amountUsdt || 0);
+    statusV.textContent = ruStatus(st);
+
+    const total = Number(d.progress?.total ?? d.amountRub ?? 0) || 0;
+    const paid  = Number(d.progress?.paid  ?? 0) || 0;
+    const rem   = Number(d.progress?.left  ?? Math.max(0, total - paid)) || 0;
+
+    paidV.textContent = fmtRub(paid);
+    remainV.textContent = fmtRub(rem);
+
+    const denom = Math.max(1, total);
+    const pct = Math.max(0, Math.min(100, (paid / denom) * 100));
+    bar.style.width = pct.toFixed(2) + "%";
+
+    const pay = d.pay || {};
+    payMethodV.textContent = String(pay.method || "—");
+    payNumberV.textContent = String(pay.number || "—");
+    payBankV.textContent = String(pay.bank || "—");
+    payFioV.textContent = String(pay.fio || "—");
+
+    renderParts(d.payouts || []);
+
+    if (st === "CHECK_SUBMITTED"){
+      setStatus("Дополнительная проверка отправлена ✅\nОжидайте подтверждения администратора.", "ok");
+      addPartBtn.disabled = true;
+    } else if (st === "CRYPTO_NOT_RECEIVED"){
+      setStatus("Администратор отметил: крипта не поступила.\nЕсли это ошибка — свяжись с администратором.", "bad");
+      addPartBtn.disabled = true;
+    } else if (st === "WAIT_CRYPTO" || st === "WAITING_CRYPTO"){
+      setStatus("Сделка ещё ожидает крипту.\nВернись на экран проверки или дождись подтверждения.", "warn");
+      addPartBtn.disabled = true;
+    } else {
+      setStatus("Мы уже начали отправлять вам платежи.\nПожалуйста вписывайте их в окно выше.", "ok");
+      validatePart();
+    }
+
+    if (st === "COMPLETED" || st === "DONE" || st === "SUCCESS"){
+      setStatus("Сделка закрыта ✅ Полная сумма отмечена как выплаченная.\nСейчас откроем страницу “Успешно”.", "ok");
+      setTimeout(() => {
+        location.href = "./sell-success.html?dealId=" + encodeURIComponent(DEAL_ID);
+      }, 900);
+    }
+  }
+
+  async function loadDeal(){
+    const j = await apiJson(
+      "/api/public/sell_status?dealId=" + encodeURIComponent(DEAL_ID) + "&secret=" + encodeURIComponent(SECRET),
+      "GET"
+    );
+    applyDeal(j);
+  }
+
+  // ✅ FIX (ТОЛЬКО ЭТО): разрешаем "Добавить" и при PAYOUT_PROGRESS
+  function validatePart(){
+    const v = String(partInput.value || "").replace(/\s+/g,"").replace(",", ".");
+    const n = Number(v);
+    const st = String(DEAL?.status || "").toUpperCase();
+
+    const allowed = (st === "CRYPTO_RECEIVED" || st === "PAYOUT_PROGRESS");
+    addPartBtn.disabled = !(DEAL && allowed && Number.isFinite(n) && n > 0);
+  }
+
+  partInput.addEventListener("input", validatePart);
+
+  addPartBtn.onclick = async () => {
+    try{
+      const v = String(partInput.value || "").replace(/\s+/g,"").replace(",", ".");
+      const n = Number(v);
+      if (!Number.isFinite(n) || n <= 0) return;
+
+      setLoading(addPartBtn, true);
+
+      await apiJson("/api/public/sell_payout_add", "POST", { dealId: DEAL_ID, secret: SECRET, amountRub: n });
+
+      partInput.value = "";
+      await loadDeal();
+    }catch(e){
+      setStatus("Ошибка: " + (e.message || String(e)), "bad");
+    }finally{
+      setLoading(addPartBtn, false);
+      validatePart();
+    }
+  };
+
+  reloadBtn.onclick = async () => {
+    try{
+      await loadDeal();
+    }catch(e){
+      setStatus("Ошибка: " + (e.message || String(e)), "bad");
+    }
+  };
+
+  // requisites edit
+  editReqBtn.onclick = () => {
+    editReqBox.style.display = (editReqBox.style.display === "none" || !editReqBox.style.display) ? "block" : "none";
+    if (DEAL && DEAL.pay){
+      payMethod.value = String(DEAL.pay.method || "SBP").toUpperCase();
+      payNumber.value = String(DEAL.pay.number || "");
+      payBank.value = String(DEAL.pay.bank || "");
+      payFio.value = String(DEAL.pay.fio || "");
+    }
+    validateReq();
+  };
+
+  cancelReqBtn.onclick = () => {
+    editReqBox.style.display = "none";
+  };
+
+  function validateReq(){
+    const ok = (payNumber.value||"").trim() && (payBank.value||"").trim() && (payFio.value||"").trim();
+    saveReqBtn.disabled = !ok;
+  }
+  payNumber.addEventListener("input", validateReq);
+  payBank.addEventListener("input", validateReq);
+  payFio.addEventListener("input", validateReq);
+  payMethod.addEventListener("change", validateReq);
+
+  saveReqBtn.onclick = async () => {
+    try{
+      const pay = {
+        method: String(payMethod.value || "SBP").toUpperCase(),
+        number: String(payNumber.value || "").trim(),
+        bank: String(payBank.value || "").trim(),
+        fio: String(payFio.value || "").trim()
+      };
+      if (!pay.number || !pay.bank || !pay.fio) return;
+
+      setLoading(saveReqBtn, true);
+      await apiJson("/api/public/sell_update_requisites", "POST", { dealId: DEAL_ID, secret: SECRET, pay });
+      editReqBox.style.display = "none";
+      await loadDeal();
+      setStatus("Реквизиты обновлены ✅", "ok");
+    }catch(e){
+      setStatus("Ошибка: " + (e.message || String(e)), "bad");
+    }finally{
+      setLoading(saveReqBtn, false);
+    }
+  };
+
+  // init
+  (async () => {
+    const r = restore();
+    DEAL_ID = r.dealId;
+    SECRET = r.secret;
+
+    if (!DEAL_ID || !SECRET){
+      setStatus("Ошибка: нет параметров сделки.\nОткрой страницу после подтверждения “Крипта получена”.", "bad");
+      return;
+    }
+    persist(DEAL_ID, SECRET);
+
+    try{
+      await loadDeal();
+      setInterval(loadDeal, 3500);
+    }catch(e){
+      setStatus("Ошибка: " + (e.message || String(e)), "bad");
+    }
+  })();
+</script>
+<script src="./resume-helper.js"></script>
+<script>(function(){
+  if (!window.CrossflagResume) return;
+  function save(){
+    if (DEAL_ID && SECRET) window.CrossflagResume.upsertSell({ id: DEAL_ID, secret: SECRET, url: location.pathname + location.search + location.hash });
+  }
+  setTimeout(save, 0);
+  window.addEventListener("pagehide", save);
+  document.addEventListener("visibilitychange", ()=>{ if (document.visibilityState === "hidden") save(); });
+})();</script>
+</body>
+</html>

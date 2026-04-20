@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Crossflag · Продажа · Проверка крипты</title>
+
+  <style>
+    :root{
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+      --card: rgba(15, 26, 48, 0.52);
+      --border: rgba(255,255,255,.12);
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+      --btn:#2d5bff;
+      --btn2:#1f3fb3;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+
+    *, *::before, *::after{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      color:var(--text);
+      background:#071022;
+      overflow-y:auto;
+      overflow-x:hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+    }
+
+    .overlay{
+      position:fixed; inset:0; z-index:-2;
+      background:
+        radial-gradient(1100px 700px at 50% -220px, rgba(45,91,255,.22), rgba(0,0,0,0) 65%),
+        radial-gradient(900px 600px at 85% 85%, rgba(34,197,94,.10), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(7,16,34,.84), rgba(7,16,34,.94));
+      pointer-events:none;
+    }
+
+    .page{
+      min-height:100svh;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      padding: calc(16px + env(safe-area-inset-top)) 16px calc(22px + env(safe-area-inset-bottom)) 16px;
+    }
+    .wrap{ width:100%; max-width:560px; }
+
+    .card{
+      position:relative;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 14px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      overflow:hidden;
+    }
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:-60px;
+      background:
+        radial-gradient(520px 180px at 35% 20%, rgba(45,91,255,.18), rgba(0,0,0,0) 60%),
+        radial-gradient(520px 180px at 75% 90%, rgba(34,197,94,.10), rgba(0,0,0,0) 60%);
+      filter: blur(18px);
+      pointer-events:none;
+      z-index:0;
+    }
+    .card > *{ position:relative; z-index:1; }
+
+    .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:12px;
+      flex-wrap:wrap;
+    }
+    .title{ font-weight:1000; font-size:16px; }
+    .back{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:950;
+      padding:10px 12px;
+      border-radius:999px;
+      cursor:pointer;
+      text-decoration:none;
+      white-space:nowrap;
+    }
+
+    .section{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      margin-bottom:12px;
+      min-width:0;
+    }
+    .sectionTitle{ font-weight:1000; margin-bottom:10px; }
+    .label{ color:var(--muted); font-size:12px; font-weight:950; margin-bottom:6px; }
+    .value{ font-weight:1000; font-size:15px; word-break:break-word; overflow-wrap:anywhere; }
+
+    input{
+      width:100%;
+      max-width:100%;
+      min-width:0;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      color:var(--text);
+      outline:none;
+      font-weight:1000;
+      font-size:15px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      display:block;
+    }
+    input::placeholder{ color: rgba(159,176,212,.65); font-weight:900; }
+
+    .hint{
+      color: rgba(233,240,255,.78);
+      font-size:12px;
+      font-weight:850;
+      line-height:1.45;
+      margin-top:8px;
+    }
+
+    .status{
+      margin-top:10px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+      font-weight:950;
+      font-size:13px;
+      white-space:pre-line;
+      display:block;
+    }
+    .status.ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.10); }
+    .status.bad{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.10); }
+    .status.warn{ border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.10); }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:12px 18px;
+      background: linear-gradient(180deg, var(--btn), var(--btn2));
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow: 0 10px 26px rgba(0,0,0,.30);
+      min-width: 190px;
+      position:relative;
+    }
+    .btnGhost{
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:14px;
+      padding:12px 18px;
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      min-width: 190px;
+    }
+    .btn:disabled{ opacity:.7; cursor:not-allowed; box-shadow:none; }
+
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+    .loading{ pointer-events:none; opacity:.88; }
+    .loading::after{
+      content:"";
+      position:absolute;
+      top:50%;
+      right:12px;
+      width:16px;
+      height:16px;
+      margin-top:-8px;
+      border-radius:999px;
+      border:2px solid rgba(255,255,255,.25);
+      border-top-color: rgba(255,255,255,.95);
+      animation: spin .9s linear infinite;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="overlay"></div>
+
+  <div class="page">
+    <div class="wrap">
+      <div class="card">
+        <div class="top">
+          <div class="title">Продажа · Проверка крипты</div>
+          <a class="back" href="./sell.html">← Назад</a>
+        </div>
+
+        <div class="section">
+          <div class="label">ID сделки</div>
+          <div class="value" id="dealIdView">—</div>
+        </div>
+
+        <div class="section">
+          <div class="label">Статус</div>
+          <div class="value" id="statusView">—</div>
+        </div>
+
+        <div class="section">
+          <div class="label">TX hash (необязательно)</div>
+          <input id="txInput" placeholder="Если есть — вставь сюда" />
+          <div class="hint">Это необязательно, но может ускорить проверку и закрытие сделки.</div>
+          <div class="actions">
+            <button class="btn" id="sendTxBtn" type="button" disabled>Отправить хэш</button>
+          </div>
+        </div>
+
+        <div class="status warn" id="msgBox">Ждём подтверждение от администратора…</div>
+
+        <div class="actions">
+          <button class="btn" id="refreshBtn" type="button">Обновить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // ✅ WORKER_BASE (как у тебя в остальных страницах)
+  const WORKER_BASE = String(
+    localStorage.getItem("worker_base") ||
+    localStorage.getItem("WORKER_BASE") ||
+    "https://api.crossflag.org"
+  ).replace(/\/+$/, "");
+
+  function getParam(name){
+    try { return new URL(location.href).searchParams.get(name) || ""; }
+    catch { return ""; }
+  }
+
+  // ✅ принимаем dealId/secret в разных ключах (на всякий)
+  const dealId = (getParam("dealId") || getParam("id") || getParam("deal") || "").trim();
+  const secret = (getParam("secret") || getParam("s") || "").trim();
+
+  const dealIdView = document.getElementById("dealIdView");
+  const statusView = document.getElementById("statusView");
+  const msgBox = document.getElementById("msgBox");
+  const txInput = document.getElementById("txInput");
+  const sendTxBtn = document.getElementById("sendTxBtn");
+  const refreshBtn = document.getElementById("refreshBtn");
+
+  dealIdView.textContent = dealId || "—";
+
+  function setMsg(text, kind){
+    msgBox.textContent = text;
+    msgBox.className = "status " + (kind || "warn");
+  }
+
+  function setLoading(btn, on){
+    if (!btn) return;
+    if (on){
+      btn.classList.add("loading");
+      btn.dataset._txt = btn.textContent;
+      btn.textContent = "Отправка…";
+      btn.disabled = true;
+    }else{
+      btn.classList.remove("loading");
+      btn.textContent = btn.dataset._txt || btn.textContent;
+      btn.disabled = false;
+    }
+  }
+
+  async function apiJson(path, method, body){
+    const res = await fetch(WORKER_BASE + path, {
+      method,
+      headers: { "Content-Type":"application/json" },
+      body: body ? JSON.stringify(body) : null
+    });
+    const text = await res.text();
+    let j;
+    try{ j = JSON.parse(text); }catch{ throw new Error("Ответ не JSON: " + text.slice(0,200)); }
+    if (!res.ok || !j.ok) throw new Error(j.error || ("HTTP " + res.status));
+    return j;
+  }
+
+function isSellTerminalStatus(st){
+  st = String(st||"").toUpperCase();
+  return st === "COMPLETED" || st === "DONE" || st === "SUCCESS" ||
+         st === "CANCELED" || st === "CANCELLED" || st === "FAILED" || st === "CRYPTO_NOT_RECEIVED";
+}
+
+function removeActiveSell(dealId){
+  try{
+    const KEY = "cf_active_deals";
+    const deals = JSON.parse(localStorage.getItem(KEY) || "[]");
+    const next = (Array.isArray(deals) ? deals : []).filter(
+      d => !(d && d.type === "SELL" && String(d.id||"") === String(dealId||""))
+    );
+    localStorage.setItem(KEY, JSON.stringify(next.slice(0, 50)));
+  }catch(e){}
+}
+
+function addHistorySell(rec){
+  try{
+    const KEY = "cf_deals_history";
+    const arr = JSON.parse(localStorage.getItem(KEY) || "[]");
+    const h = Array.isArray(arr) ? arr : [];
+    h.unshift({ ts: Date.now(), ...rec });
+    localStorage.setItem(KEY, JSON.stringify(h.slice(0, 200)));
+  }catch(e){}
+}
+
+
+
+  // ✅ ГЛАВНЫЙ ФИКС: редирект после CRYPTO_RECEIVED
+  let __redirected = false;
+  function maybeRedirectNext(status){
+    if (__redirected) return;
+    const st = String(status || "").toUpperCase();
+
+    // 👉 как только админ нажал "Крипта получена" — ведём на sell-deal.html
+    // (или если клиент открыл позже, и статус уже PAYOUT_PROGRESS)
+    if (st === "CRYPTO_RECEIVED" || st === "PAYOUT_PROGRESS") {
+      __redirected = true;
+      const qs = new URLSearchParams({ dealId, secret });
+      location.replace("./sell-deal.html?" + qs.toString());
+    }
+  }
+
+  function enableTxBtn(){
+    const v = (txInput.value || "").trim();
+    sendTxBtn.disabled = !(v.length >= 6 && dealId && secret);
+  }
+  txInput.addEventListener("input", enableTxBtn);
+
+  async function refreshStatus(silent){
+    try{
+      if (!dealId || !secret){
+        setMsg("Ошибка: нет dealId/secret\nОткрой страницу из процесса продажи.", "bad");
+        return;
+      }
+
+      if (!silent) setMsg("Обновляю…", "warn");
+
+      const qs = new URLSearchParams({ dealId, secret });
+      const j = await apiJson("/api/public/sell_status?" + qs.toString(), "GET");
+
+      const st = String(j.status || "").toUpperCase();
+      statusView.textContent = st || "—";
+
+      // ✅ если SELL завершена/отменена — убрать из активных и добавить в историю
+      if (isSellTerminalStatus(st)){
+        removeActiveSell(dealId);
+        addHistorySell({ type: "SELL", id: dealId, status: st, url: location.pathname + location.search });
+      }
+
+
+      // если воркер вернул txHash — покажем в поле, но не перетираем то, что пользователь печатает
+      if ((j.txHash || "").trim() && !(txInput.value || "").trim()){
+        txInput.value = String(j.txHash).trim();
+        enableTxBtn();
+      }
+
+      // ✅ РЕДИРЕКТ
+      maybeRedirectNext(st);
+
+      // сообщение под статусом
+      if (st === "WAIT_CRYPTO" || st === "WAITING_CRYPTO") {
+        setMsg("Ждём крипту от клиента…", "warn");
+      } else if (st === "CRYPTO_RECEIVED") {
+        setMsg("Крипта получена ✅ Переходим дальше…", "ok");
+      } else if (st === "CRYPTO_NOT_RECEIVED") {
+        setMsg("Крипта не получена ❌ Ожидай решения администратора.", "bad");
+      } else if (st === "PAYOUT_PROGRESS") {
+        setMsg("Выплата в процессе…", "ok");
+      } else if (st === "DONE" || st === "SUCCESS") {
+        setMsg("Сделка завершена ✅", "ok");
+      } else if (st === "CANCELED" || st === "FAILED") {
+        setMsg("Сделка отменена / неуспешна ❌", "bad");
+      } else {
+        setMsg("Ждём подтверждение от администратора…", "warn");
+      }
+    }catch(e){
+      const msg = String(e.message || e);
+      if (msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("deal not found")){
+        setMsg("Ошибка связи: Deal not found\nПроверь WORKER_BASE и доступность воркера.", "bad");
+      } else {
+        setMsg("Ошибка: " + msg, "bad");
+      }
+    }
+  }
+
+  sendTxBtn.onclick = async () => {
+    try{
+      const txHash = (txInput.value || "").trim();
+      if (!txHash) return;
+
+      setLoading(sendTxBtn, true);
+
+      await apiJson("/api/public/sell_submit_hash", "POST", {
+        dealId,
+        secret,
+        txHash
+      });
+
+      // после отправки хэша — просто обновим статус
+      await refreshStatus(true);
+      setMsg("Хэш отправлен ✅", "ok");
+    }catch(e){
+      setMsg("Ошибка: " + (e.message || String(e)), "bad");
+    }finally{
+      setLoading(sendTxBtn, false);
+      enableTxBtn();
+    }
+  };
+
+  refreshBtn.onclick = () => refreshStatus(false);
+
+  // старт
+  enableTxBtn();
+  refreshStatus(false);
+
+  // автообновление (чтобы поймать CRYPTO_RECEIVED и уйти дальше)
+  setInterval(() => refreshStatus(true), 2500);
+})();
+
+  (() => {
+  const p = new URLSearchParams(location.search);
+  const dealId = p.get("dealId");
+  const secret = p.get("secret");
+  if (!dealId || !secret) return;
+
+ const KEY = "cf_active_deals";
+
+const deals = JSON.parse(localStorage.getItem(KEY) || "[]");
+const url = location.pathname + location.search;
+
+const next = (Array.isArray(deals) ? deals : []).filter(
+  d => !(d && d.type === "SELL" && d.id === dealId)
+);
+
+next.unshift({
+  type: "SELL",
+  id: dealId,
+  secret,
+  url,
+  ts: Date.now()
+});
+
+localStorage.setItem(KEY, JSON.stringify(next.slice(0, 50)));
+    })();
+  
+</script>
+<script src="./resume-helper.js"></script>
+<script>(function(){
+  if (!window.CrossflagResume) return;
+  function save(){
+    if (dealId && secret) window.CrossflagResume.upsertSell({ id: dealId, secret, url: location.pathname + location.search + location.hash });
+  }
+  save();
+  window.addEventListener("pagehide", save);
+  document.addEventListener("visibilitychange", ()=>{ if (document.visibilityState === "hidden") save(); });
+})();</script>
+</body>
+</html>

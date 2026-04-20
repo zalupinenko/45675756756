@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Crossflag · Админка · Выводы</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:#0f1a30;
+      --border:#223255;
+      --text:#e9f0ff;
+      --muted:#a9b6d6;
+      --accent:#5eead4;
+      --warn:#fbbf24;
+      --bad:#fb7185;
+      --ok:#34d399;
+      --shadow: 0 12px 30px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background: radial-gradient(1200px 700px at 15% 0%, rgba(45,91,255,.18), rgba(0,0,0,0) 60%),
+                  radial-gradient(900px 650px at 80% 90%, rgba(52,211,153,.12), rgba(0,0,0,0) 65%),
+                  #071022;
+      color:var(--text);
+      min-height:100vh;
+    }
+    .wrap{ max-width:1200px; margin:0 auto; padding:18px 14px 30px; }
+    .top{
+      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+    .title{
+      font-weight:1000;
+      letter-spacing:.2px;
+      font-size:20px;
+    }
+    .hint{ color:var(--muted); font-weight:850; font-size:12px; margin-top:4px; }
+    .bar{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      background: rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:16px;
+      padding:10px;
+      box-shadow: var(--shadow);
+    }
+    input, select{
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+      color:var(--text);
+      outline:none;
+      font-weight:900;
+    }
+    input{ flex:1; min-width:240px; }
+    input::placeholder{ color: rgba(169,182,214,.65); font-weight:850; }
+
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:12px 14px;
+      background: linear-gradient(180deg, #2d5bff, #1f3fb3);
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow: 0 10px 26px rgba(0,0,0,.30);
+      white-space:nowrap;
+    }
+    .btnGhost{
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:14px;
+      padding:12px 14px;
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      white-space:nowrap;
+      text-decoration:none;
+      display:inline-flex; align-items:center; justify-content:center;
+    }
+
+    .grid{ display:grid; grid-template-columns: 1fr; gap:12px; margin-top:14px; }
+    .card{
+      background: rgba(15,26,48,.62);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:18px;
+      box-shadow: var(--shadow);
+      padding:12px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .row{
+      display:flex; gap:12px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;
+    }
+    .left{ min-width:280px; }
+    .name{
+      font-weight:1000;
+      font-size:16px;
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+    }
+    .tag{
+      display:inline-flex;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.03);
+      font-weight:1000;
+      font-size:12px;
+    }
+    .tag.ok{ border-color: rgba(52,211,153,.35); background: rgba(52,211,153,.10); }
+    .tag.bad{ border-color: rgba(251,113,133,.35); background: rgba(251,113,133,.10); }
+    .tag.warn{ border-color: rgba(251,191,36,.35); background: rgba(251,191,36,.10); }
+
+    .meta{
+      margin-top:6px;
+      color: rgba(233,240,255,.82);
+      font-weight:850;
+      font-size:12px;
+      line-height:1.4;
+    }
+    .meta span{ color: var(--muted); font-weight:900; }
+
+    .right{
+      display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap; justify-content:flex-end;
+      min-width:320px;
+    }
+    textarea{
+      width:320px;
+      max-width:100%;
+      min-height:70px;
+      resize:vertical;
+      padding:10px 10px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+      color:var(--text);
+      outline:none;
+      font-weight:850;
+      font-size:13px;
+    }
+    .btnMini{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:1000;
+      border-radius:12px;
+      padding:10px 12px;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .btnMini.ok{ border-color: rgba(52,211,153,.35); background: rgba(52,211,153,.10); }
+    .btnMini.bad{ border-color: rgba(251,113,133,.35); background: rgba(251,113,133,.10); }
+
+    .statusBox{
+      margin-top:12px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+      font-weight:900;
+      font-size:13px;
+      white-space:pre-line;
+      display:none;
+    }
+    .statusBox.show{ display:block; }
+    .statusBox.bad{ border-color: rgba(251,113,133,.35); background: rgba(251,113,133,.10); }
+    .statusBox.ok{ border-color: rgba(52,211,153,.35); background: rgba(52,211,153,.10); }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; word-break:break-all; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div class="title">Заявки на вывод</div>
+        <div class="hint">Все запросы пользователей на вывод USDT.</div>
+        <div class="hint">Worker: <span id="wbText" class="mono"></span></div>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a class="btnGhost" id="backBtn" href="./admin.html">← Назад</a>
+        <button class="btn" id="reloadBtn">Обновить</button>
+      </div>
+    </div>
+
+    <div class="bar">
+      <input id="q" placeholder="Поиск по username / user_id / адресу / id заявки..." />
+      <select id="st">
+        <option value="">Все статусы</option>
+        <option value="PENDING">PENDING</option>
+        <option value="APPROVED">APPROVED</option>
+        <option value="REJECTED">REJECTED</option>
+        <option value="PAID">PAID</option>
+      </select>
+      <button class="btnGhost" id="applyBtn">Найти</button>
+    </div>
+
+    <div class="statusBox" id="statusBox">—</div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+<script>
+  const WORKER_BASE = String(
+    new URLSearchParams(location.search).get("wb") ||
+    localStorage.getItem("worker_base") ||
+    localStorage.getItem("WORKER_BASE") ||
+    "https://api.crossflag.org"
+  ).replace(/\/+$/, "");
+
+  // сохраним, чтобы другие страницы подхватили
+  try { localStorage.setItem("worker_base", WORKER_BASE); } catch {}
+
+  document.getElementById("wbText").textContent = WORKER_BASE;
+
+  (function(){
+    // вернуться назад: если открывали из admin.html — вернём туда
+    const wb = new URLSearchParams(location.search).get("wb") || "";
+    const b = document.getElementById("backBtn");
+    try{
+      const ret = sessionStorage.getItem("withdrawals_return") || "";
+      if (ret) {
+        b.href = ret;
+        return;
+      }
+    }catch{}
+    b.href = "./admin.html" + (wb ? ("?wb=" + encodeURIComponent(wb)) : "");
+  })();
+
+  function getInitData(){
+    try{
+      const tg = window.Telegram && window.Telegram.WebApp;
+      const s = (tg && typeof tg.initData === "string") ? tg.initData : "";
+      return s || "";
+    }catch{ return ""; }
+  }
+
+  function getAdminToken(){
+    // ✅ как в твоей админке: admin_token
+    // ✅ плюс поддержка ADMIN_TOKEN (вдруг где-то старый ключ)
+    return (localStorage.getItem("admin_token") || localStorage.getItem("ADMIN_TOKEN") || "").trim();
+  }
+
+  async function fetchJson(path, method="GET", body=null){
+    const tok = getAdminToken();
+    if (!tok) throw new Error("Нет admin_token (X-Admin-Token) в localStorage");
+
+    const headers = { "Content-Type":"application/json", "X-Admin-Token": tok };
+    const initData = getInitData();
+    if (initData) headers["X-Tg-Init-Data"] = initData;
+
+    const res = await fetch(WORKER_BASE + path, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : null
+    });
+
+    const text = await res.text();
+    let j;
+    try{ j = JSON.parse(text); } catch {
+      throw new Error("Ответ не JSON: " + text.slice(0,200));
+    }
+    if (!res.ok || !j.ok) {
+      const msg = j.error || ("HTTP " + res.status + " @ " + path);
+      const e = new Error(msg);
+      e.httpStatus = res.status;
+      e.path = path;
+      e.payload = j;
+      throw e;
+    }
+    return j;
+  }
+
+  // ✅ Главная фикса: пробуем несколько вариантов эндпоинтов (на случай, если в Worker они названы иначе)
+  async function apiTry(paths, method="GET", body=null){
+    let lastErr = null;
+    for (const p of paths){
+      try{
+        return await fetchJson(p, method, body);
+      }catch(e){
+        lastErr = e;
+        // если это НЕ 404 — смысла пробовать дальше обычно нет (например 401/403/500)
+        if (e && e.httpStatus && e.httpStatus !== 404) break;
+      }
+    }
+    throw lastErr || new Error("Not found");
+  }
+
+  const grid = document.getElementById("grid");
+  const statusBox = document.getElementById("statusBox");
+  const q = document.getElementById("q");
+  const st = document.getElementById("st");
+  const reloadBtn = document.getElementById("reloadBtn");
+  const applyBtn = document.getElementById("applyBtn");
+
+  function setStatus(t, kind){
+    statusBox.textContent = t;
+    statusBox.className = "statusBox show " + (kind || "");
+  }
+
+  function ts(x){
+    try{
+      if (x == null) return "—";
+      const n = Number(x);
+      const d = new Date(n);
+      return isNaN(d.getTime()) ? String(x) : d.toLocaleString("ru-RU");
+    }catch{ return "—"; }
+  }
+
+  function fmtUsdtE6(e6){
+    const n = Number(e6 || 0);
+    return (n/1e6).toFixed(6) + " USDT";
+  }
+
+  let all = [];
+
+  function statusTag(s){
+    const v = String(s||"").toUpperCase();
+    if (v === "APPROVED" || v === "PAID") return "ok";
+    if (v === "REJECTED") return "bad";
+    return "warn";
+  }
+
+  function render(){
+    const needle = String(q.value||"").trim().toLowerCase();
+    const stNeed = String(st.value||"").trim().toUpperCase();
+
+    const list = all.filter(w => {
+      if (stNeed && String(w.status||"").toUpperCase() !== stNeed) return false;
+      if (!needle) return true;
+      const hay = [
+        w.id, w.user_id, w.username, w.to_address, w.wallet, w.network, w.txid
+      ].map(x => String(x||"").toLowerCase()).join(" ");
+      return hay.includes(needle);
+    });
+
+    grid.innerHTML = "";
+    if (!list.length){
+      grid.innerHTML = `<div class="card"><div class="meta"><span>Пусто.</span> Нет заявок или поиск ничего не нашёл.</div></div>`;
+      return;
+    }
+
+    for (const w of list){
+      const el = document.createElement("div");
+      el.className = "card";
+
+      const userLabel = w.username ? ("@" + w.username) : (w.user_id || "—");
+      const addr = w.to_address || w.wallet || "—";
+      const net = w.network || "—";
+      const asset = w.asset || w.token || "USDT";
+      const amountE6 = (typeof w.amountUsdtE6 !== "undefined") ? w.amountUsdtE6 : (typeof w.amountE6 !== "undefined" ? w.amountE6 : null);
+      const amountStr = amountE6 != null ? fmtUsdtE6(amountE6) : (w.amount ? (String(w.amount) + " " + asset) : "—");
+      const wid = w.id || w.withdrawal_id || w.request_id || "—";
+      const stt = String(w.status || "PENDING").toUpperCase();
+
+      el.innerHTML = `
+        <div class="row">
+          <div class="left">
+            <div class="name">
+              <span>Вывод #${String(wid)}</span>
+              <span class="tag ${statusTag(stt)}">${stt}</span>
+            </div>
+            <div class="meta">
+              <div><span>Пользователь:</span> ${userLabel}</div>
+              <div><span>Сумма:</span> ${amountStr}</div>
+              <div><span>Сеть:</span> ${net}</div>
+              <div class="mono"><span>Кошелёк:</span> ${addr}</div>
+              <div><span>Создано:</span> ${ts(w.createdAt || w.created_at || w.ts || w.time)}</div>
+              <div><span>Обновлено:</span> ${ts(w.updatedAt || w.updated_at)}</div>
+              ${w.txid ? `<div class="mono"><span>TXID:</span> ${String(w.txid)}</div>` : ``}
+              ${w.videoRequired ? `<div style="margin-top:4px;"><span>🎥 Видео:</span> ${w.videoUploaded
+                ? `<span style="color:#22c55e;font-weight:900;">✅ Загружено${w.videoTgSent ? '' : ' (не отправлено в TG)'}</span>` +
+                  (w.videoFileName ? ` <span style="opacity:.6;">${String(w.videoFileName)}</span>` : '')
+                : `<span style="color:#ef4444;font-weight:900;">❌ Не загружено</span>`
+              }</div>` : ``}
+              ${w.videoDeal ? `<div><span>📋 Сделка BUY:</span> ${String(w.videoDeal.id||"")} (${Number(w.videoDeal.amountRub||0).toLocaleString("ru-RU")} ₽)</div>` : ``}
+            </div>
+          </div>
+
+          <div class="right">
+            <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+              <textarea data-id="${String(wid)}" placeholder="Заметка админа...">${w.note || ""}</textarea>
+              <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+                <button class="btnMini" data-act="save" data-id="${String(wid)}">Сохранить</button>
+                <button class="btnMini ok" data-act="approve" data-id="${String(wid)}">Одобрить</button>
+                <button class="btnMini bad" data-act="reject" data-id="${String(wid)}">Отклонить</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      grid.appendChild(el);
+    }
+  }
+
+  // ---- API маршруты: список/patch/approve/reject ----
+  const LIST_ENDPOINTS = [
+    "/api/admin/withdrawals",
+    "/api/admin/withdraw_requests",
+    "/api/admin/withdraws",
+    "/api/admin/withdraw",
+    "/api/admin/payouts",
+    "/api/admin/user_withdrawals"
+  ];
+
+  function patchEndpoints(id){
+    const eid = encodeURIComponent(String(id));
+    return [
+      "/api/admin/withdrawals/" + eid,
+      "/api/admin/withdraw_requests/" + eid,
+      "/api/admin/withdraws/" + eid,
+      "/api/admin/payouts/" + eid,
+      "/api/admin/user_withdrawals/" + eid
+    ];
+  }
+
+  function approveEndpoints(id){
+    const eid = encodeURIComponent(String(id));
+    return [
+      "/api/admin/withdrawals/" + eid + "/approve",
+      "/api/admin/withdraw_requests/" + eid + "/approve",
+      "/api/admin/withdraws/" + eid + "/approve",
+      "/api/admin/payouts/" + eid + "/approve",
+      "/api/admin/user_withdrawals/" + eid + "/approve"
+    ];
+  }
+
+  function rejectEndpoints(id){
+    const eid = encodeURIComponent(String(id));
+    return [
+      "/api/admin/withdrawals/" + eid + "/reject",
+      "/api/admin/withdraw_requests/" + eid + "/reject",
+      "/api/admin/withdraws/" + eid + "/reject",
+      "/api/admin/payouts/" + eid + "/reject",
+      "/api/admin/user_withdrawals/" + eid + "/reject"
+    ];
+  }
+
+  grid.addEventListener("click", async (e)=>{
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    const act = btn.dataset.act;
+    const id = btn.dataset.id;
+    if (!id) return;
+
+    try{
+      if (act === "save"){
+        const ta = grid.querySelector(`textarea[data-id="${CSS.escape(String(id))}"]`);
+        const note = ta ? ta.value : "";
+        await apiTry(patchEndpoints(id), "PATCH", { note });
+        const it = all.find(x => String(x.id||x.withdrawal_id||x.request_id) === String(id));
+        if (it) it.note = note;
+        setStatus("Сохранено ✅", "ok");
+      }
+
+      if (act === "approve"){
+        if (!confirm("Одобрить вывод #" + id + "?")) return;
+        await apiTry(approveEndpoints(id), "POST", {});
+        setStatus("Одобрено ✅", "ok");
+        await load();
+      }
+
+      if (act === "reject"){
+        if (!confirm("Отклонить вывод #" + id + "?")) return;
+        await apiTry(rejectEndpoints(id), "POST", {});
+        setStatus("Отклонено ✅", "ok");
+        await load();
+      }
+    }catch(err){
+      const extra = (err && err.path) ? ("\nЭндпоинт: " + err.path) : "";
+      setStatus("Ошибка: " + (err.message || String(err)) + extra + "\nПроверь admin_token и WORKER_BASE.", "bad");
+    }
+  });
+
+  async function load(){
+    try{
+      setStatus("Загрузка...", "");
+      const j = await apiTry(LIST_ENDPOINTS, "GET");
+      all = Array.isArray(j.withdrawals) ? j.withdrawals
+          : (Array.isArray(j.items) ? j.items
+          : (Array.isArray(j.list) ? j.list
+          : []));
+      setStatus("Подключено ✅  Заявок: " + all.length, "ok");
+      render();
+    }catch(err){
+      const hint =
+        "Ошибка: " + (err.message || String(err)) +
+        ((err && err.path) ? ("\nЭндпоинт: " + err.path) : "") +
+        "\n\nЕсли видишь 404 Not Found — значит в Worker нет нужного /api/admin/... эндпоинта (или он называется иначе).";
+      setStatus(hint, "bad");
+    }
+  }
+
+  reloadBtn.onclick = load;
+  applyBtn.onclick = render;
+  q.addEventListener("keydown", (e)=>{ if (e.key === "Enter") render(); });
+
+  load();
+</script>
+</body>
+</html>

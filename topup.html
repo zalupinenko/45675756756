@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Crossflag · Пополнить</title>
+
+  <style>
+    :root{
+      --bg:#071022;
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+      --card: rgba(15, 26, 48, 0.55);
+      --card2: rgba(15, 26, 48, 0.42);
+      --border: rgba(255,255,255,.12);
+      --blue:#2d5bff;
+      --blue2:#1f3fb3;
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+      --shadow: 0 18px 50px rgba(0,0,0,.45);
+      --radius: 22px;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+
+    body{
+      margin:0;
+      color:var(--text);
+      background:var(--bg);
+      overflow-x:hidden;
+      overflow-y:auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+    }
+
+    .overlay{
+      position:fixed; inset:0; z-index:-2;
+      background:
+        radial-gradient(900px 600px at 50% -140px, rgba(45,91,255,.22), rgba(0,0,0,0) 65%),
+        radial-gradient(900px 600px at 85% 90%, rgba(34,197,94,.10), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(7,16,34,.84), rgba(7,16,34,.94));
+      pointer-events:none;
+    }
+
+    .wrap{
+      max-width: 520px;
+      margin:0 auto;
+      padding: calc(10px + env(safe-area-inset-top)) 14px calc(22px + env(safe-area-inset-bottom)) 14px;
+    }
+
+    .top{
+      display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px;
+    }
+    .topLeft{ display:flex; align-items:center; gap:10px; min-width:0; }
+    .backBtn{
+      width:34px;height:34px; border-radius:14px;
+      border:1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06);
+      color: rgba(233,240,255,.92); display:flex; align-items:center; justify-content:center;
+      cursor:pointer; box-shadow: 0 12px 30px rgba(0,0,0,.22); flex:0 0 auto;
+    }
+    .backBtn:active{ transform: translateY(1px); }
+    .titleBlock{ min-width:0; }
+    .titleRow{ display:flex; align-items:center; gap:8px; font-weight:1000; letter-spacing:.2px; white-space:nowrap; }
+    .sub{ margin-top:2px; font-size:12px; font-weight:850; color: rgba(233,240,255,.65); }
+
+    .card{
+      border-radius: var(--radius); border: 1px solid var(--border);
+      background: var(--card); box-shadow: var(--shadow); padding: 14px;
+      overflow:hidden; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); position:relative;
+    }
+    .card::before{
+      content:""; position:absolute; inset:-60px;
+      background: radial-gradient(520px 220px at 30% 20%, rgba(45,91,255,.16), rgba(0,0,0,0) 60%),
+                  radial-gradient(520px 220px at 70% 90%, rgba(34,197,94,.10), rgba(0,0,0,0) 60%);
+      filter: blur(18px); pointer-events:none; z-index:0;
+    }
+    .card > *{ position:relative; z-index:1; }
+
+    .sectionTitle{
+      font-weight:1000; font-size:16px; margin:0 0 10px 0;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:8px; padding:8px 10px;
+      border-radius: 16px; border:1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06);
+      font-weight:950; font-size:12px; color: rgba(233,240,255,.92); white-space:nowrap;
+    }
+    .coin{
+      width:22px;height:22px;border-radius:999px; display:inline-flex; align-items:center;justify-content:center;
+      font-weight:1000; border:1px solid rgba(255,255,255,.14); background: rgba(45,91,255,.18);
+    }
+
+    .warnBox{
+      margin-top:10px; border-radius: 18px; border: 1px solid rgba(245,158,11,.30);
+      background: rgba(245,158,11,.10); padding: 12px; color: rgba(233,240,255,.92);
+    }
+    .warnBox .t{ font-weight:1000; font-size:13px; line-height:1.25; }
+    .warnBox .s{ margin-top:6px; font-weight:900; font-size:12px; color: rgba(233,240,255,.78); line-height:1.35; }
+
+    .helperText{
+      margin-top:12px;
+      font-size:12px;
+      font-weight:900;
+      color:rgba(233,240,255,.56);
+      line-height:1.35;
+    }
+
+    .btnPrimary{
+      margin-top:14px; width:100%; padding:14px; border:none; border-radius:16px;
+      background: linear-gradient(180deg, rgba(45,91,255,.85), rgba(31,63,179,.72));
+      color:#fff; font-size:16px; font-weight:1000; cursor:pointer;
+      box-shadow: 0 10px 26px rgba(0,0,0,.30);
+    }
+    .btnPrimary:disabled{ opacity:.45; cursor:not-allowed; }
+    .btnPrimary:active:not(:disabled){ transform: translateY(1px); }
+
+    .btnSecondary{
+      flex:1; padding:12px; border:none; border-radius:14px;
+      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14);
+      color:#fff; font-weight:900; font-size:13px; cursor:pointer;
+    }
+    .btnSecondary:disabled{ opacity:.45; cursor:not-allowed; }
+    .btnSecondary:active:not(:disabled){ transform:translateY(1px); }
+
+    .metaRow{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+      margin-top:12px;
+    }
+    .metaItem{
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);
+      padding:12px;
+    }
+    .metaItem .k{
+      font-size:11px;
+      font-weight:950;
+      color:rgba(233,240,255,.55);
+      margin-bottom:5px;
+      text-transform:uppercase;
+      letter-spacing:.4px;
+    }
+    .metaItem .v{
+      font-size:14px;
+      font-weight:1000;
+      color:#fff;
+    }
+
+    .addrBlock{
+      margin-top:12px; border-radius:18px; border:1px solid rgba(255,255,255,.10);
+      background:rgba(15,26,48,.42); padding:12px;
+    }
+    .addrLabel{ font-size:12px; font-weight:950; color:rgba(233,240,255,.7); }
+    .addrText{
+      margin-top:6px; font-size:14px; font-weight:1000; letter-spacing:.2px;
+      word-break:break-all; min-height:20px;
+    }
+
+    .copyRow{
+      margin-top:10px; display:flex; gap:8px;
+    }
+
+    .statusBox{
+      margin-top:14px; padding:14px; border-radius:18px; text-align:center;
+    }
+    .statusBox.waiting{
+      border:1px solid rgba(245,158,11,.3); background:rgba(245,158,11,.08);
+    }
+    .statusBox.progress{
+      border:1px solid rgba(45,91,255,.28); background:rgba(45,91,255,.08);
+    }
+    .statusBox.success{
+      border:1px solid rgba(34,197,94,.3); background:rgba(34,197,94,.08);
+    }
+    .statusBox.error{
+      border:1px solid rgba(239,68,68,.3); background:rgba(239,68,68,.08);
+    }
+    .statusText{ font-weight:1000; font-size:14px; }
+    .statusSub{ font-weight:900; font-size:12px; color:rgba(233,240,255,.65); margin-top:4px; line-height:1.35; }
+    .statusMini{
+      font-weight:900; font-size:11px; color:rgba(233,240,255,.52); margin-top:8px;
+    }
+
+    .qrWrap{ margin-top:12px; display:flex; justify-content:center; }
+    .qrCard{
+      width:min(280px,100%); border-radius:22px; border:1px solid rgba(255,255,255,.14);
+      background:rgba(0,0,0,.20); padding:12px; box-shadow:0 18px 60px rgba(0,0,0,.4); text-align:center;
+    }
+    .qrImgBox{
+      width:220px; height:220px; margin:0 auto; border-radius:18px;
+      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10);
+      display:flex; align-items:center; justify-content:center; overflow:hidden; padding:8px;
+    }
+    .qrPaper{
+      width:100%; height:100%; border-radius:14px; background:#fff;
+      display:flex; align-items:center; justify-content:center; overflow:hidden;
+      box-shadow:0 10px 30px rgba(0,0,0,.25);
+    }
+    .qrPaper img{ width:100%; height:100%; object-fit:contain; display:block; }
+    .qrPlaceholder{
+      color:#7a7a7a;
+      font-size:12px;
+      font-weight:900;
+      text-align:center;
+      padding:16px;
+      line-height:1.35;
+    }
+
+    .err{
+      margin-top:10px; font-weight:950; font-size:12px; color:rgba(239,68,68,.92);
+      display:none; line-height:1.35;
+    }
+    .err.show{ display:block; }
+
+    .toast{
+      position:fixed; left:50%; bottom:calc(18px + env(safe-area-inset-bottom));
+      transform:translateX(-50%); z-index:9999;
+      background:rgba(0,0,0,.50); border:1px solid rgba(255,255,255,.14);
+      backdrop-filter:blur(12px); color:#fff; padding:10px 12px; border-radius:16px;
+      font-weight:950; font-size:12px; box-shadow:0 18px 60px rgba(0,0,0,.55);
+      opacity:0; pointer-events:none; transition:opacity .18s ease, transform .18s ease;
+    }
+    .toast.show{ opacity:1; transform:translateX(-50%) translateY(-6px); }
+
+    .gate{
+      position:fixed; inset:0; z-index:9998; display:none;
+      align-items:center; justify-content:center; padding:16px;
+      background:rgba(0,0,0,.58); backdrop-filter:blur(12px);
+    }
+    .gate.show{ display:flex; }
+    .gateCard{
+      width:min(520px,100%); border-radius:22px; border:1px solid rgba(255,255,255,.14);
+      background:rgba(8,15,30,.88); box-shadow:0 18px 60px rgba(0,0,0,.65); padding:14px;
+    }
+    .gateTitle{ font-weight:1000; font-size:16px; }
+    .gateText{ margin-top:8px; font-weight:900; font-size:12px; color:rgba(233,240,255,.78); line-height:1.45; }
+    .gateBtns{ margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .gBtn{ border:0; border-radius:14px; padding:12px 16px; font-weight:1000; cursor:pointer; box-shadow:0 10px 26px rgba(0,0,0,.3); }
+    .gBtn.primary{ background:linear-gradient(180deg,rgba(45,91,255,.85),rgba(31,63,179,.72)); color:#fff; min-width:190px; }
+    .gBtn.ghost{ border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:#fff; min-width:160px; }
+
+    @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.5;} }
+    .pulse{ animation:pulse 1.5s infinite; }
+
+    .hidden{ display:none !important; }
+  </style>
+</head>
+
+<body>
+  <div class="overlay"></div>
+
+  <div class="gate" id="authGate" aria-hidden="true">
+    <div class="gateCard">
+      <div class="gateTitle">Вход обязателен</div>
+      <div class="gateText">Чтобы пополнить кошелёк, нужно войти в аккаунт.</div>
+      <div class="gateBtns">
+        <button class="gBtn ghost" id="gateClose" type="button">Закрыть</button>
+        <button class="gBtn primary" id="gateGoAuth" type="button">Войти / Регистрация</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="top">
+      <div class="topLeft">
+        <button class="backBtn" id="backBtn" type="button" aria-label="Назад">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M15 6 9 12l6 6" stroke="rgba(233,240,255,.9)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="titleBlock">
+          <div class="titleRow"><span>Пополнить</span></div>
+          <div class="sub">USDT · TRON</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div class="card" id="step1">
+      <div class="sectionTitle">
+        <span>Пополнение баланса</span>
+        <span class="pill"><span class="coin">$</span> USDT</span>
+      </div>
+
+      <div class="warnBox">
+        <div class="t">Отправляй только USDT в сети TRON</div>
+        <div class="s">Не используй другие сети и не отправляй другие токены на этот адрес.</div>
+      </div>
+
+      <div class="helperText">
+        Адрес создаётся персонально для твоего аккаунта. После отправки средств депозит определится автоматически.
+      </div>
+
+      <div class="err" id="errStep1"></div>
+
+      <button class="btnPrimary" id="createDepositBtn" type="button">Получить адрес для пополнения</button>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="card hidden" id="step2">
+      <div class="sectionTitle">
+        <span>Реквизиты для пополнения</span>
+        <span class="pill"><span class="coin">$</span> USDT</span>
+      </div>
+
+      <div class="metaRow">
+        <div class="metaItem">
+          <div class="k">Сеть</div>
+          <div class="v" id="networkValue">TRON</div>
+        </div>
+        <div class="metaItem">
+          <div class="k">Актив</div>
+          <div class="v" id="assetValue">USDT</div>
+        </div>
+      </div>
+
+      <div class="addrBlock">
+        <div class="addrLabel">Адрес пополнения</div>
+        <div class="addrText" id="addrFull">—</div>
+      </div>
+
+      <div class="copyRow">
+        <button class="btnSecondary" id="copyAddrBtn" type="button" disabled>Копировать адрес</button>
+        <button class="btnSecondary" id="refreshStatusBtn" type="button">Обновить статус</button>
+      </div>
+
+      <div class="qrWrap">
+        <div class="qrCard">
+          <div class="qrImgBox">
+            <div class="qrPaper" id="qrPaper">
+              <div class="qrPlaceholder" id="qrPlaceholder">QR появится после получения адреса</div>
+              <img id="qrImg" alt="QR" style="display:none;" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="statusBox progress" id="statusBox">
+        <div class="statusText pulse" id="statusText">Получаем адрес...</div>
+        <div class="statusSub" id="statusSub">Подожди несколько секунд</div>
+        <div class="statusMini" id="statusMini"></div>
+      </div>
+
+      <div class="err" id="errStep2"></div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="card hidden" id="step3">
+      <div class="statusBox success">
+        <div class="statusText">Депозит зачислен!</div>
+        <div class="statusSub" id="creditedAmount"></div>
+        <div class="statusMini" id="creditedTx"></div>
+      </div>
+      <button class="btnPrimary" style="margin-top:14px;" id="backWalletBtn" type="button">Вернуться в кошелёк</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Скопировано</div>
+
+<script>
+  const WORKER_BASE = "https://api.crossflag.org";
+  const AUTH_URL = "./auth.html";
+  const USER_TOKEN_KEY = "user_token";
+
+  const state = {
+    depositAddress: "",
+    provider: "RAPIRA",
+    network: "TRON",
+    asset: "USDT",
+    pollTimer: null,
+    lastStatus: "",
+    lastRapiraStatus: "",
+    successShown: false
+  };
+
+  function getUserToken(){
+    try { return (localStorage.getItem(USER_TOKEN_KEY) || "").trim(); } catch { return ""; }
+  }
+
+  async function authMe(){
+    const tok = getUserToken();
+    if (!tok) return null;
+    try{
+      const res = await fetch(WORKER_BASE + "/api/public/auth/me", {
+        method:"GET",
+        headers:{ "X-User-Token": tok }
+      });
+      const j = await res.json().catch(()=>null);
+      if (!res.ok || !j || !j.ok) return null;
+      return j.user || null;
+    }catch{
+      return null;
+    }
+  }
+
+  function goAuth(returnUrl){
+    const back = returnUrl || (location.pathname + location.search);
+    try { sessionStorage.setItem("auth_return", back); } catch {}
+    location.href = AUTH_URL + "?return=" + encodeURIComponent(back);
+  }
+
+  function setGate(open){
+    const g = document.getElementById("authGate");
+    if (!g) return;
+    g.classList.toggle("show", !!open);
+  }
+
+  document.getElementById("gateGoAuth").onclick = () => goAuth(location.pathname + location.search);
+  document.getElementById("gateClose").onclick = () => setGate(false);
+  document.getElementById("backBtn").onclick = () => { location.href = "./qr.html"; };
+  document.getElementById("backWalletBtn").onclick = () => { location.href = "./qr.html"; };
+
+  const toastEl = document.getElementById("toast");
+  let toastTimer = null;
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>toastEl.classList.remove("show"), 1300);
+  }
+
+  async function copyText(text){
+    try{
+      await navigator.clipboard.writeText(text);
+      return true;
+    }catch{
+      try{
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.cssText = "position:fixed;opacity:0;";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      }catch{
+        return false;
+      }
+    }
+  }
+
+  function showErr(id, msg){
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = msg || "";
+    el.classList.toggle("show", !!msg);
+  }
+
+  function setStep(step){
+    document.getElementById("step1").classList.toggle("hidden", step !== 1);
+    document.getElementById("step2").classList.toggle("hidden", step !== 2);
+    document.getElementById("step3").classList.toggle("hidden", step !== 3);
+  }
+
+  function setStatusBox(type, title, sub, mini){
+    const box = document.getElementById("statusBox");
+    const text = document.getElementById("statusText");
+    const subEl = document.getElementById("statusSub");
+    const miniEl = document.getElementById("statusMini");
+
+    box.classList.remove("waiting","progress","success","error");
+    box.classList.add(type || "progress");
+
+    text.textContent = title || "";
+    subEl.textContent = sub || "";
+    miniEl.textContent = mini || "";
+
+    if (type === "progress" || type === "waiting") text.classList.add("pulse");
+    else text.classList.remove("pulse");
+  }
+
+  function setAddress(address){
+    state.depositAddress = String(address || "").trim();
+
+    const addrEl = document.getElementById("addrFull");
+    const copyBtn = document.getElementById("copyAddrBtn");
+    const qrImg = document.getElementById("qrImg");
+    const qrPlaceholder = document.getElementById("qrPlaceholder");
+
+    if (!state.depositAddress){
+      addrEl.textContent = "Адрес ещё не готов";
+      copyBtn.disabled = true;
+      qrImg.style.display = "none";
+      qrImg.removeAttribute("src");
+      qrPlaceholder.style.display = "block";
+      qrPlaceholder.textContent = "QR появится после получения адреса";
+      return;
+    }
+
+    addrEl.textContent = state.depositAddress;
+    copyBtn.disabled = false;
+
+    const qrData = encodeURIComponent(state.depositAddress);
+    qrImg.onload = () => {
+      qrPlaceholder.style.display = "none";
+      qrImg.style.display = "block";
+    };
+    qrImg.onerror = () => {
+      qrImg.style.display = "none";
+      qrPlaceholder.style.display = "block";
+      qrPlaceholder.textContent = "Не удалось загрузить QR";
+    };
+    qrImg.src = "https://api.qrserver.com/v1/create-qr-code/?size=440x440&margin=10&data=" + qrData;
+  }
+
+  function humanRapiraStatus(status){
+    const s = String(status || "").toUpperCase();
+    if (s === "MEMPOOL") return "Транзакция найдена в сети";
+    if (s === "PENDING_CONFIRMATIONS") return "Ждём подтверждения сети";
+    if (s === "PENDING_AML") return "Идёт проверка";
+    if (s === "MANUAL_CHECK") return "Идёт ручная проверка";
+    if (s === "SUCCESS") return "Средства зачислены";
+    return s || "";
+  }
+
+  async function api(path, options = {}){
+    const tok = getUserToken();
+    const headers = Object.assign({}, options.headers || {});
+    if (tok) headers["X-User-Token"] = tok;
+
+    const cfg = {
+      method: options.method || "GET",
+      headers
+    };
+
+    if (options.body !== undefined) cfg.body = options.body;
+
+    try{
+      const res = await fetch(WORKER_BASE + path, cfg);
+      const data = await res.json().catch(()=>null);
+      return { res, data };
+    }catch(err){
+      return { res: null, data: null, networkError: err };
+    }
+  }
+
+  function startPolling(){
+    stopPolling();
+    refreshDepositStatus(false);
+    state.pollTimer = setInterval(() => {
+      refreshDepositStatus(false);
+    }, 6000);
+  }
+
+  function stopPolling(){
+    if (state.pollTimer){
+      clearInterval(state.pollTimer);
+      state.pollTimer = null;
+    }
+  }
+
+  async function loadDepositAddress(showStep = true){
+    showErr("errStep1", "");
+    showErr("errStep2", "");
+
+    const createBtn = document.getElementById("createDepositBtn");
+    const refreshBtn = document.getElementById("refreshStatusBtn");
+
+    if (showStep){
+      setStep(2);
+      setStatusBox("progress", "Получаем адрес...", "Подожди несколько секунд", "");
+      setAddress("");
+    }
+
+    createBtn.disabled = true;
+    createBtn.textContent = "Получаем адрес...";
+    refreshBtn.disabled = true;
+
+    const { res, data, networkError } = await api("/api/public/deposit_request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
+
+    createBtn.disabled = false;
+    createBtn.textContent = "Получить адрес для пополнения";
+    refreshBtn.disabled = false;
+
+    if (networkError){
+      if (showStep){
+        setStatusBox("error", "Ошибка сети", "Не удалось связаться с сервером", "Попробуй ещё раз");
+        showErr("errStep2", "Ошибка сети. Попробуйте ещё раз.");
+      } else {
+        showErr("errStep1", "Ошибка сети. Попробуйте ещё раз.");
+      }
+      return false;
+    }
+
+    if (!res || res.status === 401){
+      setGate(true);
+      return false;
+    }
+
+    if (!res.ok || !data || !data.ok){
+      const msg = (data && data.error) || "Не удалось получить адрес";
+      if (showStep){
+        setStatusBox("error", "Не удалось получить адрес", msg, "");
+        showErr("errStep2", msg);
+      } else {
+        showErr("errStep1", msg);
+      }
+      return false;
+    }
+
+    state.provider = String(data.provider || "RAPIRA");
+    state.network = String(data.network || "TRON");
+    state.asset = String(data.asset || "USDT");
+
+    document.getElementById("networkValue").textContent = state.network;
+    document.getElementById("assetValue").textContent = state.asset;
+
+    setAddress(data.address || "");
+
+    if (data.creating || !data.address){
+      setStatusBox(
+        "progress",
+        "Создаём адрес...",
+        "Как только адрес будет готов, он появится автоматически",
+        state.provider
+      );
+    } else {
+      setStatusBox(
+        "waiting",
+        "Адрес готов",
+        "Отправь USDT в сети TRON на адрес выше. После этого статус обновится автоматически.",
+        state.provider
+      );
+    }
+
+    return true;
+  }
+
+  async function refreshDepositStatus(manual){
+    showErr("errStep2", "");
+
+    const { res, data, networkError } = await api("/api/public/deposit_status", {
+      method: "GET"
+    });
+
+    if (networkError){
+      if (manual){
+        showErr("errStep2", "Не удалось обновить статус. Проверь интернет.");
+        toast("Ошибка сети");
+      }
+      return;
+    }
+
+    if (!res || res.status === 401){
+      stopPolling();
+      setGate(true);
+      return;
+    }
+
+    if (!res.ok || !data || !data.ok){
+      if (manual){
+        const msg = (data && data.error) || "Не удалось обновить статус";
+        showErr("errStep2", msg);
+        toast("Не удалось обновить");
+      }
+      return;
+    }
+
+    state.provider = String(data.provider || state.provider || "RAPIRA");
+    state.network = String(data.network || state.network || "TRON");
+    state.asset = String(data.asset || state.asset || "USDT");
+    state.lastStatus = String(data.status || "");
+    state.lastRapiraStatus = String(data.rapiraStatus || "");
+
+    document.getElementById("networkValue").textContent = state.network;
+    document.getElementById("assetValue").textContent = state.asset;
+
+    if (data.address) setAddress(data.address);
+
+    const rapiraHuman = humanRapiraStatus(data.rapiraStatus);
+
+    if (data.status === "PENDING_ADDRESS"){
+      setStatusBox(
+        "progress",
+        "Создаём адрес...",
+        "Подожди немного, адрес появится автоматически",
+        state.provider
+      );
+      if (!state.depositAddress){
+        const addrRes = await api("/api/public/wallet/deposit_address", { method: "GET" });
+        if (addrRes && addrRes.data && addrRes.data.ok && addrRes.data.address){
+          setAddress(addrRes.data.address);
+        }
+      }
+      return;
+    }
+
+    if (data.status === "NONE"){
+      setStatusBox(
+        "waiting",
+        "Ожидаем перевод...",
+        "После отправки USDT в сети TRON мы автоматически увидим поступление и начнём зачисление.",
+        state.provider
+      );
+      if (manual) toast("Статус обновлён");
+      return;
+    }
+
+    if (data.status === "PENDING"){
+      const amountLine = Number.isFinite(Number(data.amountUsdt)) && Number(data.amountUsdt) > 0
+        ? "Обнаружено: " + Number(data.amountUsdt).toFixed(6) + " USDT."
+        : "Перевод найден.";
+      setStatusBox(
+        "progress",
+        "Перевод найден",
+        amountLine + " Ждём завершения обработки и зачисления.",
+        rapiraHuman || state.provider
+      );
+      if (manual) toast("Перевод найден");
+      return;
+    }
+
+    if (data.status === "CREDITED"){
+      stopPolling();
+      showStep3(data.amountUsdt, data.txid);
+      return;
+    }
+
+    setStatusBox(
+      "waiting",
+      "Ожидаем перевод...",
+      "Статус обновится автоматически после поступления средств.",
+      state.provider
+    );
+  }
+
+  function showStep3(amountUsdt, txid){
+    state.successShown = true;
+    setStep(3);
+
+    const amountEl = document.getElementById("creditedAmount");
+    const txEl = document.getElementById("creditedTx");
+
+    if (Number.isFinite(Number(amountUsdt)) && Number(amountUsdt) > 0){
+      amountEl.textContent = "+" + Number(amountUsdt).toFixed(6) + " USDT зачислено на баланс";
+    } else {
+      amountEl.textContent = "Средства уже добавлены на баланс";
+    }
+
+    txEl.textContent = txid ? ("TXID: " + String(txid)) : "";
+    toast("Пополнение зачислено");
+  }
+
+  document.getElementById("createDepositBtn").onclick = async () => {
+    const tok = getUserToken();
+    if (!tok){
+      setGate(true);
+      return;
+    }
+
+    const ok = await loadDepositAddress(true);
+    if (ok){
+      startPolling();
+    }
+  };
+
+  document.getElementById("copyAddrBtn").onclick = async () => {
+    if (!state.depositAddress) return;
+    const ok = await copyText(state.depositAddress);
+    toast(ok ? "Адрес скопирован" : "Не удалось скопировать");
+  };
+
+  document.getElementById("refreshStatusBtn").onclick = async () => {
+    const tok = getUserToken();
+    if (!tok){
+      setGate(true);
+      return;
+    }
+
+    if (!document.getElementById("step2").classList.contains("hidden")){
+      if (!state.depositAddress){
+        await loadDepositAddress(true);
+      }
+      await refreshDepositStatus(true);
+    }
+  };
+
+  window.addEventListener("pagehide", stopPolling);
+  window.addEventListener("beforeunload", stopPolling);
+
+  (async () => {
+    const user = await authMe();
+    if (!user){
+      setGate(true);
+      return;
+    }
+  })();
+</script>
+</body>
+</html>

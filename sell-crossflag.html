@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>P2P · Продать · Crossflag</title>
+  <style>
+    :root{
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+      --card: rgba(15, 26, 48, 0.52);
+      --border: rgba(255,255,255,.12);
+      --btn:#2d5bff;
+      --btn2:#1f3fb3;
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+    *,*::before,*::after{ box-sizing:border-box; }
+    html,body{height:100%}
+    body{
+      margin:0; color:var(--text); background:#071022;
+      overflow-y:auto; overflow-x:hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+    .overlay{
+      position:fixed; inset:0; z-index:-2;
+      background:
+        radial-gradient(1100px 700px at 50% -220px, rgba(45,91,255,.22), rgba(0,0,0,0) 65%),
+        radial-gradient(900px 600px at 85% 85%, rgba(34,197,94,.10), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(7,16,34,.84), rgba(7,16,34,.94));
+      pointer-events:none;
+    }
+    .wrap{
+      max-width:980px; margin:0 auto;
+      padding: calc(18px + env(safe-area-inset-top)) 16px calc(22px + env(safe-area-inset-bottom)) 16px;
+    }
+    .card{
+      position:relative;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:22px;
+      padding:16px;
+      box-shadow:0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      overflow:hidden;
+    }
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:-60px;
+      background:
+        radial-gradient(520px 180px at 35% 20%, rgba(45,91,255,.18), rgba(0,0,0,0) 60%),
+        radial-gradient(520px 180px at 75% 90%, rgba(34,197,94,.10), rgba(0,0,0,0) 60%);
+      filter: blur(18px);
+      pointer-events:none;
+      z-index:0;
+    }
+    .card > *{ position:relative; z-index:1; }
+
+    .top{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      margin-bottom:12px; flex-wrap:wrap;
+    }
+    .title{ font-weight:1000; font-size:16px; letter-spacing:.2px; }
+    .hint{ color:rgba(233,240,255,.78); font-size:12px; font-weight:850; line-height:1.45; }
+
+    .grid{
+      display:grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap:10px; margin-top:12px;
+    }
+    @media(max-width:900px){ .grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media(max-width:520px){ .grid{ grid-template-columns: 1fr; } }
+
+    .cell{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      overflow:hidden;
+    }
+    .label{ color:var(--muted); font-size:12px; font-weight:950; margin-bottom:6px; }
+    .value{ font-weight:1000; font-size:16px; overflow-wrap:anywhere; }
+
+    .block{
+      margin-top:12px;
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      overflow:hidden;
+    }
+
+    select, input{
+      width:100%;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      padding:12px 12px;
+      outline:none;
+      font-weight:900;
+      font-size:14px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    .row2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    @media(max-width:700px){ .row2{ grid-template-columns:1fr; } }
+
+    .walletSheet{
+      display:none;
+      margin-top:12px;
+      padding:12px;
+      border-radius:18px;
+      border:1px solid rgba(45,91,255,.35);
+      background: rgba(45,91,255,.08);
+      animation: fadeIn .18s ease both;
+    }
+    .walletSheet.show{ display:block; }
+    @keyframes fadeIn{ from{opacity:0; transform: translateY(6px);} to{opacity:1; transform: translateY(0);} }
+
+    .opts{
+      display:grid; grid-template-columns: repeat(2, minmax(0,1fr));
+      gap:10px; margin-top:10px;
+    }
+    @media(max-width:700px){ .opts{ grid-template-columns:1fr; } }
+
+    .opt{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.16);
+      border-radius:18px;
+      padding:14px;
+      cursor:pointer;
+      user-select:none;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      overflow:hidden;
+    }
+    .opt:hover{ transform: translateY(-1px); background: rgba(0,0,0,.20); border-color: rgba(255,255,255,.16); }
+    .opt.active{ border-color: rgba(34,197,94,.55); background: rgba(34,197,94,.10); }
+    .optTitle{ font-weight:1000; font-size:14px; margin-bottom:6px; }
+    .optSub{ color: var(--muted); font-size:12px; font-weight:850; overflow-wrap:anywhere; }
+
+    .status{
+      margin-top:12px;
+      border-radius:14px;
+      padding:12px 14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+      font-weight:950;
+      font-size:13px;
+      white-space:pre-line;
+      display:none;
+    }
+    .status.show{ display:block; }
+    .status.ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.10); }
+    .status.bad{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.10); }
+    .status.warn{ border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.10); }
+
+    .btnRow{ margin-top:14px; display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:12px 18px;
+      background: linear-gradient(180deg, var(--btn), var(--btn2));
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow: 0 10px 26px rgba(0,0,0,.30);
+      min-width:190px;
+      position:relative;
+    }
+    .btnGhost{
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:14px;
+      padding:12px 18px;
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow:none;
+      min-width:190px;
+    }
+    .btn:disabled{ opacity:.7; cursor:not-allowed; box-shadow:none; }
+
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+    .loading{ pointer-events:none; opacity:.88; }
+    .loading::after{
+      content:"";
+      position:absolute;
+      top:50%;
+      right:12px;
+      width:16px; height:16px;
+      margin-top:-8px;
+      border-radius:999px;
+      border:2px solid rgba(255,255,255,.25);
+      border-top-color: rgba(255,255,255,.95);
+      animation: spin .9s linear infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay"></div>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="top">
+        <div class="title">P2P · Продать · Crossflag</div>
+        <button class="btnGhost" id="backBtn" type="button">Назад</button>
+      </div>
+
+      <div class="grid">
+        <div class="cell">
+          <div class="label">Оффер</div>
+          <div class="value" id="offerId">—</div>
+        </div>
+        <div class="cell">
+          <div class="label">Сумма</div>
+          <div class="value" id="amount">—</div>
+        </div>
+        <div class="cell">
+          <div class="label">Курс</div>
+          <div class="value" id="rate">—</div>
+        </div>
+        <div class="cell">
+          <div class="label">USDT</div>
+          <div class="value" id="usdt">—</div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="hint">
+          Вставьте реквизиты, чтобы покупатель перевёл вам RUB.
+        </div>
+
+        <div class="row2" style="margin-top:10px;">
+          <div>
+            <div class="label">Способ оплаты</div>
+            <select id="payType">
+              <option value="SBP">СБП</option>
+              <option value="CARD">Карта</option>
+            </select>
+          </div>
+          <div>
+            <div class="label">Банк</div>
+            <input id="bank" placeholder="Например: Т-Банк" />
+          </div>
+        </div>
+
+        <div class="row2" style="margin-top:10px;">
+          <div>
+            <div class="label" id="requisiteLabel">Номер СБП</div>
+            <input id="requisite" placeholder="+7..." />
+          </div>
+          <div>
+            <div class="label">ФИО получателя</div>
+            <input id="fio" placeholder="Иванов Иван Иванович" />
+          </div>
+        </div>
+
+        <div class="walletSheet" id="walletSheet">
+          <div class="hint">
+            Куда вам удобнее перевести крипту за продажу?
+          </div>
+
+          <div class="opts" id="walletOpts">
+            <div class="opt" data-type="HTX_UID" data-value="504959890">
+              <div class="optTitle">HTX UID</div>
+              <div class="optSub">504959890</div>
+            </div>
+            <div class="opt" data-type="BYBIT_UID" data-value="510517445">
+              <div class="optTitle">BYBIT UID</div>
+              <div class="optSub">510517445</div>
+            </div>
+            <div class="opt" data-type="BEP20" data-value="0x77e9d8f23851a1cf40a0c3b493166b33a92bc075">
+              <div class="optTitle">BEP20</div>
+              <div class="optSub">0x77e9d8f23851a1cf40a0c3b493166b33a92bc075</div>
+            </div>
+            <div class="opt" data-type="TRC20" data-value="TXd3MJh3XJvMABXLTkauhp2ZarhJD8HuZb">
+              <div class="optTitle">TRC20</div>
+              <div class="optSub">TXd3MJh3XJvMABXLTkauhp2ZarhJD8HuZb</div>
+            </div>
+          </div>
+
+          <div class="btnRow">
+            <button class="btn" id="paidBtn" type="button" disabled>Я оплатил</button>
+          </div>
+        </div>
+
+        <div class="status" id="status"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const WORKER_BASE = "https://api.crossflag.org";
+
+
+  const p = new URLSearchParams(location.search);
+  const offerId = (p.get("offerId") || "").trim();
+  const amountRub = Number(p.get("amountRub"));
+  const rate = Number(p.get("rate"));
+
+  const offerIdEl = document.getElementById("offerId");
+  const amountEl = document.getElementById("amount");
+  const rateEl = document.getElementById("rate");
+  const usdtEl = document.getElementById("usdt");
+
+  const payTypeEl = document.getElementById("payType");
+  const bankEl = document.getElementById("bank");
+  const requisiteLabel = document.getElementById("requisiteLabel");
+  const requisiteEl = document.getElementById("requisite");
+  const fioEl = document.getElementById("fio");
+
+  const walletSheet = document.getElementById("walletSheet");
+  const walletOpts = document.getElementById("walletOpts");
+  const paidBtn = document.getElementById("paidBtn");
+  const statusEl = document.getElementById("status");
+
+  let chosenWallet = null; // {type,value}
+
+  function setStatus(text, kind){
+    statusEl.textContent = text;
+    statusEl.className = "status show " + (kind || "warn");
+  }
+
+  function getTgUser(){
+    try { return window.Telegram?.WebApp?.initDataUnsafe?.user || null; } catch(e){ return null; }
+  }
+  function getSessionId(){
+    try{
+      const k="cf_session_id";
+      let v=localStorage.getItem(k);
+      if(!v){ v=Math.random().toString(16).slice(2)+Date.now().toString(16); localStorage.setItem(k,v); }
+      return v;
+    }catch(e){ return null; }
+  }
+  async function logAttempt(step, data){
+    try{
+      await fetch(WORKER_BASE + "/api/public/log_attempt", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+          flow:"SELL",
+          step,
+          sessionId: getSessionId(),
+          tgUser: getTgUser(),
+          data: data || {}
+        })
+      });
+    }catch(e){}
+  }
+
+  function validateRequisites(){
+    const payType = String(payTypeEl.value || "").toUpperCase();
+    const bank = (bankEl.value || "").trim();
+    const requisite = (requisiteEl.value || "").trim();
+    const fio = (fioEl.value || "").trim();
+
+    const ok = !!(payType && bank && requisite && fio && requisite.length >= 3 && fio.length >= 5);
+    if(ok) walletSheet.classList.add("show");
+    else walletSheet.classList.remove("show");
+
+    paidBtn.disabled = !(ok && chosenWallet);
+    return ok;
+  }
+
+  function setLoading(btn, on){
+    if(!btn) return;
+    if(on){
+      btn.classList.add("loading");
+      btn.dataset._txt = btn.textContent;
+      btn.textContent = "Отправка…";
+      btn.disabled = true;
+    }else{
+      btn.classList.remove("loading");
+      btn.textContent = btn.dataset._txt || btn.textContent;
+      // disabled пересчитаем
+      validateRequisites();
+    }
+  }
+
+  // init header
+  offerIdEl.textContent = offerId || "—";
+  amountEl.textContent = Number.isFinite(amountRub) ? (amountRub.toLocaleString("ru-RU") + " ₽") : "—";
+  rateEl.textContent = Number.isFinite(rate) ? rate.toLocaleString("ru-RU") : "—";
+  if(Number.isFinite(amountRub) && Number.isFinite(rate) && rate > 0){
+    usdtEl.textContent = (amountRub / rate).toFixed(6) + " USDT";
+  } else {
+    usdtEl.textContent = "—";
+  }
+
+  document.getElementById("backBtn").onclick = () => history.back();
+
+  payTypeEl.onchange = () => {
+    const v = String(payTypeEl.value || "").toUpperCase();
+    if(v === "SBP"){
+      requisiteLabel.textContent = "Номер СБП";
+      requisiteEl.placeholder = "+7...";
+    } else {
+      requisiteLabel.textContent = "Номер карты";
+      requisiteEl.placeholder = "0000 0000 0000 0000";
+    }
+    validateRequisites();
+  };
+
+  [bankEl, requisiteEl, fioEl].forEach(el => el.addEventListener("input", validateRequisites));
+
+  walletOpts.addEventListener("click", (e)=>{
+    const opt = e.target.closest(".opt");
+    if(!opt) return;
+
+    walletOpts.querySelectorAll(".opt").forEach(x=>x.classList.remove("active"));
+    opt.classList.add("active");
+
+    chosenWallet = {
+      type: String(opt.dataset.type || ""),
+      value: String(opt.dataset.value || "")
+    };
+    validateRequisites();
+  });
+
+  logAttempt("OPEN_SELL_CROSSFLAG", { offerId, amountRub, rate });
+
+  paidBtn.onclick = async () => {
+    try{
+      if(!offerId) { setStatus("Ошибка: нет offerId", "bad"); return; }
+      if(!validateRequisites()) { setStatus("Заполните все реквизиты", "bad"); return; }
+      if(!chosenWallet){ setStatus("Выберите куда переводить крипту", "bad"); return; }
+
+      const txHash = (prompt("Вставьте хэш транзакции (tx hash):") || "").trim();
+      if(!txHash || txHash.length < 6){
+        setStatus("Хэш не указан", "bad");
+        return;
+      }
+
+      setLoading(paidBtn, true);
+      setStatus("Отправляем на проверку…", "warn");
+
+      await logAttempt("SUBMIT_SELL_TXHASH", { offerId, amountRub, txHash: txHash.slice(0, 24) + "…" });
+
+      const payload = {
+        offerId,
+        amountRub,
+        rate,
+        requisites: {
+          payType: String(payTypeEl.value || "").toUpperCase(),
+          requisite: (requisiteEl.value || "").trim(),
+          bank: (bankEl.value || "").trim(),
+          fio: (fioEl.value || "").trim()
+        },
+        payout: {
+          type: chosenWallet.type,
+          value: chosenWallet.value
+        },
+        txHash,
+        sessionId: getSessionId(),
+        tgUser: getTgUser(),
+      };
+
+      const res = await fetch(WORKER_BASE + "/api/public/sell_submit", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const j = await res.json().catch(()=> ({}));
+      if(!res.ok || !j.ok) throw new Error(j.error || ("HTTP " + res.status));
+
+      setStatus("Успешно отправлено ✅\nПереходим на проверку…", "ok");
+
+      try{
+        sessionStorage.setItem("cf_last_sell_resume", JSON.stringify({ dealId: j.dealId, secret: j.secret, url: "./sell-check.html?" + new URLSearchParams({ dealId: j.dealId, secret: j.secret }).toString(), ts: Date.now() }));
+      }catch(_){ }
+      if (window.CrossflagResume) window.CrossflagResume.upsertSell({ id: j.dealId, secret: j.secret, url: "./sell-check.html?" + new URLSearchParams({ dealId: j.dealId, secret: j.secret }).toString() });
+      const qs = new URLSearchParams({ dealId: j.dealId, secret: j.secret });
+      location.href = "./sell-check.html?" + qs.toString();
+
+    }catch(e){
+      setStatus("Ошибка: " + (e.message || String(e)), "bad");
+    }finally{
+      setLoading(paidBtn, false);
+    }
+  };
+</script>
+<script src="./resume-helper.js"></script>
+</body>
+</html>

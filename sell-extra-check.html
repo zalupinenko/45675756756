@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Crossflag • Доп. проверка</title>
+  <style>
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 700px at 50% 0%, rgba(35,80,255,.25), rgba(0,0,0,0)) , #050B18;
+      color:#EAF0FF;
+    }
+    .wrap{max-width:980px;margin:40px auto;padding:0 16px;}
+    .card{
+      background: rgba(15, 25, 45, 0.72);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 18px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.45);
+      padding: 26px;
+    }
+    h1{margin:0 0 14px;font-size:22px;}
+    .muted{color:rgba(234,240,255,.75);font-size:14px;line-height:1.45;}
+    .row{display:flex;gap:14px;flex-wrap:wrap;margin-top:18px;}
+    .filebox{
+      flex:1;
+      min-width:260px;
+      background: rgba(0,0,0,.18);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 14px;
+      padding: 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .btn{
+      appearance:none;
+      border:0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor:pointer;
+      color:#fff;
+      background: linear-gradient(180deg, rgba(60,120,255,.95), rgba(35,80,255,.85));
+      box-shadow: 0 10px 24px rgba(35,80,255,.25);
+    }
+    .btn.secondary{
+      background: rgba(255,255,255,.10);
+      box-shadow:none;
+      border:1px solid rgba(255,255,255,.14);
+      color:#EAF0FF;
+    }
+    .btn.warn{
+      background: linear-gradient(180deg, rgba(180,140,40,.95), rgba(145,105,25,.85));
+      box-shadow: 0 10px 24px rgba(180,140,40,.18);
+    }
+    .fname{font-size:13px;color:rgba(234,240,255,.8);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px;}
+    .actions{margin-top:18px;display:flex;justify-content:flex-end;gap:12px;}
+    .msg{
+      margin-top:16px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.22);
+      font-size:14px;
+    }
+    .msg.err{border-color: rgba(255,80,80,.35); background: rgba(255,80,80,.10);}
+    .msg.ok{border-color: rgba(80,255,160,.30); background: rgba(80,255,160,.10);}
+    .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+    .back{border-radius:14px;padding:10px 14px;}
+    input[type="file"]{display:none;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <h1>Дополнительная проверка</h1>
+      <button class="btn secondary back" id="btnBack">Назад</button>
+    </div>
+
+    <div class="card">
+      <div class="muted">
+        <b>Требуется дополнительная проверка</b><br/>
+        Прикрепите либо скриншот, либо видео. После отправки вы вернётесь в сделку.
+      </div>
+
+      <div class="muted" style="margin-top:10px;">
+        Сделка: <span id="dealLabel"></span>
+      </div>
+
+      <div class="row">
+        <div class="filebox">
+          <div>
+            <button class="btn warn" id="pickPhoto">Прикрепить фото</button>
+            <input id="photoInput" type="file" accept="image/*"/>
+          </div>
+          <div class="fname" id="photoName">Файл не выбран</div>
+        </div>
+
+        <div class="filebox">
+          <div>
+            <button class="btn warn" id="pickVideo">Прикрепить видео</button>
+            <input id="videoInput" type="file" accept="video/*"/>
+          </div>
+          <div class="fname" id="videoName">Файл не выбран</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="btnSend">Отправить</button>
+      </div>
+
+      <div class="msg" id="msg" style="display:none;"></div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const qs = new URLSearchParams(location.search);
+  const dealId = qs.get("dealId") || "";
+  const secret = qs.get("secret") || "";
+
+  // ✅ ВАЖНО: форсим API, чтобы не было Not found на github pages
+  const API_BASE = "https://api.crossflag.org";
+
+  const dealLabel = document.getElementById("dealLabel");
+  dealLabel.textContent = dealId || "—";
+
+  const photoInput = document.getElementById("photoInput");
+  const videoInput = document.getElementById("videoInput");
+  const photoName = document.getElementById("photoName");
+  const videoName = document.getElementById("videoName");
+
+  document.getElementById("pickPhoto").onclick = () => photoInput.click();
+  document.getElementById("pickVideo").onclick = () => videoInput.click();
+
+  photoInput.onchange = () => {
+    if (photoInput.files && photoInput.files[0]) {
+      photoName.textContent = photoInput.files[0].name;
+      // чтобы не отправили и фото и видео одновременно случайно:
+      videoInput.value = "";
+      videoName.textContent = "Файл не выбран";
+    } else {
+      photoName.textContent = "Файл не выбран";
+    }
+  };
+
+  videoInput.onchange = () => {
+    if (videoInput.files && videoInput.files[0]) {
+      videoName.textContent = videoInput.files[0].name;
+      photoInput.value = "";
+      photoName.textContent = "Файл не выбран";
+    } else {
+      videoName.textContent = "Файл не выбран";
+    }
+  };
+
+  const msgEl = document.getElementById("msg");
+  function showMsg(text, kind){
+    msgEl.style.display = "block";
+    msgEl.className = "msg " + (kind || "");
+    msgEl.textContent = text;
+  }
+
+  function backToDeal(){
+    // возвращаем на sell-deal.html с теми же параметрами
+    const u = new URL(location.origin + "/sell-deal.html");
+    u.searchParams.set("dealId", dealId);
+    u.searchParams.set("secret", secret);
+    location.href = u.toString();
+  }
+
+  document.getElementById("btnBack").onclick = backToDeal;
+
+  document.getElementById("btnSend").onclick = async () => {
+    if (!dealId || !secret) {
+      showMsg("Ошибка: нет dealId/secret в ссылке", "err");
+      return;
+    }
+
+    const photo = photoInput.files && photoInput.files[0] ? photoInput.files[0] : null;
+    const video = videoInput.files && videoInput.files[0] ? videoInput.files[0] : null;
+
+    if (!photo && !video) {
+      showMsg("Выберите фото или видео.", "err");
+      return;
+    }
+
+    const fd = new FormData();
+    fd.set("dealId", dealId);
+    fd.set("secret", secret);
+    if (photo) fd.set("photo", photo, photo.name || "photo.jpg");
+    if (video) fd.set("video", video, video.name || "video.mp4");
+
+    try {
+      showMsg("Отправка...", "");
+      const res = await fetch(API_BASE + "/api/public/sell_submit_extra_check", {
+        method: "POST",
+        body: fd
+      });
+
+      const j = await res.json().catch(() => null);
+      if (!res.ok || !j || !j.ok) {
+        const err = (j && j.error) ? j.error : ("HTTP " + res.status);
+        showMsg("Ошибка: " + err, "err");
+        return;
+      }
+
+      showMsg("Отправлено. Возвращаемся в сделку...", "ok");
+      setTimeout(backToDeal, 700);
+    } catch (e) {
+      showMsg("Ошибка: " + (e && e.message ? e.message : String(e)), "err");
+    }
+  };
+})();
+</script>
+<script src="./resume-helper.js"></script>
+<script>(function(){
+  if (!window.CrossflagResume) return;
+  function save(){
+    if (dealId && secret) window.CrossflagResume.upsertSell({ id: dealId, secret, url: location.pathname + location.search + location.hash });
+  }
+  save();
+  window.addEventListener("pagehide", save);
+  document.addEventListener("visibilitychange", ()=>{ if (document.visibilityState === "hidden") save(); });
+})();</script>
+</body>
+</html>

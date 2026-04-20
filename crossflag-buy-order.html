@@ -1,0 +1,1190 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Crossflag Exchange · Оплата</title>
+
+  <style>
+    :root{
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+
+      --card: rgba(15, 26, 48, 0.52);
+      --border: rgba(255,255,255,.12);
+
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+
+      --btn:#2d5bff;
+      --btn2:#1f3fb3;
+
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+
+    html,body{ height:100%; }
+
+    body{
+      margin:0;
+      color:var(--text);
+      background:#071022;
+
+      overflow-y:auto;
+      overflow-x:hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+    }
+
+    .overlay{
+      position:fixed;
+      inset:0;
+      z-index:-1;
+      background:
+        radial-gradient(900px 600px at 50% 20%, rgba(60,120,255,.18), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(7,16,34,.82), rgba(7,16,34,.92));
+      pointer-events:none;
+    }
+
+    .page{
+      min-height:100vh;
+      min-height:100dvh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:
+        calc(16px + env(safe-area-inset-top))
+        16px
+        calc(22px + env(safe-area-inset-bottom))
+        16px;
+      box-sizing:border-box;
+
+      width:100%;
+    }
+
+    .wrap{ width:100%; max-width:980px; }
+
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 14px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:12px;
+    }
+
+    .title{ font-weight:1000; font-size:16px; }
+
+    .btnTop{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:1000;
+      padding:10px 14px;
+      border-radius:14px;
+      cursor:pointer;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    @media(max-width:860px){
+      .grid{ grid-template-columns:1fr; }
+    }
+
+    .box{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      min-width:0;
+    }
+    .label{ font-weight:950; font-size:12px; color:var(--muted); margin-bottom:6px; }
+    .value{ font-weight:1000; font-size:18px; word-break:break-word; overflow-wrap:anywhere; }
+
+    .statusWrap{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      margin-bottom:12px;
+    }
+    .statusHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .statusTitle{ font-weight:1000; }
+    .pill{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      padding:8px 12px;
+      border-radius:999px;
+      font-weight:950;
+      font-size:12px;
+      white-space:nowrap;
+    }
+
+    /* ── Таймер ── */
+    .ttlBanner{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding:14px 18px;
+      border-radius:16px;
+      border:2px solid rgba(245,158,11,.45);
+      background: rgba(245,158,11,.10);
+      margin-bottom:12px;
+      transition: border-color .4s, background .4s;
+    }
+    .ttlBanner.ttlOk{
+      border-color: rgba(34,197,94,.45);
+      background: rgba(34,197,94,.08);
+    }
+    .ttlBanner.ttlWarn{
+      border-color: rgba(245,158,11,.55);
+      background: rgba(245,158,11,.12);
+    }
+    .ttlBanner.ttlDanger{
+      border-color: rgba(239,68,68,.6);
+      background: rgba(239,68,68,.13);
+      animation: ttlPulse 1.1s ease-in-out infinite;
+    }
+    @keyframes ttlPulse{
+      0%,100%{ box-shadow: 0 0 0 0 rgba(239,68,68,.0); }
+      50%{ box-shadow: 0 0 0 8px rgba(239,68,68,.18); }
+    }
+    .ttlIcon{ font-size:20px; line-height:1; flex-shrink:0; }
+    .ttlLabel{ font-size:12px; font-weight:900; color: var(--muted); }
+    .ttlValue{
+      font-size:26px;
+      font-weight:1000;
+      letter-spacing:.04em;
+      color:#fde68a;
+      transition: color .4s;
+    }
+    .ttlBanner.ttlOk  .ttlValue{ color:#86efac; }
+    .ttlBanner.ttlWarn .ttlValue{ color:#fde68a; }
+    .ttlBanner.ttlDanger .ttlValue{ color:#fca5a5; }
+
+    /* ── Логотип банка ── */
+    .bankLogo{
+      width:36px; height:36px; border-radius:10px;
+      object-fit:contain; background:#fff;
+      padding:3px; box-sizing:border-box;
+      flex-shrink:0; display:block;
+    }
+    .bankBadge{
+      width:36px; height:36px; border-radius:10px;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:1000; font-size:13px; flex-shrink:0;
+      border:1px solid rgba(0,0,0,.1);
+    }
+
+    /* ── Реквизиты кликабельны ── */
+    .reqClickable{
+      cursor:pointer;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      transition: background .15s;
+    }
+    .reqClickable:hover{ background: rgba(45,91,255,.07); }
+    .reqClickable:active{ background: rgba(45,91,255,.13); }
+    .reqCopied{
+      font-size:11px; font-weight:800;
+      color:#86efac; margin-top:4px;
+      opacity:0; transition:opacity .2s;
+      height:14px;
+    }
+    .reqCopied.show{ opacity:1; }
+    .statusLine{
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+      font-weight:900;
+      font-size:13px;
+    }
+    .statusLine.ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.10); }
+    .statusLine.bad{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.10); }
+    .statusLine.warn{ border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.10); }
+
+    .payTitle{ font-weight:1000; margin:12px 0 10px; }
+
+    .row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      margin-bottom:10px;
+      min-width:0;
+    }
+
+    .rowLeft{ min-width:0; }
+    .rowLabel{ font-weight:950; font-size:12px; color:var(--muted); margin-bottom:6px; }
+    .rowValue{
+      font-weight:1000;
+      font-size:16px;
+      word-break:break-word;
+      overflow-wrap:anywhere;
+      min-width:0;
+    }
+
+    .copyBtn{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-weight: 900;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .copyBtn:hover{ background: rgba(255,255,255,.09); }
+
+    .actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:12px 16px;
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow: 0 10px 26px rgba(0,0,0,.30);
+    }
+    .btn.cancel{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      min-width:170px;
+    }
+    .btn.primary{
+      background: linear-gradient(180deg, var(--btn), var(--btn2));
+      color:#fff;
+      min-width:170px;
+    }
+    .btn:disabled{ opacity:.7; cursor:not-allowed; }
+  </style>
+</head>
+
+<body>
+  <div class="overlay"></div>
+
+  <div class="page">
+    <div class="wrap">
+      <div class="card">
+
+        <div class="top">
+          <div class="title">Crossflag Exchange · Оплата</div>
+          <button class="btnTop" type="button" id="backBtn">Назад</button>
+        </div>
+
+        <div class="grid">
+          <div class="box">
+            <div class="label">Ордер</div>
+            <div class="value" id="orderId">—</div>
+          </div>
+          <div class="box">
+            <div class="label">Сумма к оплате (RUB)</div>
+            <div class="value" id="amountRub">—</div>
+          </div>
+          <div class="box">
+            <div class="label">Курс (RUB/USDT)</div>
+            <div class="value" id="rate">—</div>
+          </div>
+          <div class="box">
+            <div class="label">Получите (USDT)</div>
+            <div class="value" id="usdt">—</div>
+          </div>
+        </div>
+
+
+        <!-- Таймер оплаты -->
+        <div class="ttlBanner ttlWarn" id="ttlBanner">
+          <span class="ttlIcon">⏱</span>
+          <div>
+            <div class="ttlLabel">Время на оплату</div>
+            <div class="ttlValue" id="ttlValue">—</div>
+          </div>
+        </div>
+
+        <div class="statusWrap">
+          <div class="statusHead">
+            <div class="statusTitle">Статус</div>
+          </div>
+          <div class="statusLine warn" id="statusLine">Загрузка…</div>
+        </div>
+
+        <div class="payTitle">Реквизиты для оплаты</div>
+
+        <div class="row">
+          <div id="bankLogoWrap" style="flex-shrink:0;"></div>
+          <div class="rowLeft" style="flex:1; min-width:0;">
+            <div class="rowLabel">Банк</div>
+            <div class="rowValue" id="payBank">—</div>
+          </div>
+        </div>
+
+        <div class="row reqClickable" id="payReqRow" title="Нажмите, чтобы скопировать">
+          <div class="rowLeft" style="flex:1; min-width:0;">
+            <div class="rowLabel">Реквизиты · нажмите для копирования</div>
+            <div class="rowValue" id="payReq">—</div>
+            <div class="reqCopied" id="reqCopied">✓ Скопировано</div>
+          </div>
+          <button class="copyBtn" id="copyBtn" type="button">Копировать</button>
+        </div>
+
+        <div class="row" id="qrWrap" style="display:none; align-items:flex-start; gap:12px;">
+          <div class="rowLeft" style="flex:1; min-width:0;">
+            <div class="rowLabel">QR для оплаты</div>
+            <div class="rowValue muted" style="font-size:13px; line-height:1.35;">
+              Отсканируйте QR-код камерой или в приложении банка, затем нажмите «Я оплатил».
+            </div>
+          </div>
+          <div style="width:132px; height:132px; border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.12); display:flex; align-items:center; justify-content:center;">
+            <img id="qrImg" alt="QR" style="width:132px; height:132px; object-fit:cover; display:block;" />
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn cancel" id="cancelBtn" type="button">Отменить ордер</button>
+          <button class="btn primary" id="paidBtn" type="button">Я оплатил</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes cancelModalIn{
+      from{ opacity:0; transform:translate(-50%,-48%) scale(.95); }
+      to{   opacity:1; transform:translate(-50%,-50%) scale(1); }
+    }
+    .crBtn{
+      display:flex; align-items:center; gap:12px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.05);
+      color:#e9f0ff;
+      border-radius:14px;
+      padding:13px 14px;
+      font-size:14px;
+      font-weight:700;
+      cursor:pointer;
+      text-align:left;
+      width:100%;
+      transition: background .15s, border-color .15s, transform .12s;
+    }
+    .crBtn:hover{ background:rgba(255,255,255,.10); border-color:rgba(255,255,255,.22); transform:translateX(3px); }
+    .crBtn:active{ transform:translateX(1px) scale(.99); }
+    .crBtn .crIcon{ font-size:18px; flex-shrink:0; width:28px; text-align:center; }
+    .crBtn .crText{ flex:1; }
+    .crBtn .crArrow{ opacity:.35; font-size:13px; flex-shrink:0; }
+  </style>
+
+  <!-- Cancel warning toast -->
+  <style>
+    .cancelWarning{
+      position:fixed; bottom:0; left:0; right:0; z-index:10001;
+      display:flex; justify-content:center;
+      pointer-events:none;
+      padding:0 14px calc(14px + env(safe-area-inset-bottom));
+      transform:translateY(120%);
+      transition: transform .35s cubic-bezier(.34,1.4,.64,1), opacity .25s;
+      opacity:0;
+    }
+    .cancelWarning.show{ transform:translateY(0); opacity:1; pointer-events:auto; }
+    .cancelWarningInner{
+      max-width:420px; width:100%;
+      background: linear-gradient(160deg, #1a0a0a 0%, #1c1020 100%);
+      border: 1px solid rgba(239,68,68,.35);
+      border-radius:20px;
+      padding:16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.7), 0 0 0 1px rgba(239,68,68,.12);
+    }
+    .cwHeader{
+      display:flex; align-items:center; gap:10px;
+      margin-bottom:10px;
+    }
+    .cwIcon{ font-size:28px; }
+    .cwTitle{ font-weight:1000; font-size:15px; color:#fca5a5; }
+    .cwText{
+      font-size:12px; font-weight:800; line-height:1.45;
+      color:rgba(252,165,165,.75);
+    }
+    .cwText b{ color:#fca5a5; font-weight:1000; }
+    .cwBar{
+      margin-top:10px;
+      display:flex; gap:10px;
+    }
+    .cwBtn{
+      flex:1; border:0; border-radius:12px; padding:11px;
+      font-weight:1000; font-size:13px; cursor:pointer; color:#fff;
+      transition: transform .08s, filter .15s;
+    }
+    .cwBtn:active{ transform:scale(.97); }
+    .cwBtnCancel{
+      background: linear-gradient(180deg, #dc2626, #b91c1c);
+      box-shadow: 0 8px 20px rgba(185,28,28,.3);
+    }
+    .cwBtnBack{
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      color: rgba(233,240,255,.65);
+    }
+    .cwBtnBack:hover{ background: rgba(255,255,255,.10); color:#fff; }
+  </style>
+
+  <div class="cancelWarning" id="cancelWarning">
+    <div class="cancelWarningInner">
+      <div class="cwHeader">
+        <span class="cwIcon">⚠️</span>
+        <span class="cwTitle">Предупреждение об отмене</span>
+      </div>
+      <div class="cwText">
+        Ордер будет отменён. Обратите внимание:<br><br>
+        <b>🚫 При частых отменах доступ к выплатам временно ограничивается.</b><br><br>
+        Если у вас возникли проблемы с реквизитами или оплатой — лучше обратитесь в поддержку, чем отменять заказ.
+      </div>
+      <div class="cwBar">
+        <button class="cwBtn cwBtnBack" id="cwBtnBack" type="button">Вернуться</button>
+        <button class="cwBtn cwBtnCancel" id="cwBtnProceed" type="button">Всё равно отменить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cancel reason modal -->
+  <div id="cancelModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,.78); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); align-items:center; justify-content:center;">
+    <div style="
+      background: linear-gradient(160deg, #0c1628 0%, #101e36 100%);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 24px;
+      padding: 22px 18px 18px;
+      max-width: 390px;
+      width: 92%;
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      box-shadow: 0 32px 80px rgba(0,0,0,.65), 0 0 0 1px rgba(239,68,68,.08);
+      animation: cancelModalIn .22s cubic-bezier(.34,1.4,.64,1) both;
+    ">
+      <div style="text-align:center; margin-bottom:18px;">
+        <div style="font-size:30px; margin-bottom:8px; line-height:1;">❌</div>
+        <div style="font-weight:900; font-size:17px; color:#e9f0ff; letter-spacing:-.01em;">Причина отмены</div>
+        <div style="font-size:12px; color:rgba(159,176,212,.65); margin-top:4px; font-weight:700;">Выберите причину для отмены ордера</div>
+      </div>
+
+      <div id="cancelReasons" style="display:flex; flex-direction:column; gap:7px;">
+        <button class="cancelReasonBtn crBtn" data-reason="Красные реквизиты">
+          <span class="crIcon">🔴</span><span class="crText">Красные реквизиты</span><span class="crArrow">›</span>
+        </button>
+        <button class="cancelReasonBtn crBtn" data-reason="Недостаточный баланс">
+          <span class="crIcon">💸</span><span class="crText">Недостаточный баланс</span><span class="crArrow">›</span>
+        </button>
+        <button class="cancelReasonBtn crBtn" data-reason="Нет нужного банка">
+          <span class="crIcon">🏦</span><span class="crText">Нет нужного банка</span><span class="crArrow">›</span>
+        </button>
+        <button class="cancelReasonBtn crBtn" data-reason="Неверные реквизиты">
+          <span class="crIcon">⚠️</span><span class="crText">Неверные реквизиты</span><span class="crArrow">›</span>
+        </button>
+        <button class="cancelReasonBtn crBtn" data-reason="2 получателя на одном реквизите">
+          <span class="crIcon">👥</span><span class="crText">2 получателя на одном реквизите</span><span class="crArrow">›</span>
+        </button>
+        <button class="cancelReasonBtn crBtn" data-reason="Не хочу" data-fault="1">
+          <span class="crIcon">🚫</span><span class="crText">Не хочу</span><span class="crArrow">›</span>
+        </button>
+      </div>
+
+      <button id="cancelModalClose" type="button" style="margin-top:12px; width:100%; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.04); color:rgba(233,240,255,.4); border-radius:14px; padding:12px; font-size:14px; font-weight:700; cursor:pointer; transition:background .15s;">Назад</button>
+    </div>
+  </div>
+
+  <!-- Proof upload modal -->
+  <style>
+    .proofDropzone{
+      border:2px dashed rgba(255,255,255,.18); border-radius:16px; padding:28px 16px;
+      text-align:center; cursor:pointer; transition: border-color .2s, background .2s; position:relative;
+    }
+    .proofDropzone:hover,.proofDropzone.dragover{ border-color:rgba(45,91,255,.5); background:rgba(45,91,255,.06); }
+    .proofDropzone.hasFile{ border-color:rgba(34,197,94,.4); background:rgba(34,197,94,.06); }
+    .proofDropzone input[type=file]{ position:absolute; inset:0; opacity:0; cursor:pointer; }
+    .proofPreview{ max-width:100%; max-height:180px; border-radius:12px; margin-top:10px; display:none; }
+    .proofBtnRow{ display:flex; gap:8px; margin-top:14px; }
+    .proofBtnRow button{ flex:1; border-radius:14px; padding:13px; font-weight:800; font-size:14px; cursor:pointer; border:0; transition: opacity .15s; }
+    .proofBtnRow button:disabled{ opacity:.5; cursor:not-allowed; }
+    .proofBtnSend{ background: linear-gradient(180deg,#2d5bff,#1f3fb3); color:#fff; box-shadow:0 8px 20px rgba(45,91,255,.25); }
+    .proofBtnSkip{ background:rgba(255,255,255,.06); color:rgba(233,240,255,.55); border:1px solid rgba(255,255,255,.10) !important; }
+    .proofStatus{ margin-top:10px; padding:10px 12px; border-radius:12px; font-size:13px; font-weight:700; display:none; }
+    .proofStatus.show{ display:block; }
+    .proofStatus.ok{ background:rgba(34,197,94,.12); border:1px solid rgba(34,197,94,.3); color:#7dffcf; }
+    .proofStatus.bad{ background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.3); color:#fca5a5; }
+    .proofStatus.warn{ background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.3); color:#fde68a; }
+  </style>
+  <div id="proofModal" style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,.82); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);">
+    <div style="background: linear-gradient(160deg, #0c1628 0%, #101e36 100%); border: 1px solid rgba(255,255,255,.12); border-radius: 24px; padding: 22px 18px 18px; max-width: 400px; width: 92%; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); box-shadow: 0 32px 80px rgba(0,0,0,.65); animation: cancelModalIn .22s cubic-bezier(.34,1.4,.64,1) both;">
+      <div style="text-align:center; margin-bottom:16px;">
+        <div style="font-size:28px; margin-bottom:6px; line-height:1;">📸</div>
+        <div style="font-weight:900; font-size:17px; color:#e9f0ff;">Подтверждение причины</div>
+        <div style="font-size:12px; color:rgba(159,176,212,.65); margin-top:4px; font-weight:700;">Приложите скриншот, подтверждающий причину отмены.<br>Это сохранит ваш процент выполнения.</div>
+      </div>
+      <div style="text-align:center; margin-bottom:12px;"><span style="display:inline-block; padding:5px 14px; border-radius:999px; border:1px solid rgba(245,158,11,.3); background:rgba(245,158,11,.08); font-size:12px; font-weight:800; color:#fde68a;" id="proofReasonText">—</span></div>
+      <div class="proofDropzone" id="proofDropzone">
+        <input type="file" accept="image/*" id="proofFileInput" />
+        <div id="proofPlaceholder"><div style="font-size:32px; margin-bottom:6px;">📎</div><div style="font-weight:800; font-size:14px; color:rgba(233,240,255,.7);">Нажмите или перетащите скриншот</div><div style="font-size:11px; color:rgba(159,176,212,.5); margin-top:4px;">PNG, JPG до 10 МБ</div></div>
+        <img class="proofPreview" id="proofPreview" />
+      </div>
+      <div class="proofStatus" id="proofStatus"></div>
+      <div class="proofBtnRow">
+        <button class="proofBtnSkip" id="proofSkipBtn" type="button">Пропустить</button>
+        <button class="proofBtnSend" id="proofSendBtn" type="button" disabled>Отправить</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ===== AUTH / API HEADERS (FIX) ===== */
+const API_BASE =
+  new URLSearchParams(location.search).get('wb') ||
+  new URLSearchParams(location.search).get('api') ||
+  localStorage.getItem('WORKER_BASE') ||
+  'https://api.crossflag.org';
+
+const USER_TOKEN =
+  localStorage.getItem('CF_USER_TOKEN') ||
+  localStorage.getItem('user_token') ||
+  localStorage.getItem('crossflag_user_token') ||
+  localStorage.getItem('USER_TOKEN') ||
+  localStorage.getItem('userToken') ||
+  localStorage.getItem('cf_user_token') ||
+  '';
+
+const AUTH_HEADERS = USER_TOKEN
+  ? { 'Authorization': 'Bearer ' + USER_TOKEN }
+  : {};
+
+// ✅ WORKER_BASE as before
+const WORKER_BASE = String(
+  localStorage.getItem("worker_base") ||
+  localStorage.getItem("WORKER_BASE") ||
+  "https://api.crossflag.org"
+).replace(/\/+$/, "");
+
+const p = new URLSearchParams(location.search);
+const id = (p.get("id") || "").trim();
+let reserveId =
+  (p.get("reserveId") || "").trim() ||
+  (p.get("reservedId") || "").trim() ||
+  (p.get("reserveid") || "").trim() ||
+  (p.get("rid") || "").trim();
+
+// Fallback: ищем reserveId в localStorage (когда ссылка из TG только с ?id=)
+if (!reserveId && id) {
+  try {
+    reserveId =
+      (sessionStorage.getItem("cf_reserve_buy_" + id) || "").trim() ||
+      (localStorage.getItem("cf_reserve_buy_" + id) || "").trim() ||
+      (localStorage.getItem("cf_reserve_" + id) || "").trim();
+  } catch(_) {}
+}
+if (!reserveId && id) {
+  try {
+    const _deals = JSON.parse(localStorage.getItem("cf_active_deals") || "[]");
+    const _hit = Array.isArray(_deals) ? _deals.find(d => d && d.type === "BUY" && String(d.id||"") === String(id)) : null;
+    if (_hit && _hit.reserveId) reserveId = String(_hit.reserveId).trim();
+  } catch(_) {}
+}
+
+let amountRub = Number(p.get("amountRub"));
+let rate = Number(p.get("rate"));
+const methodUrl = (p.get("method") || "").toUpperCase();
+
+const orderIdEl = document.getElementById("orderId");
+const amountRubEl = document.getElementById("amountRub");
+const rateEl = document.getElementById("rate");
+const usdtEl = document.getElementById("usdt");
+
+const statusLine = document.getElementById("statusLine");
+const ttlPill = null; // removed — replaced by ttlBanner
+
+const payBankEl = document.getElementById("payBank");
+const payReqEl = document.getElementById("payReq");
+const copyBtn = document.getElementById("copyBtn");
+
+const cancelBtn = document.getElementById("cancelBtn");
+const paidBtn = document.getElementById("paidBtn");
+
+let currentOffer = null;
+
+function fmtRub(n){
+  const v = Number(n);
+  if (!Number.isFinite(v)) return "—";
+  return v.toLocaleString("ru-RU") + " ₽";
+}
+function fmtRate(n){
+  const v = Number(n);
+  if (!Number.isFinite(v)) return "—";
+  return v.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
+}
+function fmtUsdt(n){
+  const v = Number(n);
+  if (!Number.isFinite(v)) return "—";
+  return v.toLocaleString("ru-RU", { maximumFractionDigits: 6 }) + " USDT";
+}
+function setStatus(text, kind){
+  statusLine.textContent = text;
+  statusLine.classList.remove("ok","bad","warn");
+  statusLine.classList.add(kind || "warn");
+}
+
+// normalise expiresAt: accept seconds, ms or ISO-string
+function normExpiry(v){
+  if (!v) return 0;
+  let n = Number(v);
+  if (!Number.isFinite(n)){
+    n = new Date(v).getTime();
+    if (!Number.isFinite(n)) return 0;
+  }
+  if (n > 0 && n < 1e12) n *= 1000;
+  return n;
+}
+
+const ttlBanner = document.getElementById("ttlBanner");
+const ttlValueEl = document.getElementById("ttlValue");
+
+function setTtl(expiresAt){
+  const ms = normExpiry(expiresAt) - serverNow();
+  const banner = ttlBanner;
+  const valEl = ttlValueEl;
+  if (!banner || !valEl) return;
+
+  if (!Number.isFinite(ms) || ms <= 0){
+    valEl.textContent = "00:00";
+    banner.className = "ttlBanner ttlDanger";
+    return;
+  }
+  const s = Math.floor(ms / 1000);
+  const mm = String(Math.floor(s / 60)).padStart(2,"0");
+  const ss = String(s % 60).padStart(2,"0");
+  valEl.textContent = mm + ":" + ss;
+
+  banner.className = "ttlBanner " + (
+    s > 5 * 60 ? "ttlOk" :
+    s > 2 * 60 ? "ttlWarn" :
+    "ttlDanger"
+  );
+}
+
+/* ── Логотипы банков ── */
+const BANK_LOGOS = {
+  "сбербанк":    { d:"sberbank.ru",      bg:"#21A038", fg:"#fff",  t:"Сб" },
+  "сбер":        { d:"sberbank.ru",      bg:"#21A038", fg:"#fff",  t:"Сб" },
+  "тинькофф":   { d:"tinkoff.ru",       bg:"#FFDD2D", fg:"#222",  t:"T"  },
+  "тинк":        { d:"tinkoff.ru",       bg:"#FFDD2D", fg:"#222",  t:"T"  },
+  "т-банк":      { d:"tinkoff.ru",       bg:"#FFDD2D", fg:"#222",  t:"T"  },
+  "t-bank":      { d:"tinkoff.ru",       bg:"#FFDD2D", fg:"#222",  t:"T"  },
+  "втб":         { d:"vtb.ru",           bg:"#009FDF", fg:"#fff",  t:"ВТБ"},
+  "vtb":         { d:"vtb.ru",           bg:"#009FDF", fg:"#fff",  t:"ВТБ"},
+  "альфа":       { d:"alfabank.ru",      bg:"#EF3124", fg:"#fff",  t:"А"  },
+  "альфабанк":   { d:"alfabank.ru",      bg:"#EF3124", fg:"#fff",  t:"А"  },
+  "газпром":     { d:"gazprombank.ru",   bg:"#004D97", fg:"#fff",  t:"ГП" },
+  "газпромбанк": { d:"gazprombank.ru",   bg:"#004D97", fg:"#fff",  t:"ГП" },
+  "мтс":         { d:"mtsbank.ru",       bg:"#E30611", fg:"#fff",  t:"МТС"},
+  "мтс банк":    { d:"mtsbank.ru",       bg:"#E30611", fg:"#fff",  t:"МТС"},
+  "открытие":    { d:"open.ru",          bg:"#FF6B00", fg:"#fff",  t:"О"  },
+  "совком":      { d:"sovcombank.ru",    bg:"#1D2F5E", fg:"#fff",  t:"СК" },
+  "совкомбанк":  { d:"sovcombank.ru",    bg:"#1D2F5E", fg:"#fff",  t:"СК" },
+  "росбанк":     { d:"rosbank.ru",       bg:"#D7001B", fg:"#fff",  t:"Р"  },
+  "рсхб":        { d:"rshb.ru",          bg:"#008931", fg:"#fff",  t:"РСХБ"},
+  "россельхоз":  { d:"rshb.ru",          bg:"#008931", fg:"#fff",  t:"РСХБ"},
+  "почта":       { d:"pochtabank.ru",    bg:"#006DB7", fg:"#fff",  t:"ПБ" },
+  "почта банк":  { d:"pochtabank.ru",    bg:"#006DB7", fg:"#fff",  t:"ПБ" },
+  "озон":        { d:"ozon.ru",          bg:"#005BFF", fg:"#fff",  t:"O"  },
+  "ozon":        { d:"ozon.ru",          bg:"#005BFF", fg:"#fff",  t:"O"  },
+  "юмани":       { d:"yoomoney.ru",      bg:"#8B00D1", fg:"#fff",  t:"Ю"  },
+  "юmoney":      { d:"yoomoney.ru",      bg:"#8B00D1", fg:"#fff",  t:"Ю"  },
+  "yoomoney":    { d:"yoomoney.ru",      bg:"#8B00D1", fg:"#fff",  t:"Ю"  },
+  "qiwi":        { d:"qiwi.com",         bg:"#FF8C00", fg:"#fff",  t:"Q"  },
+  "киви":        { d:"qiwi.com",         bg:"#FF8C00", fg:"#fff",  t:"Q"  },
+  "сбп":         { d:"nspk.ru",          bg:"#5E2D8C", fg:"#fff",  t:"СБП"},
+  "sbp":         { d:"nspk.ru",          bg:"#5E2D8C", fg:"#fff",  t:"СБП"},
+  "райффайзен":  { d:"raiffeisen.ru",    bg:"#FFDE00", fg:"#222",  t:"R"  },
+  "raiffeisen":  { d:"raiffeisen.ru",    bg:"#FFDE00", fg:"#222",  t:"R"  },
+  "уралсиб":     { d:"uralsib.ru",       bg:"#007DC3", fg:"#fff",  t:"УС" },
+  "хоум":        { d:"homecredit.ru",    bg:"#ED1C24", fg:"#fff",  t:"HC" },
+  "хоум кредит": { d:"homecredit.ru",    bg:"#ED1C24", fg:"#fff",  t:"HC" },
+  "ак барс":     { d:"akbars.ru",        bg:"#006A35", fg:"#fff",  t:"АБ" },
+  "акбарс":      { d:"akbars.ru",        bg:"#006A35", fg:"#fff",  t:"АБ" },
+  "промсвязь":   { d:"psbank.ru",        bg:"#E2000F", fg:"#fff",  t:"ПСБ"},
+  "псб":         { d:"psbank.ru",        bg:"#E2000F", fg:"#fff",  t:"ПСБ"},
+  "бкс":         { d:"bcs.ru",           bg:"#003087", fg:"#fff",  t:"БКС"},
+};
+
+function setBankLogo(bankName){
+  const wrap = document.getElementById("bankLogoWrap");
+  if (!wrap) return;
+  const key = (bankName || "").toLowerCase().trim();
+  let entry = null;
+  for (const [k, v] of Object.entries(BANK_LOGOS)){
+    if (key.includes(k)){ entry = v; break; }
+  }
+
+  function makeBadge(e, letter){
+    const bg = e ? e.bg : "rgba(45,91,255,.2)";
+    const fg = e ? e.fg : "#93b4ff";
+    const text = e ? e.t : (letter || "?");
+    wrap.innerHTML = `<div class="bankBadge" style="background:${bg};color:${fg}">${text}</div>`;
+  }
+
+  if (!entry){ makeBadge(null, (bankName||"?").charAt(0).toUpperCase()); return; }
+
+  const img = new Image();
+  img.className = "bankLogo";
+  img.alt = bankName;
+  img.onerror = () => makeBadge(entry);
+  img.src = "https://logo.clearbit.com/" + entry.d;
+  wrap.innerHTML = "";
+  wrap.appendChild(img);
+}
+
+orderIdEl.textContent = id || "—";
+amountRubEl.textContent = fmtRub(amountRub);
+rateEl.textContent = fmtRate(rate);
+usdtEl.textContent = (Number.isFinite(amountRub) && Number.isFinite(rate) && rate > 0) ? fmtUsdt(amountRub / rate) : "—";
+
+const cancelModal = document.getElementById("cancelModal");
+const cancelModalClose = document.getElementById("cancelModalClose");
+const proofModal = document.getElementById("proofModal");
+const proofFileInput = document.getElementById("proofFileInput");
+const proofPreview = document.getElementById("proofPreview");
+const proofPlaceholder = document.getElementById("proofPlaceholder");
+const proofDropzone = document.getElementById("proofDropzone");
+const proofSendBtn = document.getElementById("proofSendBtn");
+const proofSkipBtn = document.getElementById("proofSkipBtn");
+const proofReasonText = document.getElementById("proofReasonText");
+const proofStatusEl = document.getElementById("proofStatus");
+
+let _cancelReason = "";
+let _cancelId = "";
+let _proofFile = null;
+
+function showProofStatus(text, kind){
+  proofStatusEl.textContent = text;
+  proofStatusEl.className = "proofStatus show " + (kind || "warn");
+}
+
+proofDropzone.addEventListener("dragover", e => { e.preventDefault(); proofDropzone.classList.add("dragover"); });
+proofDropzone.addEventListener("dragleave", () => proofDropzone.classList.remove("dragover"));
+proofDropzone.addEventListener("drop", e => {
+  e.preventDefault(); proofDropzone.classList.remove("dragover");
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith("image/")) handleProofFile(f);
+});
+proofFileInput.addEventListener("change", () => { const f = proofFileInput.files[0]; if (f) handleProofFile(f); });
+
+function handleProofFile(f){
+  if (f.size > 10*1024*1024){ showProofStatus("Файл слишком большой (макс 10 МБ)","bad"); return; }
+  _proofFile = f;
+  proofPreview.src = URL.createObjectURL(f);
+  proofPreview.style.display = "block";
+  proofPlaceholder.style.display = "none";
+  proofDropzone.classList.add("hasFile");
+  proofSendBtn.disabled = false;
+  proofStatusEl.className = "proofStatus";
+}
+
+async function cancelWithReason(reason){
+  cancelModal.style.display = "none";
+  const isFault = (reason === "Не хочу");
+
+  let cancelData = {};
+  try{
+    if (id && reserveId){
+      const res = await fetch(WORKER_BASE + "/api/public/cancel_reserve", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", ...AUTH_HEADERS },
+        body: JSON.stringify({ id, reserveId, cancelReason: reason, needsProof: !isFault })
+      });
+      const txt = await res.text();
+      try{ cancelData = JSON.parse(txt); }catch(_){}
+    }
+  } catch(e){}
+
+  if (!isFault){
+    _cancelReason = reason;
+    _cancelId = cancelData.cancelId || id || "";
+    _proofFile = null;
+    proofReasonText.textContent = reason;
+    proofPreview.style.display = "none";
+    proofPlaceholder.style.display = "";
+    proofDropzone.classList.remove("hasFile");
+    proofSendBtn.disabled = true;
+    proofFileInput.value = "";
+    proofStatusEl.className = "proofStatus";
+    proofModal.style.display = "block";
+    return;
+  }
+
+  location.href = "./buy.html";
+}
+
+proofSendBtn.onclick = async () => {
+  if (!_proofFile){ showProofStatus("Выберите скриншот","bad"); return; }
+  proofSendBtn.disabled = true;
+  proofSkipBtn.disabled = true;
+  showProofStatus("Загрузка...","warn");
+  try{
+    const fd = new FormData();
+    fd.append("screenshot", _proofFile);
+    fd.append("cancelId", _cancelId);
+    fd.append("orderId", id || "");
+    fd.append("reserveId", reserveId || "");
+    fd.append("cancelReason", _cancelReason);
+    const res = await fetch(WORKER_BASE + "/api/public/cancel_proof", {
+      method:"POST", headers: AUTH_HEADERS, body: fd
+    });
+    const j = await res.json().catch(()=>({}));
+    showProofStatus(res.ok && (j.ok||j.success) ? "Скриншот отправлен. Отмена не повлияет на рейтинг." : "Отправлено (сервер обработает позже).","ok");
+  }catch(e){
+    showProofStatus("Отправлено (сервер обработает позже).","ok");
+  }
+  setTimeout(()=>{ location.href = "./buy.html"; }, 1500);
+};
+
+proofSkipBtn.onclick = async () => {
+  proofSkipBtn.disabled = true;
+  proofSendBtn.disabled = true;
+  try{
+    await fetch(WORKER_BASE + "/api/public/cancel_skip_proof", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json", ...AUTH_HEADERS },
+      body: JSON.stringify({ cancelId: _cancelId, orderId: id, reserveId })
+    });
+  }catch(_){}
+  location.href = "./buy.html";
+};
+
+// ── Cancel flow: warning → reason modal → cancel ──
+const cancelWarningEl = document.getElementById("cancelWarning");
+const cwBtnBack = document.getElementById("cwBtnBack");
+const cwBtnProceed = document.getElementById("cwBtnProceed");
+
+cancelBtn.onclick = () => {
+  // Show warning first
+  cancelWarningEl.classList.add("show");
+};
+
+cwBtnBack.onclick = () => {
+  cancelWarningEl.classList.remove("show");
+};
+
+cwBtnProceed.onclick = () => {
+  cancelWarningEl.classList.remove("show");
+  // Now show reason modal
+  cancelModal.style.display = "flex";
+};
+
+cancelModalClose.onclick = () => { cancelModal.style.display = "none"; };
+document.querySelectorAll(".cancelReasonBtn").forEach(btn => {
+  btn.onclick = () => cancelWithReason(btn.getAttribute("data-reason"));
+});
+
+// ✅ NEW: QR -> сразу mark_paid -> check.html (без доказательств)
+paidBtn.onclick = async () => {
+  try{
+    const m = String((currentOffer && currentOffer.method) || methodUrl || "").toUpperCase();
+
+    if (m === "QR"){
+      paidBtn.disabled = true;
+      setStatus("Отмечаю оплату…", "warn");
+
+      const res = await fetch(WORKER_BASE + "/api/public/mark_paid", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", ...AUTH_HEADERS },
+        body: JSON.stringify({ id, reserveId })
+      });
+
+      const j = await res.json().catch(()=>null);
+      if (!res.ok || !j || !j.ok) throw new Error(j?.error || ("HTTP " + res.status));
+
+      // ✅ QR: отдельный экран ожидания начисления исполнителю
+      location.href = "./qr_executor_wait.html?id=" + encodeURIComponent(id) + "&reserveId=" + encodeURIComponent(reserveId);
+      return;
+    }
+
+    // ✅ НЕ QR — старое поведение: на buy-paid (доказательства)
+    const qs = new URLSearchParams({
+      id,
+      reserveId,
+      amountRub: String(amountRub || ""),
+      rate: String(rate || ""),
+      method: String(m || ""),
+      checkOnly: (currentOffer && currentOffer.checkOnly) ? "1" : "",
+      sourceKind: (currentOffer && currentOffer.sourceKind) || ""
+    });
+    location.href = "./buy-paid.html?" + qs.toString();
+  }catch(e){
+    paidBtn.disabled = false;
+    setStatus("Ошибка: " + (e.message || String(e)), "bad");
+  }
+};
+
+const reqCopiedEl = document.getElementById("reqCopied");
+const payReqRow = document.getElementById("payReqRow");
+
+async function doCopy(){
+  const v = (payReqEl.textContent || "").trim();
+  if (!v || v === "—") return;
+  try{
+    await navigator.clipboard.writeText(v);
+  }catch{
+    const ta = document.createElement("textarea");
+    ta.value = v; document.body.appendChild(ta); ta.select();
+    document.execCommand("copy"); ta.remove();
+  }
+  copyBtn.textContent = "✓ Скопировано";
+  if (reqCopiedEl){ reqCopiedEl.classList.add("show"); }
+  setTimeout(()=>{
+    copyBtn.textContent = "Копировать";
+    if (reqCopiedEl){ reqCopiedEl.classList.remove("show"); }
+  }, 1400);
+}
+
+copyBtn.onclick = (e) => { e.stopPropagation(); doCopy(); };
+payReqRow.addEventListener("click", doCopy);
+
+let keepAliveTimer = null;
+let ttlTimer = null;
+let lastExpiresAt = 0;
+let _clockOffset = 0; // client - server (ms), positive = client ahead
+
+function serverNow(){ return Date.now() - _clockOffset; }
+
+function syncClock(serverTime, httpRes){
+  try{
+    const st = Number(serverTime || 0);
+    if (Number.isFinite(st) && st > 0){
+      _clockOffset = Date.now() - st;
+      return;
+    }
+  }catch(_){}
+
+  try{
+    const sd = httpRes && httpRes.headers ? httpRes.headers.get("Date") : "";
+    if (!sd) return;
+    const st = new Date(sd).getTime();
+    if (!Number.isFinite(st)) return;
+    _clockOffset = Date.now() - st;
+  }catch(_){}
+}
+
+async function loadRequisitesAndKeepAlive(){
+  if (!id || !reserveId){
+    setStatus("Сессия устарела. Вернитесь в список ордеров и выберите заново.", "bad");
+    paidBtn.disabled = true;
+    return;
+  }
+
+  try{
+    setStatus("Загружаю реквизиты…", "warn");
+
+    const res = await fetch(WORKER_BASE + "/api/public/reserve_offer", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json", ...AUTH_HEADERS },
+      body: JSON.stringify({ id, reserveId })
+    });
+
+    const txt = await res.text();
+    let j;
+    try { j = JSON.parse(txt); } catch { throw new Error("Ответ не JSON: " + txt.slice(0,200)); }
+    if (!res.ok && res.status === 409) {
+      throw new Error("Заявка уже занята другим пользователем или бронь истекла. Вернись в стакан и выбери другую.");
+    }
+    if (!res.ok || !j.ok) throw new Error(j.error || ("HTTP " + res.status));
+
+        syncClock(j.serverTime, res);
+
+    const offer = j.offer || {};
+    currentOffer = offer;
+
+    payBankEl.textContent = offer.payBank || "—";
+    payReqEl.textContent = offer.payRequisite || "—";
+    setBankLogo(offer.payBank || "");
+
+    // QR: show QR image
+    try{
+      const mm = String(offer.method || "").toUpperCase();
+      const qrWrap = document.getElementById("qrWrap");
+      const qrImg = document.getElementById("qrImg");
+      if (mm === "QR" && offer.payRequisite) {
+        qrWrap.style.display = "flex";
+        const data = encodeURIComponent(String(offer.payRequisite));
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${data}`;
+      } else {
+        qrWrap.style.display = "none";
+        if (qrImg) qrImg.removeAttribute("src");
+      }
+    } catch {}
+
+    // fallback amount/rate
+    if (!(Number.isFinite(amountRub) && amountRub > 0)){
+      const v = Number(offer.amountRub || 0);
+      if (Number.isFinite(v) && v > 0) amountRub = v;
+    }
+    if (!(Number.isFinite(rate) && rate > 0)){
+      const v = Number(offer.rate || 0);
+      if (Number.isFinite(v) && v > 0) rate = v;
+    }
+
+    amountRubEl.textContent = fmtRub(amountRub);
+    rateEl.textContent = fmtRate(rate);
+    usdtEl.textContent = (Number.isFinite(amountRub) && Number.isFinite(rate) && rate > 0) ? fmtUsdt(amountRub / rate) : "—";
+  
+    // Use sessionStorage to preserve original expiresAt across page reloads
+    const _expiryKey = "cf_expiry_" + id;
+    const _serverExpiry = normExpiry(j.expiresAt || j.offer?.expiresAt || offer.expiresAt || 0);
+    let _savedExpiry = 0;
+    try { _savedExpiry = Number(sessionStorage.getItem(_expiryKey) || 0); } catch {}
+    // Use saved expiry if still valid and earlier than server value (prevents reset)
+    if (_savedExpiry && _savedExpiry > serverNow() && (!_serverExpiry || _savedExpiry < _serverExpiry)) {
+      lastExpiresAt = _savedExpiry;
+    } else {
+      lastExpiresAt = _serverExpiry;
+      if (lastExpiresAt) { try { sessionStorage.setItem(_expiryKey, String(lastExpiresAt)); } catch {} }
+    }
+
+    if (lastExpiresAt && serverNow() >= lastExpiresAt){
+      // бронь уже просрочена — показываем предупреждение, но НЕ отменяем мгновенно
+      setStatus("Время бронирования истекло. Вернись в стакан и выбери новый ордер.", "bad");
+      if (ttlBanner){ ttlBanner.className = "ttlBanner ttlDanger"; } if (ttlValueEl){ ttlValueEl.textContent = "Истекло"; }
+      return; // не запускаем таймер и keepAlive
+    }
+
+    setStatus("Реквизиты выданы. Переведи точную сумму и нажми «Я оплатил».", "ok");
+    setTtl(lastExpiresAt);
+
+    if (ttlTimer) clearInterval(ttlTimer);
+    ttlTimer = setInterval(() => {
+      if (!lastExpiresAt) return;
+      setTtl(lastExpiresAt);
+      if (serverNow() > lastExpiresAt){
+        clearInterval(ttlTimer);
+        setStatus("Время бронирования истекло. Вернись в стакан и выбери новый ордер.", "bad");
+        if (ttlBanner){ ttlBanner.className = "ttlBanner ttlDanger"; } if (ttlValueEl){ ttlValueEl.textContent = "Истекло"; }
+      }
+    }, 1000);
+
+    if (keepAliveTimer) clearInterval(keepAliveTimer);
+    keepAliveTimer = setInterval(async () => {
+      try{
+        const ka = await fetch(WORKER_BASE + "/api/public/reserve_offer", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json", ...AUTH_HEADERS },
+          body: JSON.stringify({ id, reserveId })
+        });
+        const t = await ka.text();
+        let jj;
+        try { jj = JSON.parse(t); } catch { return; }
+        if (!ka.ok && ka.status === 409){
+          // бронь больше не наша
+          clearInterval(keepAliveTimer);
+          setStatus("Бронь больше недоступна (кто-то уже открыл эту заявку). Вернись в стакан.", "bad");
+          return;
+        }
+        if (ka.ok && jj && jj.ok){
+          syncClock(jj.serverTime, ka);
+          // Don't update lastExpiresAt from keepAlive — timer must count down naturally
+        }
+      }catch(e){}
+    }, 20000);
+
+  } catch(e){
+    setStatus("Ошибка: " + (e.message || String(e)), "bad");
+  }
+}
+
+loadRequisitesAndKeepAlive();
+</script>
+
+<script>
+const backBtn = document.getElementById("backBtn");
+if (backBtn){
+  backBtn.onclick = async () => {
+    try{
+      if (id && reserveId){
+        await fetch(WORKER_BASE + "/api/public/cancel_reserve", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json", ...AUTH_HEADERS },
+          body: JSON.stringify({ id, reserveId })
+        });
+      }
+    }catch(e){}
+
+    try{
+      const KEY = "cf_active_deals";
+      const deals = JSON.parse(localStorage.getItem(KEY) || "[]");
+      const next = (Array.isArray(deals) ? deals : []).filter(d => !(d && d.type === "BUY" && d.id === id));
+      localStorage.setItem(KEY, JSON.stringify(next));
+    }catch(e){}
+
+    location.href = "./buy-order.html";
+  };
+}
+</script>
+
+<script src="./resume-helper.js"></script>
+<script>
+(function(){
+  if (!window.CrossflagResume) return;
+  function save(){
+    try{
+      const p = new URLSearchParams(location.search);
+      const id = String(p.get("id") || "").trim();
+      const reserveId = String(
+        p.get("reserveId") ||
+        p.get("reserveid") ||
+        p.get("reservedId") ||
+        p.get("rid") ||
+        ""
+      ).trim();
+      if (!id || !reserveId) return;
+      window.CrossflagResume.upsertBuy({
+        id,
+        reserveId,
+        url: location.pathname + location.search + location.hash
+      });
+    }catch(_){}
+  }
+  save();
+  window.addEventListener("pagehide", save);
+  window.addEventListener("beforeunload", save);
+  document.addEventListener("visibilitychange", function(){
+    if (document.visibilityState === "hidden") save();
+  });
+})();
+</script>
+</body>
+</html>

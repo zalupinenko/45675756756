@@ -1,0 +1,1034 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Админка обмен
+    ника</title>
+  <style>
+    :root{
+      --bg:#0b1220; --card:#0f1a30; --border:#223255;
+      --text:#e9f0ff; --muted:#9fb0d4;
+      --btn:#2563eb; --warn:#f59e0b; --danger:#ef4444; --ok:#22c55e;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+    body{ margin:0; background:var(--bg); color:var(--text); }
+    .wrap{ max-width:1200px; margin:0 auto; padding:18px; }
+    .top{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+    .title{ font-weight:950; font-size:16px; }
+    .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:14px; box-shadow:0 18px 50px rgba(0,0,0,.35); }
+    .grid{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    @media(max-width:900px){ .grid{ grid-template-columns:1fr; } }
+
+    label{ display:block; font-size:12px; color:var(--muted); margin:0 0 6px; font-weight:800; }
+    input, select{
+      width:100%; box-sizing:border-box; padding:10px 12px;
+      border-radius:12px; border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.03); color:var(--text); font-weight:850; outline:none;
+    }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:end; }
+    .btn{
+      border:0; border-radius:12px; padding:10px 14px; cursor:pointer;
+      color:#fff; font-weight:950; background:var(--btn);
+    }
+    .btn.warn{ background:var(--warn); color:#111827; }
+    .btn.danger{ background:var(--danger); }
+    .btn.ok{ background:var(--ok); color:#052e16; }
+    .btn.gray{ background:rgba(255,255,255,.10); }
+
+    .status{ margin-top:10px; font-size:12px; color:var(--muted); white-space:pre-wrap; }
+    .status.ok{ color:#9dffb8; font-weight:900; }
+    .status.bad{ color:#ffb4b4; font-weight:900; }
+
+    .tableWrap{ overflow:auto; border-radius:14px; }
+    table{ width:100%; border-collapse:separate; border-spacing:0; margin-top:10px; font-size:13px; min-width: 1100px; }
+    th, td{ padding:10px 10px; border-bottom:1px solid rgba(255,255,255,.06); text-align:left; vertical-align:top; }
+    th{ color:var(--muted); font-weight:950; }
+    td{ max-width: 360px; }
+
+    .tag{ display:inline-block; padding:4px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.03); font-weight:900; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12px; color:#cfe0ff; }
+    .small{ font-size:12px; color:var(--muted); }
+    .divider{ height:1px; background:rgba(255,255,255,.06); margin:14px 0; }
+
+    .tabs{ display:flex; gap:8px; margin-top:10px; }
+    .tab{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:950;
+      padding:8px 12px;
+      border-radius:999px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .tab.active{ background: rgba(37,99,235,.35); border-color: rgba(37,99,235,.55); }
+
+    .txWrap{
+      margin-top:8px;
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .txInput{
+      flex: 1 1 220px;
+      min-width: 220px;
+      padding:8px 10px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.03);
+      color:var(--text);
+      font-weight:900;
+    }
+    .miniBtn{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:950;
+      padding:8px 10px;
+      border-radius:12px;
+      cursor:pointer;
+    }
+    .miniBtn:hover{ background: rgba(255,255,255,.09); }
+
+    /* === Bank searchable dropdown (added) === */
+    .bankSel{ position:relative; }
+    .bankDd{
+      position:absolute; top:calc(100% + 6px); left:0; right:0;
+      max-height:260px; overflow:auto;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:14px;
+      box-shadow:0 18px 50px rgba(0,0,0,.35);
+      display:none;
+      z-index:999;
+    }
+    .bankItem{
+      padding:10px 12px;
+      font-weight:900;
+      cursor:pointer;
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .bankItem:last-child{ border-bottom:0; }
+    .bankItem:hover{ background: rgba(37,99,235,.22); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="title">Админка обменника</div>
+
+      <div class="row" style="gap:10px; align-items:center;">
+  <div class="small">Worker: <span id="w"></span></div>
+
+  <button class="miniBtn" id="openDealLink" type="button">Ссылки сделок</button>
+  <button class="miniBtn" id="openDealsLogOld" type="button">Логи сделок (старые)</button>
+  <button class="miniBtn" id="openDealsLogSell" type="button">SELL сделки (новые)</button>
+
+  <!-- ✅ ДОБАВИЛИ -->
+  <button class="miniBtn" id="openWithdrawals" type="button">Выводы</button>
+
+  <button class="miniBtn" id="openBuyAmountRequests" type="button">BUY запросы сумм</button>
+  <button class="miniBtn" id="openBroadcast" type="button" style="background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.35);color:#fbbf24;">📣 Рассылка</button>
+  <button class="miniBtn" id="openStats" type="button" style="background:rgba(37,99,235,.22);border-color:rgba(37,99,235,.4);">Статистика</button>
+  <button class="miniBtn" id="openPdfChecker" type="button" style="background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.35);color:#f59e0b;">PDF Checker</button>
+</div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div style="font-weight:950; margin-bottom:8px;">Авторизация</div>
+        <label>Admin token (X-Admin-Token) / Telegram WebApp</label>
+        <input id="token" placeholder="вставь секретный токен из Cloudflare" />
+        <div class="row" style="margin-top:10px;">
+          <button class="btn" id="saveToken">Сохранить</button>
+          <button class="btn gray" id="clearToken">Сбросить</button>
+        </div>
+        <div class="status" id="authStatus">Можно войти по Telegram (initData) или по токену. Токен хранится локально.</div>
+      </div>
+
+      <div class="card">
+  <div style="font-weight:950; margin-bottom:8px;">Настройка процентов</div>
+
+  <div class="row">
+    <div style="flex:1; min-width:180px;">
+      <label>Покупка %</label>
+      <input id="buyPercent" />
+    </div>
+    <div style="flex:1; min-width:180px;">
+      <label>Продажа %</label>
+      <input id="sellPercent" />
+    </div>
+    <button class="btn" id="saveConfig">Сохранить</button>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="row">
+    <div style="flex:1; min-width:220px;">
+      <label>Поиск суммы</label>
+      <button class="btn gray" id="toggleBuyAmount" type="button">Поиск суммы: вкл</button>
+    </div>
+  </div>
+
+  <div class="status" id="cfgStatus">—</div>
+</div>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <div style="font-weight:950;">Заявки</div>
+
+      <div class="tabs">
+        <div class="tab active" id="tabBuy">BUY (Купить)</div>
+        <div class="tab" id="tabSell">SELL (Продать)</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div id="buyBlock">
+        <div class="row">
+          <div style="flex:1; min-width:160px;">
+            <label>Сумма (RUB)</label>
+            <input id="amountRub" />
+          </div>
+
+          <div style="flex:1; min-width:150px;">
+            <label>Метод</label>
+            <select id="methodBuy">
+              <option value="SBP">SBP (СБП)</option>
+              <option value="CARD">CARD (Карта)</option>
+              <option value="QR">QR</option>
+            </select>
+          </div>
+
+          <div style="flex:1; min-width:160px;">
+            <label>Курс</label>
+            <input id="rateBuy" />
+          </div>
+
+          <div style="flex:1; min-width:160px;">
+            <label>Банк (Crossflag)</label>
+            <div class="bankSel">
+              <input id="payBank" placeholder="Начни вводить банк…" autocomplete="off" />
+              <div class="bankDd" id="payBankDD"></div>
+            </div>
+          </div>
+
+          <div style="flex:1; min-width:220px;">
+            <label>Реквизиты (Crossflag)</label>
+            <input id="payRequisite" />
+          </div>
+
+          <!-- ✅ ДОБАВЛЕНО: КНОПКА "ТОЛЬКО ЧЕК" -->
+          <button class="btn gray" id="toggleCheckOnly" type="button">Только чек: выкл</button>
+
+          <button class="btn" id="addBuy">Добавить</button>
+          <button class="btn gray" id="refreshBuy">Обновить</button>
+        </div>
+
+        <div class="status" id="buyStatus">—</div>
+
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="min-width:140px;">ID</th>
+                <th style="min-width:110px;">Сумма</th>
+                <th style="min-width:80px;">Метод</th>
+                <th style="min-width:90px;">Курс</th>
+                <th style="min-width:120px;">Статус</th>
+                <th style="min-width:260px;">Проверка / Кошелек</th>
+                <th style="min-width:300px;">Действия</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyBuy"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="sellBlock" style="display:none;">
+        <div class="row">
+          <div style="flex:1; min-width:150px;">
+            <label>Метод</label>
+            <select id="methodSell">
+              <option value="SBP">SBP (СБП)</option>
+              <option value="CARD">CARD (Карта)</option>
+            </select>
+          </div>
+
+          <div style="flex:1; min-width:200px;">
+            <label>Курс (число или % к Rapira)</label>
+            <input id="rateSell" placeholder="Напр: 98.12 или (+5%) или (-1%)" />
+            <div class="small" id="rateSellHint" style="margin-top:6px;">Можно ввести число или процент к Rapira: (+5%) / (-1%).</div>
+          </div>
+
+          <div style="flex:1; min-width:160px;">
+            <label>Мин. чек (RUB)</label>
+            <input id="minCheckRub" />
+          </div>
+
+          <div style="flex:1; min-width:180px;">
+            <label>Среднее время (мин)</label>
+            <input id="avgTimeMin" />
+          </div>
+
+          <button class="btn" id="addSell">Добавить</button>
+          <button class="btn gray" id="refreshSell">Обновить</button>
+        </div>
+
+        <div class="status" id="sellStatus">—</div>
+
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="min-width:140px;">ID</th>
+                <th style="min-width:90px;">Метод</th>
+                <th style="min-width:110px;">Курс</th>
+                <th style="min-width:130px;">Мин. чек</th>
+                <th style="min-width:150px;">Время</th>
+                <th style="min-width:120px;">Статус</th>
+                <th style="min-width:260px;">Действия</th>
+              </tr>
+            </thead>
+            <tbody id="tbodySell"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+
+  const WORKER_BASE = "https://api.crossflag.org".replace(/\/+$/, "");
+
+
+  // чтобы другие страницы знали базу
+  try { localStorage.setItem("worker_base", WORKER_BASE); } catch {}
+
+  // === Banks list (RU, 230+) ===
+  const RUS_BANKS = ["Сбербанк", "ВТБ", "Газпромбанк", "Альфа-Банк", "Т-Банк (Тинькофф)", "Россельхозбанк", "ПСБ (Промсвязьбанк)", "Московский кредитный банк (МКБ)", "Совкомбанк", "Райффайзенбанк", "Росбанк", "ЮниКредит Банк", "Банк Открытие", "РНКБ", "АК Барс Банк", "Банк Санкт-Петербург", "Уралсиб", "МТС Банк", "Почта Банк", "ОТП Банк", "Хоум Банк (Home Credit)", "Ренессанс Банк (Ренессанс Кредит)", "Русский Стандарт", "БКС Банк", "Точка", "Экспобанк", "СДМ-Банк", "Абсолют Банк", "Авангард", "Металлинвестбанк", "Локо-Банк", "Ланта-Банк", "Кредит Европа Банк", "Кредит Урал Банк", "УБРиР", "Примсоцбанк", "ТрансКапиталБанк (ТКБ)", "Севергазбанк", "Синара (СКБ-Банк)", "Центр-инвест", "Челябинвестбанк", "Фора-Банк", "Хлынов", "Кубань Кредит", "Приморье", "Дальневосточный банк", "Банк ЗЕНИТ", "Банк Россия", "Банк Союз", "Банк Солидарность", "Банк ДОМ.РФ", "Новикомбанк", "МСП Банк", "Мособлбанк", "Генбанк", "АТБ (Азиатско-Тихоокеанский банк)", "ВБРР", "Инвестторгбанк", "Пойдем!", "Советский", "Таврический", "Ингосстрах Банк", "РосДорБанк", "Акцепт", "Камкомбанк", "Норвик Банк", "Банк Левобережный", "Кузнецкий", "Энерготрансбанк", "Снежинский", "Орелрегионбанк", "Сургутнефтегазбанк", "Абсолют", "ББР Банк", "Банк Финсервис", "Банк Интеза", "Банк ЦентрКредит", "Центрокредит", "Александровский", "Еврофинанс Моснарбанк", "Реалист Банк", "Фридом Финанс Банк", "Банк Платина", "Национальный стандарт", "Национальный клиринговый центр (НКЦ)", "Кольцо Урала", "Нейва", "Нефтепромбанк", "Сетелем Банк", "Восточный", "Саровбизнесбанк", "Углеметбанк", "Петербургский социальный коммерческий банк", "Мир Бизнес Банк", "Держава", "Агророс", "Алмазэргиэнбанк", "Аресбанк", "АТОН", "Банк Екатеринбург", "Енисейский объединенный банк", "Банк Форштадт", "Банк Примсоцбанк", "Банк Приморье", "Земский банк", "ИК Банк", "Инбанк", "Классик Эконом Банк", "Космос", "МБА-Москва", "Международный финансовый клуб (МФК)", "Новый век", "НС Банк", "Плюс Банк", "Руснарбанк", "Ситибанк", "Славия", "Тимер Банк", "Трансстройбанк", "Экспресс-Волга", "ЮMoney Банк", "Озон Банк", "Яндекс Банк", "WB Банк (Wildberries)", "Банк Модульбанк", "Банк ДелоБанк", "Другой банк"];
+
+  function normalizeBankName(s){
+    return String(s||"").toLowerCase()
+      .replace(/ё/g,"е")
+      .replace(/[^a-zа-я0-9]+/g," ")
+      .replace(/\s+/g," ")
+      .trim();
+  }
+
+  function attachBankDropdown(inputEl, ddEl, list){
+    let open = false;
+    function render(q){
+      const nq = normalizeBankName(q);
+      ddEl.innerHTML = "";
+      const items = list.filter(b => normalizeBankName(b).includes(nq)).slice(0, 60);
+      for (const b of items){
+        const d = document.createElement("div");
+        d.className = "bankItem";
+        d.textContent = b;
+        d.onclick = () => {
+          inputEl.value = b;
+          ddEl.style.display = "none";
+          open = false;
+        };
+        ddEl.appendChild(d);
+      }
+      ddEl.style.display = items.length ? "block" : "none";
+      open = items.length > 0;
+    }
+
+    inputEl.addEventListener("focus", () => render(inputEl.value));
+    inputEl.addEventListener("input", () => render(inputEl.value));
+
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest(".bankSel")) {
+        ddEl.style.display = "none";
+        open = false;
+      }
+    });
+
+    inputEl.addEventListener("keydown", (e) => {
+      if (!open) return;
+      const items = Array.from(ddEl.querySelectorAll(".bankItem"));
+      if (!items.length) return;
+
+      let idx = items.findIndex(x => x.classList.contains("active"));
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        idx = Math.min(items.length - 1, idx + 1);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        idx = Math.max(0, idx - 1);
+      } else if (e.key === "Enter") {
+        if (idx >= 0) {
+          e.preventDefault();
+          items[idx].click();
+        }
+        return;
+      } else {
+        return;
+      }
+      items.forEach(x => x.classList.remove("active"));
+      items[idx].classList.add("active");
+      items[idx].scrollIntoView({ block:"nearest" });
+    });
+  }
+
+  document.getElementById("w").textContent = WORKER_BASE;
+
+  // ✅ Переходы без повторного ввода токена
+  document.getElementById("openDealLink").onclick = () => {
+    try {
+      localStorage.setItem("worker_base", WORKER_BASE);
+      sessionStorage.setItem("deal_link_return", location.href);
+      location.href = "./deal-link.html?wb=" + encodeURIComponent(WORKER_BASE);
+    } catch {
+      location.href = "./deal-link.html?wb=" + encodeURIComponent(WORKER_BASE);
+    }
+  };
+
+  // ✅ Старые логи (как раньше)
+  document.getElementById("openDealsLogOld").onclick = () => {
+    try {
+      localStorage.setItem("worker_base", WORKER_BASE);
+      sessionStorage.setItem("deals_log_return", location.href);
+      location.href = "./admin-attempts.html?wb=" + encodeURIComponent(WORKER_BASE);
+    } catch {
+      location.href = "./admin-attempts.html?wb=" + encodeURIComponent(WORKER_BASE);
+    }
+  };
+
+  // ✅ Новые SELL сделки
+  document.getElementById("openDealsLogSell").onclick = () => {
+    try {
+      localStorage.setItem("worker_base", WORKER_BASE);
+      sessionStorage.setItem("deals_log_return", location.href);
+      location.href = "./sell-deals-log.html?wb=" + encodeURIComponent(WORKER_BASE);
+    } catch {
+      location.href = "./sell-deals-log.html?wb=" + encodeURIComponent(WORKER_BASE);
+    }
+  };
+
+  // ✅ BUY: запросы сумм (новая вкладка)
+  document.getElementById("openBuyAmountRequests").onclick = () => {
+    window.open("./admin-buy-requests.html", "_blank");
+  };
+
+  // ✅ FIX: если кнопки openWithdrawals нет в HTML — НЕ ломаем админку
+  const _openWithdrawalsBtn = document.getElementById("openWithdrawals");
+  if (_openWithdrawalsBtn){
+    _openWithdrawalsBtn.onclick = () => {
+      try {
+        localStorage.setItem("worker_base", WORKER_BASE);
+        sessionStorage.setItem("withdrawals_return", location.href);
+        location.href = "./admin-withdrawals.html?wb=" + encodeURIComponent(WORKER_BASE);
+      } catch {
+        location.href = "./admin-withdrawals.html?wb=" + encodeURIComponent(WORKER_BASE);
+      }
+    };
+  }
+
+
+  document.getElementById("openBroadcast").onclick = () => {
+    location.href = "./admin-broadcast.html";
+  };
+
+  document.getElementById("openStats").onclick = () => {
+    location.href = "./admin-stats.html";
+  };
+
+  document.getElementById("openPdfChecker").onclick = () => {
+    window.open("./admin-pdf-checker.html", "_blank");
+  };
+
+  const tokenInput = document.getElementById("token");
+  const authStatus = document.getElementById("authStatus");
+  const cfgStatus = document.getElementById("cfgStatus");
+
+  const buyStatus = document.getElementById("buyStatus");
+  const sellStatus = document.getElementById("sellStatus");
+
+  const buyPercent = document.getElementById("buyPercent");
+const sellPercent = document.getElementById("sellPercent");
+const toggleBuyAmountBtn = document.getElementById("toggleBuyAmount");
+
+let _buyAmountEnabled = true;
+  const tabBuy = document.getElementById("tabBuy");
+  const tabSell = document.getElementById("tabSell");
+  const buyBlock = document.getElementById("buyBlock");
+  const sellBlock = document.getElementById("sellBlock");
+
+  function getToken(){ return localStorage.getItem("admin_token") || ""; }
+  function setToken(t){ localStorage.setItem("admin_token", t); }
+  tokenInput.value = getToken();
+  function renderBuyAmountToggle(){
+  if (!toggleBuyAmountBtn) return;
+  toggleBuyAmountBtn.textContent = _buyAmountEnabled ? "Поиск суммы: вкл" : "Поиск суммы: выкл";
+  toggleBuyAmountBtn.className = _buyAmountEnabled ? "btn ok" : "btn danger";
+}
+
+if (toggleBuyAmountBtn){
+  toggleBuyAmountBtn.onclick = () => {
+    _buyAmountEnabled = !_buyAmountEnabled;
+    renderBuyAmountToggle();
+  };
+}
+
+  function getInitData(){
+    try{
+      const tg = window.Telegram && window.Telegram.WebApp;
+      const s = (tg && typeof tg.initData === "string") ? tg.initData : "";
+      return s || "";
+    }catch{ return ""; }
+  }
+
+  tabBuy.onclick = () => {
+    tabBuy.classList.add("active");
+    tabSell.classList.remove("active");
+    buyBlock.style.display = "";
+    sellBlock.style.display = "none";
+  };
+  tabSell.onclick = () => {
+    tabSell.classList.add("active");
+    tabBuy.classList.remove("active");
+    sellBlock.style.display = "";
+    buyBlock.style.display = "none";
+  };
+
+  document.getElementById("saveToken").onclick = () => {
+    setToken(tokenInput.value.trim());
+    authStatus.textContent = "Токен сохранён.";
+    authStatus.className = "status ok";
+  };
+  document.getElementById("clearToken").onclick = () => {
+    localStorage.removeItem("admin_token");
+    tokenInput.value = "";
+    tokenInput.disabled = false;
+    document.getElementById("saveToken").disabled = false;
+    authStatus.textContent = "Токен сброшен.";
+    authStatus.className = "status";
+  };
+
+  async function api(path, opts = {}) {
+    const headers = Object.assign({}, opts.headers || {});
+    const initData = getInitData();
+    if (initData) headers["X-Tg-Init-Data"] = initData;
+
+    const t = getToken();
+    if (t) headers["X-Admin-Token"] = t;
+
+    const hasBody = opts.body !== undefined && opts.body !== null;
+    const bodyIsString = typeof opts.body === "string";
+
+    if (!headers["Content-Type"] && opts.method && opts.method !== "GET") {
+      headers["Content-Type"] = "application/json";
+    }
+
+    const cleanBase = String(WORKER_BASE || "").replace(/\/+$/, "");
+    const cleanPath = String(path || "").startsWith("/") ? String(path || "") : ("/" + String(path || ""));
+    const url = cleanBase + cleanPath;
+
+    const res = await fetch(url, {
+      method: opts.method || "GET",
+      headers,
+      body: hasBody ? (bodyIsString ? opts.body : JSON.stringify(opts.body)) : undefined
+    });
+
+    const text = await res.text();
+
+    let j = null;
+    try { j = JSON.parse(text); } catch {}
+
+    if (!res.ok || !j || !j.ok) {
+      const preview = String(text || "").slice(0, 200);
+      const msg = (j && j.error) ? j.error : `HTTP ${res.status} @ ${cleanPath}: ${preview}`;
+      throw new Error(msg);
+    }
+
+    return j;
+  }
+
+  function fmtRub(n){ return Number(n).toLocaleString("ru-RU") + " ₽"; }
+  function safe(s){ return (s || "").toString().replace(/[<>&]/g, c=>({ "<":"&lt;", ">":"&gt;", "&":"&amp;" }[c])); }
+  function statusRu(s){
+    const m = {
+      NEW:"Активна",
+      ON_PAY:"На оплате",
+      PAID:"Оплачено",
+      ON_CHECK:"На проверке",
+      SUCCESS:"Успешно",
+      FAILED:"Неуспешно",
+      HTX_WAITING:"HTX ожидание",
+      BYBIT_WAITING:"Bybit ожидание",
+
+      BYBIT_CREATING:"Bybit: создаём",
+      BYBIT:"Bybit: объявление",
+      BYBIT_MATCHED:"Bybit: матч",
+      BYBIT_DONE:"Bybit: завершено",
+      BYBIT_CANCELED:"Bybit: отменено",
+      ERROR:"Ошибка",
+    };
+    return m[s] || s || "Активна";
+  }
+
+  function walletRu(t){
+    const x = String(t||"").toUpperCase().replace(/\s+/g,"_");
+    if (x === "BEP20") return "BEP20";
+    if (x === "TRC20") return "TRC20";
+    if (x === "HTX_UID" || x === "HTX") return "HTX UID";
+    if (x === "BYBIT_UID" || x === "BYBIT") return "Bybit UID";
+    return x || "";
+  }
+
+  async function loadConfig(){
+  try{
+    cfgStatus.textContent = "Загружаю…";
+    cfgStatus.className = "status";
+
+    const j = await api("/api/admin/config", { method:"GET" });
+
+    buyPercent.value = j.config.buyPercent ?? 0;
+    sellPercent.value = j.config.sellPercent ?? 0;
+    _buyAmountEnabled = j.config.buyAmountEnabled !== false;
+    renderBuyAmountToggle();
+
+    cfgStatus.textContent = "Загружено.";
+    cfgStatus.className = "status ok";
+  }catch(e){
+    cfgStatus.textContent = "Ошибка: " + e.message;
+    cfgStatus.className = "status bad";
+  }
+}
+
+  async function saveConfig(){
+  try{
+    cfgStatus.textContent = "Сохраняю…";
+    cfgStatus.className = "status";
+
+    await api("/api/admin/config", {
+      method:"POST",
+      body: {
+        buyPercent: buyPercent.value,
+        sellPercent: sellPercent.value,
+        buyAmountEnabled: _buyAmountEnabled
+      }
+    });
+
+    cfgStatus.textContent = "Сохранено.";
+    cfgStatus.className = "status ok";
+  }catch(e){
+    cfgStatus.textContent = "Ошибка: " + e.message;
+    cfgStatus.className = "status bad";
+  }
+}
+  document.getElementById("saveConfig").onclick = saveConfig;
+
+  // ===== BUY (как было) =====
+  const tbodyBuy = document.getElementById("tbodyBuy");
+  const amountRub = document.getElementById("amountRub");
+  const methodBuy = document.getElementById("methodBuy");
+  const rateBuy = document.getElementById("rateBuy");
+  const payBank = document.getElementById("payBank");
+  const payBankDD = document.getElementById("payBankDD");
+  attachBankDropdown(payBank, payBankDD, RUS_BANKS);
+  const payRequisite = document.getElementById("payRequisite");
+
+  rateBuy.addEventListener("input", () => {
+  const v = String(rateBuy.value || "").trim();
+  _buyRateTouched = v !== "";
+});
+
+  let _buyRateTouched = false;
+let _buyRateAutoTimer = null;
+
+  // ✅ ДОБАВЛЕНО: состояние "только чек"
+  let _checkOnly = false;
+  const toggleCheckOnlyBtn = document.getElementById("toggleCheckOnly");
+  if (toggleCheckOnlyBtn){
+    toggleCheckOnlyBtn.onclick = () => {
+      _checkOnly = !_checkOnly;
+      toggleCheckOnlyBtn.textContent = _checkOnly ? "Только чек: вкл" : "Только чек: выкл";
+      toggleCheckOnlyBtn.className = _checkOnly ? "btn ok" : "btn gray";
+    };
+  }
+
+  async function addBuy(){
+    try{
+      buyStatus.textContent = "Добавляю…";
+      buyStatus.className = "status";
+      await api("/api/admin/offers", {
+        method:"POST",
+        body: JSON.stringify({
+          amountRub: amountRub.value,
+          method: methodBuy.value,
+          rate: rateBuy.value,
+          payBank: payBank.value,
+          payRequisite: payRequisite.value,
+
+          // ✅ ДОБАВЛЕНО: режим "только чек" (TG)
+          checkOnly: _checkOnly
+        })
+      });
+      amountRub.value = "";
+rateBuy.value = "";
+payBank.value = "";
+payRequisite.value = "";
+_buyRateTouched = false;
+
+await loadBuy();
+await fillBuyRateIfNeeded(true);
+      buyStatus.textContent = "Добавлено.";
+      buyStatus.className = "status ok";
+    }catch(e){
+      buyStatus.textContent = "Ошибка: " + e.message;
+      buyStatus.className = "status bad";
+    }
+  }
+
+  function renderCheckAndWallet(o){
+    const ci = o.checkInfo || null;
+
+    const wObj = o.wallet || null;
+    const wType = (o.walletType || (wObj && wObj.type) || o.wallet_type || o.network || "").toString();
+    const wVal  = (o.walletValue || (wObj && wObj.value) || o.wallet_value || o.address || o.uid || "").toString();
+
+    const txh   = (o.txHash && String(o.txHash).trim()) ? String(o.txHash).trim() : "";
+
+    const checkPart = ci
+      ? ("Банк: <b>"+safe(ci.bankFrom)+"</b><br>Тип: <b>"+safe(ci.proofType)+"</b>" + (ci.alphaLink ? ("<br>Alpha: <span class='mono'>"+safe(ci.alphaLink)+"</span>") : ""))
+      : "—";
+
+    const walletPart = (wType || wVal)
+      ? ("<div style='margin-top:8px;'><span class='tag'>"+safe(walletRu(wType))+"</span><br><span class='mono'>"+safe(wVal)+"</span></div>")
+      : "<div style='margin-top:8px;' class='small'>Кошелек: —</div>";
+
+    const txPart = txh
+      ? ("<div style='margin-top:8px;'><div class='small'>TX Hash:</div><div class='mono'>"+safe(txh)+"</div></div>")
+      : "";
+
+    return `<div class="small">${checkPart}${walletPart}${txPart}</div>`;
+  }
+
+  async function loadBuy(){
+    try{
+      buyStatus.textContent = "Загружаю…";
+      buyStatus.className = "status";
+      const j = await api("/api/admin/offers", { method:"GET" });
+      tbodyBuy.innerHTML = "";
+
+      const list = (j.offers || []).filter(o => {
+        const st = String(o.status || "NEW").toUpperCase();
+        // Bybit-заявки скрываем из "обычных"
+        if (st === "BYBIT_CREATING" || st === "BYBIT" || st === "BYBIT_MATCHED" || st === "BYBIT_DONE" || st === "BYBIT_CANCELED" || st === "ERROR") {
+          return false;
+        }
+        return true;
+      });
+
+      for (const o of (j.offers || [])){
+        const st = String(o.status||"NEW").toUpperCase();
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+  <td><span class="mono">${safe(o.id)}</span></td>
+  <td>${fmtRub(o.amountRub)}</td>
+  <td><span class="tag">${safe(o.method)}</span></td>
+  <td><b>${Number(o.rate).toLocaleString("ru-RU")}</b></td>
+  <td><span class="tag">${safe(statusRu(st))}</span></td>
+  <td>${renderCheckAndWallet(o)}</td>
+  <td></td>
+`;
+
+        const td = tr.querySelector("td:last-child");
+
+        const freezeBtn = document.createElement("button");
+        freezeBtn.className = "btn warn";
+        freezeBtn.textContent = o.frozen ? "Разморозить" : "Заморозить";
+        freezeBtn.onclick = async () => {
+          await api(`/api/admin/offers/${o.id}`, { method:"PATCH", body: JSON.stringify({ frozen: !o.frozen }) });
+          await loadBuy();
+        };
+        td.appendChild(freezeBtn);
+
+        const hasProof = !!(o.checkInfo || o.txHash);
+        if (st === "ON_CHECK" || (st === "PAID" && hasProof)) {
+          const okBtn = document.createElement("button");
+          okBtn.className = "btn ok";
+          okBtn.style.marginLeft = "8px";
+          okBtn.textContent = "Успешно";
+          okBtn.onclick = async () => {
+            await api(`/api/admin/offers/${o.id}`, { method:"PATCH", body: JSON.stringify({ status:"SUCCESS" }) });
+            await loadBuy();
+          };
+          td.appendChild(okBtn);
+
+          const failBtn = document.createElement("button");
+          failBtn.className = "btn danger";
+          failBtn.style.marginLeft = "8px";
+          failBtn.textContent = "Неуспешно";
+          failBtn.onclick = async () => {
+            await api(`/api/admin/offers/${o.id}`, { method:"PATCH", body: JSON.stringify({ status:"FAILED" }) });
+            await loadBuy();
+          };
+          td.appendChild(failBtn);
+        }
+
+        if (st === "NEW") {
+          const bybitBtn = document.createElement("button");
+          bybitBtn.className = "btn";
+          bybitBtn.style.marginLeft = "8px";
+          bybitBtn.textContent = "На Bybit";
+          bybitBtn.onclick = async () => {
+            await api(`/api/admin/offers/${o.id}/bybit/start`, {
+              method:"POST",
+              body: JSON.stringify({ actor: "admin-ui" })
+            });
+            await loadBuy();
+          };
+          td.appendChild(bybitBtn);
+        }
+
+        const delBtn = document.createElement("button");
+        delBtn.className = "btn danger";
+        delBtn.style.marginLeft = "8px";
+        delBtn.textContent = "Удалить";
+        delBtn.onclick = async () => {
+          if (!confirm("Удалить заявку?")) return;
+          await api(`/api/admin/offers/${o.id}`, { method:"DELETE" });
+          await loadBuy();
+        };
+        td.appendChild(delBtn);
+
+        tbodyBuy.appendChild(tr);
+      }
+
+      buyStatus.textContent = "Готово.";
+      buyStatus.className = "status ok";
+    }catch(e){
+      buyStatus.textContent = "Ошибка: " + e.message;
+      buyStatus.className = "status bad";
+    }
+  }
+
+  document.getElementById("addBuy").onclick = addBuy;
+  document.getElementById("refreshBuy").onclick = loadBuy;
+
+  // ===== SELL (динамика от Rapira по % или фикс) =====
+  const tbodySell = document.getElementById("tbodySell");
+  const methodSell = document.getElementById("methodSell");
+  const rateSell = document.getElementById("rateSell");
+  const rateSellHint = document.getElementById("rateSellHint");
+  const minCheckRub = document.getElementById("minCheckRub");
+  const avgTimeMin = document.getElementById("avgTimeMin");
+
+  let _rapiraRate = null;
+  let _rapiraLoadedAt = 0;
+  function _now(){ return Date.now(); }
+
+  function parseRateInput(raw){
+    const s = String(raw || "").trim();
+    const m = s.match(/^\(?\s*([+-])\s*([\d]+(?:[.,]\d+)?)\s*%\s*\)?$/);
+    if (m){
+      const sign = m[1] === "-" ? -1 : 1;
+      const val = Number(String(m[2]).replace(",", "."));
+      if (Number.isFinite(val)) return { kind:"pct", pct: sign * val };
+    }
+    const n = Number(s.replace(",", "."));
+    if (Number.isFinite(n)) return { kind:"abs", rate:n };
+    return { kind:"bad" };
+  }
+
+  function fmtRateRu(n){
+    const x = Number(n);
+    if (!Number.isFinite(x)) return "—";
+    return x.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
+  }
+
+  async function loadPublicBuyRate(){
+  try{
+    const res = await fetch(WORKER_BASE + "/api/public/rapira_rate", { cache:"no-store" });
+    const j = await res.json().catch(()=>null);
+    if (!res.ok || !j || !j.ok) throw new Error("rapira_rate");
+    const rate = Number(j?.rate);
+    if (!Number.isFinite(rate) || rate <= 0) throw new Error("bad buy rate");
+    return Number((rate * 1.01).toFixed(2));
+  }catch{
+    return null;
+  }
+}
+
+async function fillBuyRateIfNeeded(force = false){
+  try{
+    if (!force && _buyRateTouched) return;
+    const r = await loadPublicBuyRate();
+    if (!Number.isFinite(r)) return;
+    rateBuy.value = String(Number(r.toFixed(2)));
+  }catch{}
+}
+
+  async function loadRapiraRate(){
+    try{
+      if (_rapiraLoadedAt && (_now() - _rapiraLoadedAt) < 6000 && Number.isFinite(_rapiraRate)) return _rapiraRate;
+      const res = await fetch(WORKER_BASE + "/api/public/rapira_rate", { cache:"no-store" });
+      const j = await res.json().catch(()=>null);
+      if (!res.ok || !j || !j.ok) throw new Error("rapira_rate");
+      const base = Number(j.rate);
+      if (!Number.isFinite(base)) throw new Error("rapira_rate");
+      _rapiraRate = base;
+      _rapiraLoadedAt = _now();
+      return _rapiraRate;
+    }catch{
+      return null;
+    }
+  }
+
+  async function refreshRateSellHint(){
+    const p = parseRateInput(rateSell.value);
+    if (p.kind === "abs"){
+      rateSellHint.textContent = "Введён фиксированный курс: " + fmtRateRu(p.rate);
+      return;
+    }
+    if (p.kind === "pct"){
+      const r = await loadRapiraRate();
+      if (!Number.isFinite(r)){
+        rateSellHint.textContent = "Процент к Rapira: " + (p.pct > 0 ? "+" : "") + fmtRateRu(p.pct) + "% · Rapira не загрузилась";
+        return;
+      }
+      const calc = r * (1 + (p.pct / 100));
+      rateSellHint.textContent =
+        "Примерный курс: " + fmtRateRu(calc) + " ₽ · Rapira " + fmtRateRu(r) + " ₽ " + (p.pct > 0 ? "+" : "") + fmtRateRu(p.pct) + "%";
+      return;
+    }
+    rateSellHint.textContent = "Можно ввести число или процент к Rapira: (+5%) / (-1%).";
+  }
+
+  rateSell.addEventListener("input", () => { refreshRateSellHint(); });
+  rateSell.addEventListener("focus", () => { refreshRateSellHint(); });
+  setInterval(() => {
+    const p = parseRateInput(rateSell.value);
+    if (p.kind === "pct") refreshRateSellHint();
+  }, 8000);
+
+  async function addSell(){
+  try{
+    sellStatus.textContent = "Добавляю…";
+    sellStatus.className = "status";
+
+    const p = parseRateInput(rateSell.value);
+    if (p.kind === "bad") throw new Error("Некорректный курс");
+
+    let body = {
+      method: methodSell.value,
+      minCheckRub: minCheckRub.value,
+      avgTimeMin: avgTimeMin.value,
+    };
+
+    if (p.kind === "pct"){
+      body.rateMode = "PERCENT";
+      body.ratePercent = p.pct;
+    } else {
+      body.rateMode = "ABS";
+      body.rate = String(Number(p.rate.toFixed(2)));
+    }
+
+    await api("/api/admin/sell_offers", {
+      method:"POST",
+      body: JSON.stringify(body)
+    });
+
+    rateSell.value = "";
+    minCheckRub.value = "";
+    avgTimeMin.value = "";
+
+    await refreshRateSellHint();
+    await loadSell();
+
+    sellStatus.textContent = "Добавлено.";
+    sellStatus.className = "status ok";
+  }catch(e){
+    sellStatus.textContent = "Ошибка: " + e.message;
+    sellStatus.className = "status bad";
+  }
+}
+
+  async function loadSell(){
+    try{
+      sellStatus.textContent = "Загружаю…";
+      sellStatus.className = "status";
+      const j = await api("/api/admin/sell_offers", { method:"GET" });
+      tbodySell.innerHTML = "";
+
+      for (const o of (j.offers||[])){
+        const st = String(o.status||"NEW").toUpperCase();
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+  <td><span class="mono">${safe(o.id)}</span></td>
+  <td><span class="tag">${safe(o.method)}</span></td>
+  <td><b>${
+    String(o.rateMode || "").toUpperCase() === "PERCENT"
+      ? ((Number(o.ratePercent) > 0 ? "+" : "") + Number(o.ratePercent).toLocaleString("ru-RU") + "%")
+      : Number(o.rate).toLocaleString("ru-RU")
+  }</b></td>
+  <td>${fmtRub(o.minCheckRub)}</td>
+  <td>${Number(o.avgTimeMin).toLocaleString("ru-RU")} мин</td>
+  <td><span class="tag">${safe(statusRu(st))}</span></td>
+  <td></td>
+`;
+
+        const td = tr.querySelector("td:last-child");
+
+        const freezeBtn = document.createElement("button");
+        freezeBtn.className = "btn warn";
+        freezeBtn.textContent = o.frozen ? "Разморозить" : "Заморозить";
+        freezeBtn.onclick = async () => {
+          await api(`/api/admin/sell_offers/${o.id}`, { method:"PATCH", body: JSON.stringify({ frozen: !o.frozen }) });
+          await loadSell();
+        };
+        td.appendChild(freezeBtn);
+
+        const delBtn = document.createElement("button");
+        delBtn.className = "btn danger";
+        delBtn.style.marginLeft = "8px";
+        delBtn.textContent = "Удалить";
+        delBtn.onclick = async () => {
+          if (!confirm("Удалить заявку?")) return;
+          await api(`/api/admin/sell_offers/${o.id}`, { method:"DELETE" });
+          await loadSell();
+        };
+        td.appendChild(delBtn);
+
+        tbodySell.appendChild(tr);
+      }
+
+      sellStatus.textContent = "Готово.";
+      sellStatus.className = "status ok";
+    }catch(e){
+      sellStatus.textContent = "Ошибка: " + e.message;
+      sellStatus.className = "status bad";
+    }
+  }
+
+  document.getElementById("addSell").onclick = addSell;
+  document.getElementById("refreshSell").onclick = loadSell;
+
+  // init
+  (async () => {
+  await loadConfig();
+  await loadBuy();
+  await loadSell();
+  await refreshRateSellHint();
+  await fillBuyRateIfNeeded(true);
+
+  if (_buyRateAutoTimer) clearInterval(_buyRateAutoTimer);
+  _buyRateAutoTimer = setInterval(() => {
+    if (!_buyRateTouched || !String(rateBuy.value || "").trim()) {
+      fillBuyRateIfNeeded(false);
+    }
+  }, 10000);
+})();
+</script>
+</body>
+</html>

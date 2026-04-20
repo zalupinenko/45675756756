@@ -1,0 +1,824 @@
+<!-- admin-attempts.html (полностью) -->
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Логи сделок — Crossflag</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:#0f1a30;
+      --border:#223255;
+      --text:#e9f0ff;
+      --muted:#a9b6d6;
+      --accent:#5eead4;
+      --warn:#fbbf24;
+      --bad:#fb7185;
+      --ok:#34d399;
+      --chip:#0b1b33;
+      --shadow: 0 12px 30px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 700px at 30% -10%, rgba(94,234,212,.14), transparent 60%),
+                  radial-gradient(900px 600px at 90% 0%, rgba(56,189,248,.12), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+    }
+    .wrap{max-width:1100px; margin:0 auto; padding:18px 14px 40px;}
+    .top{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; flex-wrap:wrap; margin-bottom:14px;
+    }
+    .title{
+      display:flex; flex-direction:column; gap:2px;
+    }
+    h1{margin:0; font-size:18px; letter-spacing:.2px}
+    .sub{color:var(--muted); font-size:12px}
+    .controls{
+      display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:flex-end;
+    }
+    .inp, .sel, .btn{
+      border:1px solid var(--border);
+      background: rgba(15,26,48,.85);
+      color:var(--text);
+      border-radius:10px;
+      padding:10px 12px;
+      font-size:13px;
+      outline:none;
+    }
+    .inp{min-width:230px}
+    .sel{padding:10px 10px}
+    .btn{
+      cursor:pointer;
+      transition: transform .06s ease, border-color .15s ease, background .15s ease;
+      user-select:none;
+      display:inline-flex; align-items:center; gap:8px;
+    }
+    .btn:hover{border-color:#2f4578}
+    .btn:active{transform: translateY(1px)}
+    .btn.primary{border-color: rgba(94,234,212,.35); background: rgba(94,234,212,.12)}
+    .btn.danger{border-color: rgba(251,113,133,.35); background: rgba(251,113,133,.10)}
+    .btn.ok{border-color: rgba(52,211,153,.35); background: rgba(52,211,153,.10)}
+        .btn.warn{border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.10)}
+.btn.small{padding:8px 10px; border-radius:9px; font-size:12px}
+    .row{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; flex-wrap:wrap;
+      margin:10px 0 16px;
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:7px 10px;
+      border-radius:999px;
+      background: rgba(15,26,48,.7);
+      border:1px solid var(--border);
+      color:var(--muted);
+      font-size:12px;
+    }
+    .dot{width:8px; height:8px; border-radius:50%}
+    .dot.ok{background:var(--ok)}
+    .dot.warn{background:var(--warn)}
+    .dot.bad{background:var(--bad)}
+    .list{display:grid; grid-template-columns: 1fr; gap:12px;}
+    .card{
+      background: rgba(15,26,48,.82);
+      border:1px solid var(--border);
+      border-radius:16px;
+      box-shadow: var(--shadow);
+      padding:14px 14px 12px;
+    }
+    .cardTop{
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+      flex-wrap:wrap;
+    }
+    .idLine{display:flex; flex-direction:column; gap:4px}
+    .id{
+      font-weight:700;
+      font-size:14px;
+      letter-spacing:.2px;
+      display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    }
+    .badge{
+      padding:6px 9px;
+      border-radius:999px;
+      font-size:12px;
+      border:1px solid var(--border);
+      background: rgba(11,27,51,.7);
+      color:var(--muted);
+    }
+    .badge.ok{border-color: rgba(52,211,153,.35); background: rgba(52,211,153,.10); color:#bfffe6}
+    .badge.warn{border-color: rgba(251,191,36,.35); background: rgba(251,191,36,.10); color:#ffe8a3}
+    .badge.bad{border-color: rgba(251,113,133,.35); background: rgba(251,113,133,.10); color:#ffd1da}
+    .meta{
+      color:var(--muted);
+      font-size:12px;
+      display:flex; gap:10px; flex-wrap:wrap;
+    }
+    .grid{
+      margin-top:10px;
+      display:grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap:10px;
+    }
+    @media (max-width: 860px){ .grid{grid-template-columns: 1fr} }
+    .box{
+      background: rgba(11,27,51,.55);
+      border:1px solid rgba(34,50,85,.85);
+      border-radius:14px;
+      padding:10px 10px;
+    }
+    .kvs{display:grid; grid-template-columns: 140px 1fr; gap:6px 10px; font-size:13px}
+    .k{color:var(--muted)}
+    .v{color:var(--text); overflow-wrap:anywhere}
+    .v a{color:var(--accent); text-decoration:none}
+    .v a:hover{text-decoration:underline}
+    .actions{
+      display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+      margin-top:10px;
+    }
+    .hr{height:1px; background: rgba(34,50,85,.75); margin:12px 0}
+    .empty{
+      text-align:center;
+      color:var(--muted);
+      padding:26px 10px;
+      border:1px dashed rgba(34,50,85,.9);
+      border-radius:16px;
+      background: rgba(15,26,48,.55);
+    }
+    .toast{
+      position:fixed;
+      bottom:14px; left:50%;
+      transform:translateX(-50%);
+      background: rgba(10,18,34,.92);
+      border:1px solid rgba(34,50,85,.9);
+      color:var(--text);
+      border-radius:12px;
+      padding:10px 12px;
+      font-size:13px;
+      display:none;
+      box-shadow: var(--shadow);
+      max-width: calc(100% - 20px);
+      z-index:9999;
+    }
+
+    .tabs{ display:flex; gap:10px; margin:12px 0 8px; flex-wrap:wrap; }
+    .tabBtn{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:950;
+      padding:10px 12px;
+      border-radius:999px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .tabBtn.active{ background: rgba(99,102,241,.28); border-color: rgba(99,102,241,.55); }
+
+    /* ====== ✅ КРУГ-ШКАЛА ПРОГРЕССА (минимально, не ломает дизайн) ====== */
+    .progRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .ring{
+      width:64px; height:64px;
+      flex:0 0 auto;
+      display:grid;
+      place-items:center;
+      border-radius:999px;
+      background: rgba(15,26,48,.35);
+      border:1px solid rgba(34,50,85,.65);
+    }
+    .ring svg{ width:56px; height:56px; display:block; }
+    .ring .pct{
+      position:absolute;
+      font-size:11px;
+      font-weight:900;
+      color: rgba(233,240,255,.90);
+    }
+    .ringWrap{ position:relative; width:56px; height:56px; }
+    .ringBg{ opacity:.22; }
+    .ringFg{
+      transition: stroke-dashoffset .7s ease;
+      filter: drop-shadow(0 2px 10px rgba(52,211,153,.25));
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="title">
+        <h1>Логи сделок</h1>
+        <div class="sub">Здесь показываются <b>активные сделки</b> (как на P2P): статус, реквизиты, кошелёк, ссылка/хеш.</div>
+      </div>
+
+      <div class="controls">
+        <input id="search" class="inp" placeholder="Поиск по ID / банку / реквизитам / кошельку…" />
+        <select id="filter" class="sel">
+          <option value="all">Все</option>
+        </select>
+        <button id="btnRefresh" class="btn primary">Обновить</button>
+        <a class="btnGhost" id="usersBtn" href="./admin-users.html">Пользователи</a>
+      </div>
+    </div>
+
+    <div class="row">
+      <div id="conn" class="pill"><span class="dot warn"></span><span>Подключение…</span></div>
+      <div class="pill"><span id="counts">—</span><span style="opacity:.6">• автообновление 10с</span></div>
+    </div>
+
+    <div class="tabs">
+      <div class="tabBtn active" id="tabBuy">BUY · Логи заявок</div>
+      <div class="tabBtn" id="tabSell">SELL · Логи сделок</div>
+    </div>
+
+    <div id="list" class="list"></div>
+    <div id="sellList" class="list" style="display:none;"></div>
+
+    <div id="toast" class="toast"></div>
+  </div>
+
+<script>
+(() => {
+  const qs = new URLSearchParams(location.search);
+  const WB_FROM_QS = qs.get("wb");
+
+  const LS_WB_KEYS = ["WORKER_BASE","WORKER_URL","WB","API_BASE","worker_base"];
+  const LS_TOKEN_KEYS = ["ADMIN_TOKEN","X_ADMIN_TOKEN","TOKEN","admin_token"];
+
+  function getLS(keys){
+    for (const k of keys){
+      const v = localStorage.getItem(k);
+      if (v && v.trim()) return v.trim();
+    }
+    return "";
+  }
+
+  const WORKER_BASE = String(
+    WB_FROM_QS ||
+    getLS(LS_WB_KEYS) ||
+    "https://api.crossflag.org"
+  ).replace(/\/+$/, "").replace(/\/api$/i, "");
+
+  const ADMIN_TOKEN = getLS(LS_TOKEN_KEYS);
+
+  const elList = document.getElementById("list");
+  const elSellList = document.getElementById("sellList");
+  const elConn = document.getElementById("conn");
+  const elCounts = document.getElementById("counts");
+  const elSearch = document.getElementById("search");
+  const elFilter = document.getElementById("filter");
+  const elToast = document.getElementById("toast");
+
+  const tabBuy = document.getElementById("tabBuy");
+  const tabSell = document.getElementById("tabSell");
+
+  (function(){
+    const wb = new URLSearchParams(location.search).get("wb") || "";
+    const u = document.getElementById("usersBtn");
+    if (!u) return;
+    u.href = "./admin-users.html" + (wb ? ("?wb=" + encodeURIComponent(wb)) : "");
+  })();
+
+  function toast(msg){
+    elToast.textContent = msg;
+    elToast.style.display = "block";
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=> elToast.style.display = "none", 2200);
+  }
+
+  function setConn(state, text){
+    const dot = elConn.querySelector(".dot");
+    const label = elConn.querySelector("span:last-child");
+    dot.className = "dot " + (state === "ok" ? "ok" : state === "bad" ? "bad" : "warn");
+    label.textContent = text;
+  }
+
+  function escapeHtml(s){
+    s = String(s ?? "");
+    return s.replace(/[&<>"']/g, ch => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[ch]));
+  }
+  function escapeAttr(s){ return escapeHtml(s).replace(/"/g, "&quot;"); }
+
+  function formatUser(u){
+    if (!u) return "—";
+    if (typeof u === "string"){
+      const s = u.trim();
+      if (!s) return "—";
+      const name = s.startsWith('@') ? s : ('@' + s.replace(/^@/, ''));
+      return escapeHtml(name);
+    }
+    const uname = u.username ? ('@' + String(u.username).replace(/^@/, '')) : "";
+    const uid = u.id ? String(u.id) : "";
+    if (uname && uid) return `${escapeHtml(uname)} <span style="opacity:.7">(tgId: ${escapeHtml(uid)})</span>`;
+    if (uname) return escapeHtml(uname);
+    if (uid) return `tgId: ${escapeHtml(uid)}`;
+    return "—";
+  }
+
+  async function api(path, opts={}){
+    if (!WORKER_BASE) throw new Error("WORKER_BASE не задан.");
+    const headers = Object.assign({}, opts.headers || {});
+    const method = opts.method || "GET";
+    if (method !== "GET") headers["Content-Type"] = headers["Content-Type"] || "application/json";
+    if (ADMIN_TOKEN) headers["X-Admin-Token"] = ADMIN_TOKEN;
+
+    const fullPath = path.startsWith("/api/") ? path : ("/api" + (path.startsWith("/") ? "" : "/") + path);
+    const res = await fetch(WORKER_BASE + fullPath, {
+      method,
+      headers,
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    });
+
+    const txt = await res.text();
+    let j;
+    try{ j = JSON.parse(txt); }catch{ throw new Error("Ответ не JSON: " + txt.slice(0,120)); }
+    if (!res.ok || !j.ok) throw new Error(j.error || ("HTTP " + res.status));
+    return j;
+  }
+
+  // ===== BUY offers =====
+  function isActiveBuy(o){
+    const st = String(o.status||"NEW").toUpperCase();
+    return st !== "NEW" || !!o.frozen;
+  }
+  function matchesSearchBuy(o, q){
+    if (!q) return true;
+    q = q.toLowerCase();
+    const parts = [
+      o.id, o.status, o.method, o.payBank, o.payRequisite, o.txHash,
+      o.wallet?.type, o.wallet?.value,
+      o.checkInfo?.bankFrom, o.checkInfo?.proofType, o.checkInfo?.alphaLink
+    ].filter(Boolean).join(" ").toLowerCase();
+    return parts.includes(q);
+  }
+  function statusClass(st){
+    st = (st || "").toUpperCase();
+    if (["PAID","SUCCESS","DONE","COMPLETED"].includes(st)) return "ok";
+    if (["ON_CHECK","ON_PAY","HTX_WAITING","BYBIT_WAITING"].includes(st)) return "warn";
+    if (["FAIL","FAILED","CANCELED","CANCELLED","REJECTED"].includes(st)) return "bad";
+    return "";
+  }
+  function statusOptionsBuy(current){
+    const list = ["NEW","ON_PAY","HTX_WAITING","BYBIT_WAITING","PAID","ON_CHECK","SUCCESS","FAILED","FAIL","CANCELED"];
+    return list.map(s => `<option value="${s}" ${s===current ? "selected":""}>${s}</option>`).join("");
+  }
+
+  async function fetchOffers(){
+    const j = await api("/api/admin/offers");
+    return Array.isArray(j.offers) ? j.offers : [];
+  }
+  async function patchOffer(id, body){
+    return api("/api/admin/offers/" + encodeURIComponent(id), { method:"PATCH", body });
+  }
+  // ✅ НОВОЕ: удаление оффера
+  async function deleteOffer(id){
+    return api("/api/admin/offers/" + encodeURIComponent(id), { method:"DELETE" });
+  }
+
+  function renderBuy(offers){
+    const q = elSearch.value.trim();
+    const visible = offers
+      .filter(o => matchesSearchBuy(o, q))
+      .sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+
+    const activeCount = offers.filter(isActiveBuy).length;
+    elCounts.textContent = `BUY: всего ${offers.length} • активных ${activeCount} • показано ${visible.length}`;
+
+    if (!visible.length){
+      elList.innerHTML = `<div class="empty">Нет сделок по текущему поиску.</div>`;
+      return;
+    }
+
+    elList.innerHTML = "";
+    for (const o of visible){
+      const st = String(o.status || "NEW").toUpperCase();
+      const stCls = statusClass(st);
+
+      const dealLink = (o.txHash && /^https?:\/\//i.test(o.txHash)) ? o.txHash : "";
+      const walletLine = o.wallet ? `${o.wallet.type || ""} • ${o.wallet.value || ""}`.trim() : "";
+      const checkInfo = o.checkInfo || null;
+
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <div class="cardTop">
+          <div class="idLine">
+            <div class="id">
+              <span>ID: ${escapeHtml(o.id)}</span>
+              <span class="badge ${stCls}">${escapeHtml(st)}</span>
+              ${o.frozen ? `<span class="badge warn">FROZEN</span>` : ``}
+            </div>
+            <div class="meta">
+              <span>Метод: ${escapeHtml(o.method || "—")}</span>
+              <span>Сумма: <b>${escapeHtml(String(o.amountRub ?? "—"))}</b> RUB</span>
+              <span>Курс: ${escapeHtml(String(o.rate ?? "—"))}</span>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <button class="btn small" data-act="copyId">Копировать ID</button>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="box">
+            <div class="kvs">
+              <div class="k">Пользователь</div><div class="v">${formatUser(o.user || o.tgUser || o.username || '')}</div>
+              <div class="k">Банк</div><div class="v">${escapeHtml(o.payBank || "—")}</div>
+              <div class="k">Реквизиты</div><div class="v">${escapeHtml(o.payRequisite || "—")}</div>
+              <div class="k">Кошелёк</div><div class="v">${walletLine ? escapeHtml(walletLine) : "—"}</div>
+              <div class="k">Hash / Link</div>
+              <div class="v">${dealLink ? `<a href="${escapeAttr(dealLink)}" target="_blank" rel="noopener">${escapeHtml(dealLink)}</a>` : escapeHtml(o.txHash || "—")}</div>
+            </div>
+          </div>
+
+          <div class="box">
+            <div class="kvs">
+              <div class="k">Proof</div><div class="v">${checkInfo ? escapeHtml(checkInfo.proofType || "—") : "—"}</div>
+              <div class="k">Bank From</div><div class="v">${checkInfo ? escapeHtml(checkInfo.bankFrom || "—") : "—"}</div>
+              <div class="k">Alpha Link</div><div class="v">${checkInfo && checkInfo.alphaLink ? `<a href="${escapeAttr(checkInfo.alphaLink)}" target="_blank" rel="noopener">${escapeHtml(checkInfo.alphaLink)}</a>` : "—"}</div>
+              <div class="k">Files</div><div class="v">${checkInfo && Array.isArray(checkInfo.files) ? escapeHtml(String(checkInfo.files.length)) : "—"}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="actions">
+          <select class="sel" data-act="statusSel" style="min-width:190px">${statusOptionsBuy(st)}</select>
+          <button class="btn small primary" data-act="saveStatus">Сохранить статус</button>
+
+          <label class="pill" style="margin:0;">
+            <input type="checkbox" data-act="freezeChk" ${o.frozen ? "checked" : ""} />
+            <span style="margin-left:8px;">frozen</span>
+          </label>
+          <button class="btn small" data-act="saveFreeze">Сохранить frozen</button>
+
+          <input class="inp" data-act="txInp" style="min-width:280px" placeholder="hash или ссылка…" value="${escapeAttr(o.txHash || "")}" />
+          <button class="btn small primary" data-act="saveTx">Сохранить hash/link</button>
+
+          <!-- ✅ НОВОЕ: удаление заявки -->
+          <button class="btn small danger" data-act="deleteOffer">Удалить</button>
+
+          <!-- Бан / разбан покупки -->
+          ${(o.user?.username || o.tgUser?.username) ? `
+            <button class="btn small bad" data-act="buyban" style="border-color:rgba(251,113,133,.4);">🚫 Бан покупки 3д</button>
+            <button class="btn small ok" data-act="buyunban" style="border-color:rgba(52,211,153,.4);">✅ Разбан покупки</button>
+          ` : ''}
+        </div>
+      `;
+
+      card.querySelector('[data-act="copyId"]').onclick = async () => {
+        await navigator.clipboard.writeText(String(o.id || ""));
+        toast("ID скопирован");
+      };
+      card.querySelector('[data-act="saveStatus"]').onclick = async () => {
+        const v = card.querySelector('[data-act="statusSel"]').value;
+        try{ await patchOffer(o.id, { status: v }); toast("Статус сохранён"); await reloadBuy(true); }
+        catch(e){ toast("Ошибка: " + e.message); }
+      };
+      card.querySelector('[data-act="saveFreeze"]').onclick = async () => {
+        const v = card.querySelector('[data-act="freezeChk"]').checked;
+        try{ await patchOffer(o.id, { frozen: v }); toast("Frozen сохранён"); await reloadBuy(true); }
+        catch(e){ toast("Ошибка: " + e.message); }
+      };
+      card.querySelector('[data-act="saveTx"]').onclick = async () => {
+        const v = card.querySelector('[data-act="txInp"]').value.trim();
+        try{ await patchOffer(o.id, { txHash: v }); toast("Hash/Link сохранён"); await reloadBuy(true); }
+        catch(e){ toast("Ошибка: " + e.message); }
+      };
+
+      // ✅ НОВОЕ: обработчик удаления
+      card.querySelector('[data-act="deleteOffer"]').onclick = async () => {
+        const sure = confirm(`Удалить заявку ${o.id}? Это действие нельзя отменить.`);
+        if (!sure) return;
+
+        try{
+          await deleteOffer(o.id);
+          toast("Заявка удалена");
+          await reloadBuy(true);
+        }catch(e){
+          toast("Ошибка: " + e.message);
+        }
+      };
+
+      // ✅ Бан / разбан покупки
+      const _buyUserObj = o.user || o.tgUser || {};
+      const _buyUsername = String(_buyUserObj.username || "").replace(/^@/, "").trim();
+      if (_buyUsername) {
+        const _btnBuyBan = card.querySelector('[data-act="buyban"]');
+        const _btnBuyUnban = card.querySelector('[data-act="buyunban"]');
+        if (_btnBuyBan) {
+          _btnBuyBan.onclick = async () => {
+            if (!confirm(`Забанить покупку для @${_buyUsername} на 3 дня?`)) return;
+            try{
+              await api(`/api/admin/users/${encodeURIComponent(_buyUsername)}`, {
+                method: "PATCH",
+                body: { buyBannedUntil: Date.now() + 3 * 24 * 60 * 60 * 1000, buyBanReason: "ADMIN_MANUAL" }
+              });
+              toast("🚫 Бан покупки установлен для @" + _buyUsername);
+            }catch(e){ toast("Ошибка бана: " + e.message); }
+          };
+        }
+        if (_btnBuyUnban) {
+          _btnBuyUnban.onclick = async () => {
+            try{
+              await api(`/api/admin/users/${encodeURIComponent(_buyUsername)}`, {
+                method: "PATCH",
+                body: { buyBannedUntil: 0, buyBanReason: "" }
+              });
+              toast("✅ Бан покупки снят для @" + _buyUsername);
+            }catch(e){ toast("Ошибка разбана: " + e.message); }
+          };
+        }
+      }
+
+      elList.appendChild(card);
+    }
+  }
+
+  // ===== SELL deals =====
+  async function fetchSellDeals(){
+    const j = await api("/api/admin/sell_deals", { method:"GET" });
+    return Array.isArray(j.deals) ? j.deals : [];
+  }
+
+  async function patchSellDeal(dealId, patch){
+    const id = String(dealId || "").trim();
+    if (!id) throw new Error("dealId пустой");
+
+    // 1) пробуем классический вариант: /sell_deals/:id
+    try{
+      return await api(`/api/admin/sell_deals/${encodeURIComponent(id)}`, {
+        method:"PATCH",
+        body: patch || {}
+      });
+    }catch(e){
+      // 2) fallback: /sell_deals (в теле передаём dealId)
+      return await api(`/api/admin/sell_deals`, {
+        method:"PATCH",
+        body: Object.assign({ dealId: id }, patch || {})
+      });
+    }
+  }
+
+  function sumReceived(deal){
+    const arr = Array.isArray(deal.received) ? deal.received : [];
+    return arr.reduce((acc, x) => acc + (Number(x.amountRub)||0), 0);
+  }
+  function sellStatusRu(s){
+    const x = String(s||"").toUpperCase();
+    const m = {
+      WAIT_CRYPTO: "Ждём крипту",
+      WAITING_CRYPTO: "Ждём крипту",
+      CRYPTO_RECEIVED: "Крипта получена",
+      CHECK_REQUIRED: "Требуется проверка",
+      CHECK_SUBMITTED: "Проверка отправлена",
+      CRYPTO_NOT_RECEIVED: "Крипта не получена",
+      PAYOUT_PROGRESS: "Выплата частями",
+      DONE: "Завершено",
+      SUCCESS: "SUCCESS",
+      CANCELED: "Отменено",
+    };
+    return m[x] || (x || "—");
+  }
+
+  function setRing(svgRoot, pct){
+    const fg = svgRoot.querySelector(".ringFg");
+    const t = svgRoot.querySelector(".pct");
+    const r = 22;
+    const c = 2 * Math.PI * r;
+    fg.style.strokeDasharray = String(c);
+    const clamped = Math.max(0, Math.min(100, pct));
+    fg.style.strokeDashoffset = String(c * (1 - clamped / 100));
+    if (t) t.textContent = `${clamped}%`;
+  }
+
+  function renderSell(deals){
+    const q = (elSearch.value || "").trim().toLowerCase();
+    const filtered = (deals || []).filter(d => {
+      if (!q) return true;
+      const hay = [
+        d.dealId, d.offerId,
+        d.pay?.number, d.pay?.bank, d.pay?.fio,
+        d.txHash,
+        d.cryptoDest?.type, d.cryptoDest?.label, d.cryptoDest?.value,
+      ].filter(Boolean).join(" ").toLowerCase();
+      return hay.includes(q);
+    });
+
+    elCounts.textContent = `SELL: всего ${deals.length} • показано ${filtered.length}`;
+
+    if (!filtered.length){
+      elSellList.innerHTML = `<div class="empty">Пока нет SELL-сделок.</div>`;
+      return;
+    }
+
+    elSellList.innerHTML = "";
+    for (const d of filtered){
+      const dealId = String(d.dealId || d.id || d._id || d.deal_id || d.offerId || "").trim();
+      const st = String(d.status||"").toUpperCase();
+      const got = sumReceived(d);
+      const need = Number(d.amountRub)||0;
+      const left = Math.max(0, need - got);
+      const pct = need>0 ? Math.min(100, Math.round((got/need)*100)) : 0;
+
+      const pay = d.pay || {};
+      const cd = d.cryptoDest || {};
+
+      const card = document.createElement("div");
+      card.className = "card";
+
+      card.innerHTML = `
+        <div class="cardTop">
+          <div class="idLine">
+            <div class="id">
+              <span>SELL · Сделка ${escapeHtml(dealId)}</span>
+              <span class="badge ${statusClass(st)}">${escapeHtml(sellStatusRu(st))}</span>
+            </div>
+            <div class="meta">
+              <span>Юзер: ${formatUser(d.user || d.tgUser || '')}</span>
+              <span>Сумма: <b>${(Number(d.amountRub)||0).toLocaleString("ru-RU")} ₽</b></span>
+              <span>Курс: <b>${(Number(d.rate)||0).toLocaleString("ru-RU")}</b></span>
+              <span>USDT: <b>${(Number(d.amountUsdt)||0).toLocaleString("ru-RU",{maximumFractionDigits:6})}</b></span>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <button class="btn small ok" data-act="crypto_ok">Крипта получена</button>
+            ${(["CRYPTO_RECEIVED","CHECK_REQUIRED","CHECK_SUBMITTED"].includes(String(d.status||"").toUpperCase())) ? `<button class="btn small warn" data-act="crypto_check">Проверка</button>` : ""}
+            <button class="btn small danger" data-act="crypto_bad">Крипта не получена</button>
+          </div>
+        </div>
+
+        <div class="grid" style="grid-template-columns: 1fr 1fr 1fr;">
+          <div class="box">
+            <div class="kvs" style="grid-template-columns: 140px 1fr;">
+              <div class="k">Метод</div><div class="v"><span class="badge warn">${escapeHtml(String(pay.method||"—").toUpperCase())}</span></div>
+              <div class="k">Номер</div><div class="v">${escapeHtml(pay.number||"—")}</div>
+              <div class="k">Банк</div><div class="v">${escapeHtml(pay.bank||"—")}</div>
+              <div class="k">ФИО</div><div class="v">${escapeHtml(pay.fio||"—")}</div>
+            </div>
+          </div>
+
+          <div class="box">
+            <div class="kvs" style="grid-template-columns: 140px 1fr;">
+              <div class="k">Сеть</div><div class="v">${escapeHtml(cd.label || cd.type || "—")}</div>
+              <div class="k">Адрес/UID</div><div class="v">${escapeHtml(cd.value || "—")}</div>
+              <div class="k">TX Hash</div><div class="v">${escapeHtml(d.txHash || "—")}</div>
+            </div>
+          </div>
+
+          <div class="box">
+            <div class="progRow">
+              <div>
+                <div style="font-weight:900;">Прогресс выплаты</div>
+                <div style="margin-top:6px;">Получено: <b>${got.toLocaleString("ru-RU")} ₽</b></div>
+                <div>Осталось: <b>${left.toLocaleString("ru-RU")} ₽</b></div>
+              </div>
+
+              <div class="ring">
+                <div class="ringWrap">
+                  <svg viewBox="0 0 56 56" data-act="ringSvg">
+                    <circle class="ringBg" cx="28" cy="28" r="22" fill="none" stroke="rgba(233,240,255,.20)" stroke-width="6"/>
+                    <circle class="ringFg" cx="28" cy="28" r="22" fill="none" stroke="rgba(52,211,153,.95)" stroke-width="6"
+                            stroke-linecap="round"
+                            transform="rotate(-90 28 28)"
+                            stroke-dasharray="138"
+                            stroke-dashoffset="138"/>
+                  </svg>
+                  <div class="pct">0%</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="hr" style="margin:10px 0;"></div>
+            <div style="color:var(--muted); font-size:12px; font-weight:900;">История частичных выплат</div>
+            <div style="margin-top:6px; color:rgba(233,240,255,.85); font-size:12px;">
+              ${(Array.isArray(d.received) && d.received.length)
+                ? d.received.slice().reverse().slice(0,8).map(x => {
+                    const a = Number(x.amountRub)||0;
+                    const ts = x.ts ? new Date(x.ts).toLocaleString("ru-RU") : "";
+                    return `• <b>${a.toLocaleString("ru-RU")} ₽</b> <span style="opacity:.7">${escapeHtml(ts)}</span>`;
+                  }).join("<br>")
+                : "—"}
+            </div>
+          </div>
+        </div>
+      `;
+
+      const ringSvg = card.querySelector('[data-act="ringSvg"]').closest(".ringWrap");
+      setRing(ringSvg, pct);
+
+      card.querySelector('[data-act="crypto_ok"]').onclick = async () => {
+        try{ await patchSellDeal(dealId, { status:"CRYPTO_RECEIVED" }); toast("Статус: крипта получена"); await reloadSell(true); }
+        catch(e){ toast("Ошибка: " + e.message); }
+      };
+
+      const btnCheck = card.querySelector('[data-act="crypto_check"]');
+      if (btnCheck) {
+        btnCheck.onclick = async () => {
+          try{ await patchSellDeal(dealId, { status:"CHECK_REQUIRED" }); toast("Статус: требуется проверка"); await reloadSell(true); }
+          catch(e){ toast("Ошибка: " + e.message); }
+        };
+      }
+
+      card.querySelector('[data-act="crypto_bad"]').onclick = async () => {
+        try{ await patchSellDeal(dealId, { status:"CRYPTO_NOT_RECEIVED" }); toast("Статус: крипта не получена"); await reloadSell(true); }
+        catch(e){ toast("Ошибка: " + e.message); }
+      };
+
+      elSellList.appendChild(card);
+    }
+  }
+
+  // ===== loading / switching =====
+  let _buyCache = [];
+  let _sellCache = [];
+  let _mode = "buy";
+  let _loading = false;
+
+  async function reloadBuy(silent=false){
+    if (_loading) return;
+    _loading = true;
+    if (!silent) setConn("warn","Обновление…");
+    try{
+      if (!ADMIN_TOKEN) throw new Error("Нет ADMIN_TOKEN в localStorage");
+      seenFilterBuy();
+      _buyCache = await fetchOffers();
+      setConn("ok","Подключено");
+      renderBuy(_buyCache);
+    }catch(e){
+      setConn("bad","Ошибка: " + e.message);
+      elList.innerHTML = `<div class="empty">Ошибка загрузки: <b>${escapeHtml(e.message)}</b></div>`;
+    }finally{ _loading = false; }
+  }
+
+  async function reloadSell(silent=false){
+    if (_loading) return;
+    _loading = true;
+    if (!silent) setConn("warn","Обновление…");
+    try{
+      if (!ADMIN_TOKEN) throw new Error("Нет ADMIN_TOKEN в localStorage");
+      seenFilterSell();
+      _sellCache = await fetchSellDeals();
+      setConn("ok","Подключено");
+      renderSell(_sellCache);
+    }catch(e){
+      setConn("bad","Ошибка: " + e.message);
+      elSellList.innerHTML = `<div class="empty">Ошибка загрузки: <b>${escapeHtml(e.message)}</b></div>`;
+    }finally{ _loading = false; }
+  }
+
+  function seenFilterBuy(){
+    elFilter.innerHTML = `<option value="all">Все</option>`;
+  }
+  function seenFilterSell(){
+    elFilter.innerHTML = `<option value="all">Все</option>`;
+  }
+
+  function switchTab(to){
+    if (to === "sell"){
+      _mode = "sell";
+      tabSell.classList.add("active");
+      tabBuy.classList.remove("active");
+      elSellList.style.display = "";
+      elList.style.display = "none";
+      reloadSell();
+    } else {
+      _mode = "buy";
+      tabBuy.classList.add("active");
+      tabSell.classList.remove("active");
+      elList.style.display = "";
+      elSellList.style.display = "none";
+      reloadBuy();
+    }
+  }
+
+  tabBuy.onclick = () => switchTab("buy");
+  tabSell.onclick = () => switchTab("sell");
+
+  document.getElementById("btnRefresh").onclick = () => _mode==="sell" ? reloadSell() : reloadBuy();
+  elSearch.addEventListener("input", () => _mode==="sell" ? renderSell(_sellCache) : renderBuy(_buyCache));
+
+  // старт
+  if (!WORKER_BASE){
+    setConn("bad","Нет WORKER_BASE");
+    elList.innerHTML = `<div class="empty">Не найден адрес воркера. Открой из админки (с ?wb=) или запиши WORKER_BASE в localStorage.</div>`;
+    return;
+  }
+
+  reloadBuy();
+  setInterval(() => _mode==="sell" ? reloadSell(true) : reloadBuy(true), 10000);
+})();
+</script>
+</body>
+</html>

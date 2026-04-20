@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>P2P · Мои запросы</title>
+  <style>
+    :root{
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+      --card: rgba(15, 26, 48, 0.52);
+      --border: rgba(255,255,255,.12);
+      --btn:#2d5bff;
+      --btn2:#1f3fb3;
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0; color:var(--text); background:#071022;
+      overflow-x:hidden;
+    }
+
+    .bg{ position:fixed; inset:0; z-index:-3; overflow:hidden; background:#071022; }
+    .bg video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.6; }
+
+    .overlay{
+      position:fixed; inset:0; z-index:-2;
+      background:
+        radial-gradient(900px 600px at 50% -100px, rgba(45,91,255,.22), transparent 65%),
+        radial-gradient(900px 600px at 85% 90%, rgba(34,197,94,.10), transparent 60%),
+        linear-gradient(180deg, rgba(7,16,34,.55), rgba(7,16,34,.70));
+      pointer-events:none;
+    }
+    .wrap{
+      max-width:560px; margin:0 auto;
+      padding: calc(10px + env(safe-area-inset-top)) 14px calc(22px + env(safe-area-inset-bottom)) 14px;
+    }
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      margin-bottom:12px;
+    }
+    .back{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff; font-weight:950;
+      padding:10px 12px; border-radius:999px;
+      cursor:pointer; text-decoration:none;
+      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    }
+    .pageTitle{ font-weight:1000; font-size:18px; }
+
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 14px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      margin-bottom:12px;
+    }
+    .sectionTitle{
+      font-weight:1000; font-size:15px; margin-bottom:10px;
+      display:flex; align-items:center; justify-content:space-between; gap:8px;
+    }
+    .hint{
+      color: rgba(233,240,255,.65); font-weight:850; font-size:12px; line-height:1.4;
+    }
+
+    /* Request items */
+    .reqList{ display:flex; flex-direction:column; gap:10px; }
+    .reqItem{
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      border-radius: 16px;
+      padding: 14px;
+    }
+    .reqTop{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+    .reqRange{ font-weight:1000; font-size:16px; }
+    .chip{
+      display:inline-flex; align-items:center; padding:5px 10px;
+      border-radius:999px; font-weight:1000; font-size:11px;
+      border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06);
+    }
+    .chip.ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.10); color: rgba(34,197,94,.95); }
+
+    .reqMeta{
+      margin-top:8px; display:flex; flex-wrap:wrap; gap:6px 16px;
+    }
+    .reqMeta .hint b{ color: var(--text); }
+
+    .progressBar{
+      margin-top:10px; height:6px; border-radius:3px;
+      background: rgba(255,255,255,.08); overflow:hidden;
+    }
+    .progressFill{
+      height:100%; border-radius:3px;
+      background: linear-gradient(90deg, var(--ok), #16a34a);
+      transition: width .3s ease;
+    }
+
+    /* Search animation */
+    .searchAnim{
+      margin-top:12px;
+      display:flex; align-items:center; gap:10px;
+      padding:10px 14px;
+      border-radius:14px;
+      background: rgba(45,91,255,.06);
+      border: 1px solid rgba(45,91,255,.15);
+    }
+    .searchDots{
+      display:flex; gap:4px; align-items:center;
+    }
+    .searchDots span{
+      width:6px; height:6px; border-radius:50%;
+      background: rgba(45,91,255,.8);
+      animation: dotPulse 1.4s ease-in-out infinite;
+    }
+    .searchDots span:nth-child(2){ animation-delay:.2s; }
+    .searchDots span:nth-child(3){ animation-delay:.4s; }
+    @keyframes dotPulse{
+      0%,80%,100%{ opacity:.25; transform:scale(.8); }
+      40%{ opacity:1; transform:scale(1.2); }
+    }
+    .searchText{
+      font-size:12px; font-weight:900; color: rgba(45,91,255,.85);
+    }
+
+    /* Found animation */
+    .foundAnim{
+      margin-top:12px;
+      display:flex; align-items:center; gap:10px;
+      padding:10px 14px;
+      border-radius:14px;
+      background: rgba(34,197,94,.08);
+      border: 1px solid rgba(34,197,94,.25);
+      animation: foundGlow 2s ease infinite;
+    }
+    @keyframes foundGlow{
+      0%,100%{ border-color: rgba(34,197,94,.25); box-shadow: 0 0 0 rgba(34,197,94,0); }
+      50%{ border-color: rgba(34,197,94,.45); box-shadow: 0 0 16px rgba(34,197,94,.12); }
+    }
+    .foundText{
+      font-size:13px; font-weight:1000; color: rgba(34,197,94,.95);
+    }
+
+    /* Buttons */
+    .reqActions{
+      margin-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px;
+    }
+    .reqBtn{
+      border:0; border-radius:14px; padding:13px 14px;
+      font-weight:1000; font-size:14px; cursor:pointer; color:#fff;
+      text-align:center; text-decoration:none;
+      display:flex; align-items:center; justify-content:center;
+      transition: transform .08s ease, filter .15s ease;
+    }
+    .reqBtn:active{ transform:scale(.97); }
+    .reqBtn:disabled{ opacity:.5; cursor:not-allowed; }
+    .reqBtnGo{
+      background: linear-gradient(180deg, var(--ok), #16a34a);
+      box-shadow: 0 8px 24px rgba(34,197,94,.25);
+    }
+    .reqBtnStop{
+      background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12);
+      color: rgba(233,240,255,.7);
+    }
+    .reqBtnStop:hover{ background: rgba(255,255,255,.08); color: rgba(239,68,68,.95); border-color: rgba(239,68,68,.25); }
+
+    /* Create form */
+    .grid{
+      display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;
+    }
+    .span2{ grid-column: 1 / -1; }
+    .field{
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:14px; padding:10px 12px;
+    }
+    .label{
+      font-size:12px; font-weight:950;
+      color: rgba(233,240,255,.75); margin-bottom:6px;
+    }
+    input, select{
+      width:100%; box-sizing:border-box; border:0; outline:none;
+      background:transparent; color:#fff; font-weight:950; font-size:16px;
+    }
+    input::placeholder{ color: rgba(233,240,255,.45); }
+    select{ appearance:none; -webkit-appearance:none; padding-right:26px; cursor:pointer; }
+    option{ background:#0f1a30; color:#fff; }
+    .selectWrap{ position:relative; }
+    .selectWrap:after{
+      content:"▾"; position:absolute; right:10px; top:50%;
+      transform:translateY(-35%); font-weight:1000;
+      color: rgba(233,240,255,.55); pointer-events:none;
+    }
+    .btn{
+      width:100%; border:0; border-radius:14px; padding:14px;
+      font-weight:1000; cursor:pointer; color:#fff;
+      background: linear-gradient(180deg, var(--btn), var(--btn2));
+      box-shadow: 0 12px 30px rgba(0,0,0,.32);
+    }
+    .btn:disabled{ opacity:.5; cursor:not-allowed; }
+    .status{
+      margin-top:10px; font-size:13px; font-weight:850;
+      color: rgba(233,240,255,.78);
+    }
+    .status.bad{ color:#ffb4b4; }
+    .status.ok{ color:#c7ffd7; }
+    .empty{ text-align:center; padding:20px 0; color:var(--muted); font-weight:850; font-size:13px; }
+
+    @media (max-width: 420px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="bg">
+  <video autoplay muted loop playsinline preload="auto" poster="./buy-bg.jpg">
+    <source src="./buy-bg.mp4" type="video/mp4">
+  </video>
+</div>
+<div class="overlay"></div>
+<div class="wrap">
+
+  <div class="topbar">
+    <a class="back" href="./buy.html">← Назад</a>
+    <div class="pageTitle">Мои запросы</div>
+  </div>
+
+  <!-- Active requests -->
+  <div class="card">
+    <div class="sectionTitle">
+      <span>Активные запросы</span>
+      <span class="hint" id="activeCount">—</span>
+    </div>
+    <div class="reqList" id="reqList">
+      <div class="empty">Загрузка...</div>
+    </div>
+  </div>
+
+  <!-- Create new request -->
+  <div class="card">
+    <div class="sectionTitle">
+      <span>Новый запрос</span>
+    </div>
+    <p class="hint" style="margin:0 0 12px;">Укажите диапазон суммы и количество ордеров. Запрос будет отправлен в чаты — продавцы смогут предложить свои условия.</p>
+
+    <div class="grid">
+      <div class="field">
+        <div class="label">Минимум (RUB)</div>
+        <input id="minRub" inputmode="numeric" placeholder="1 000" />
+      </div>
+      <div class="field">
+        <div class="label">Максимум (RUB)</div>
+        <input id="maxRub" inputmode="numeric" placeholder="200 000" />
+      </div>
+      <div class="field span2">
+        <div class="label">Количество ордеров</div>
+        <div class="selectWrap">
+          <select id="reqCount">
+            <option value="1" selected>1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn" id="createBtn" type="button">Отправить запрос</button>
+    <div class="status" id="createStatus"></div>
+  </div>
+
+</div>
+
+<script>
+const WORKER_BASE = String(
+  new URLSearchParams(location.search).get("wb") ||
+  localStorage.getItem("worker_base") ||
+  localStorage.getItem("WORKER_BASE") ||
+  "https://api.crossflag.org"
+).replace(/\/+$/, "");
+
+function getToken(){
+  return (
+    localStorage.getItem("CF_USER_TOKEN") ||
+    localStorage.getItem("user_token") ||
+    localStorage.getItem("X_AUTH_TOKEN") ||
+    localStorage.getItem("AUTH_TOKEN") ||
+    localStorage.getItem("userToken") ||
+    ""
+  ).trim();
+}
+
+async function apiJson(path, method="GET", body=null){
+  const tok = getToken();
+  if (!tok) throw new Error("Не авторизован");
+  const headers = {
+    "Content-Type":"application/json",
+    "X-Auth-Token": tok,
+    "X-User-Token": tok,
+    "Authorization": "Bearer " + tok,
+  };
+  const res = await fetch(WORKER_BASE + path, {
+    method, headers,
+    body: body ? JSON.stringify(body) : null,
+    cache: "no-store",
+  });
+  const text = await res.text();
+  let j;
+  try{ j = JSON.parse(text); }catch{ throw new Error("Ответ не JSON"); }
+  if (!res.ok || !j.ok) throw new Error(j.error || ("HTTP " + res.status));
+  return j;
+}
+
+function fmtRub(n){
+  n = Number(n);
+  if (!Number.isFinite(n)) return "—";
+  try{ return n.toLocaleString("ru-RU"); }catch{ return String(n); }
+}
+
+const reqListEl = document.getElementById("reqList");
+const activeCountEl = document.getElementById("activeCount");
+const createBtn = document.getElementById("createBtn");
+const createStatus = document.getElementById("createStatus");
+
+function setCreateStatus(text, kind){
+  createStatus.textContent = text || "";
+  createStatus.classList.remove("bad","ok");
+  if (kind) createStatus.classList.add(kind);
+}
+
+function parseRub(s){
+  s = String(s||"").replace(/[^\d]/g,"");
+  const n = Math.floor(Number(s||0));
+  return Number.isFinite(n) ? n : 0;
+}
+
+// ---- Render requests ----
+function renderRequests(items){
+  reqListEl.innerHTML = "";
+
+  const active = items.filter(x => x.status === "PENDING");
+  active.sort((a,b) => (Number(b.createdAt||0)) - (Number(a.createdAt||0)));
+
+  activeCountEl.textContent = active.length ? (active.length + " активных") : "нет";
+
+  if (!active.length){
+    reqListEl.innerHTML = '<div class="empty">Нет активных запросов. Создайте новый ниже.</div>';
+    return;
+  }
+
+  for (const req of active){
+    const matched = Number(req.matchedOffersCount || 0);
+    const total = Number(req.count || 1);
+    const remaining = Math.max(0, total - matched);
+    const pct = total > 0 ? Math.min(100, Math.round((matched / total) * 100)) : 0;
+    const offerIds = Array.isArray(req.matchedOfferIds) ? req.matchedOfferIds : [];
+    const hasOffers = offerIds.length > 0;
+    const firstOfferId = hasOffers ? offerIds[0] : "";
+
+    const el = document.createElement("div");
+    el.className = "reqItem";
+
+    el.innerHTML = `
+      <div class="reqTop">
+        <div class="reqRange">${fmtRub(req.minRub)} — ${fmtRub(req.maxRub)} ₽</div>
+        <span class="chip ok">Активен</span>
+      </div>
+      <div class="reqMeta">
+        <span class="hint">Ордеров: <b>${matched}/${total}</b></span>
+        <span class="hint">Осталось: <b>${remaining}</b></span>
+        <span class="hint">Курс: <b>${req.approxRate ? (Number(req.approxRate).toFixed(2) + " ₽") : "—"}</b></span>
+      </div>
+      ${total > 1 ? `
+        <div class="progressBar">
+          <div class="progressFill" style="width:${pct}%"></div>
+        </div>
+      ` : ""}
+      ${hasOffers ? `
+        <div class="foundAnim">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4" stroke="rgba(34,197,94,.95)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="10" stroke="rgba(34,197,94,.95)" stroke-width="2"/></svg>
+          <span class="foundText">Заявка найдена!</span>
+        </div>
+      ` : `
+        <div class="searchAnim">
+          <div class="searchDots"><span></span><span></span><span></span></div>
+          <span class="searchText">Ищем предложение...</span>
+        </div>
+      `}
+      <div class="reqActions">
+        <button class="reqBtn reqBtnStop" data-cancel-id="${req.id}" type="button">Остановить</button>
+        ${hasOffers ? `<a class="reqBtn reqBtnGo" href="./crossflag-buy-order.html?id=${encodeURIComponent(firstOfferId)}">Перейти к сделке</a>` : '<div></div>'}
+      </div>
+    `;
+
+    reqListEl.appendChild(el);
+  }
+
+  // Bind cancel buttons
+  reqListEl.querySelectorAll("[data-cancel-id]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const id = btn.getAttribute("data-cancel-id");
+      btn.disabled = true;
+      btn.textContent = "Останавливаю...";
+      try {
+        await apiJson("/api/public/buy_amount_request/cancel", "POST", { id });
+        await loadRequests();
+      } catch(e) {
+        btn.textContent = "Ошибка";
+        setTimeout(() => { btn.textContent = "Остановить"; btn.disabled = false; }, 2000);
+      }
+    });
+  });
+}
+
+async function loadRequests(){
+  try {
+    const j = await apiJson("/api/public/buy_amount_requests");
+    renderRequests(j.items || []);
+  } catch(e) {
+    if (String(e.message||"").includes("Не авторизован") || String(e.message||"").includes("Unauthorized")){
+      reqListEl.innerHTML = '<div class="empty">Нужно войти в аккаунт</div>';
+      return;
+    }
+    reqListEl.innerHTML = `<div class="empty">Ошибка загрузки: ${e.message||e}</div>`;
+  }
+}
+
+// ---- Create request ----
+createBtn.onclick = async () => {
+  try {
+    setCreateStatus("Отправляю...");
+    createBtn.disabled = true;
+
+    const minRub = parseRub(document.getElementById("minRub").value);
+    const maxRub = parseRub(document.getElementById("maxRub").value);
+    const count = Math.max(1, Math.min(10, Math.floor(Number(document.getElementById("reqCount").value || 1))));
+
+    if (!minRub || minRub <= 0) throw new Error("Введите минимальную сумму");
+    if (!maxRub || maxRub <= 0) throw new Error("Введите максимальную сумму");
+    if (minRub > maxRub) throw new Error("Минимум не может быть больше максимума");
+
+    await apiJson("/api/public/buy_amount_request", "POST", { minRub, maxRub, count });
+
+    setCreateStatus("Запрос создан!", "ok");
+    document.getElementById("minRub").value = "";
+    document.getElementById("maxRub").value = "";
+    document.getElementById("reqCount").value = "1";
+
+    await loadRequests();
+
+    setTimeout(() => setCreateStatus(""), 3000);
+  } catch(e) {
+    setCreateStatus("Ошибка: " + (e.message||e), "bad");
+  } finally {
+    createBtn.disabled = false;
+  }
+};
+
+// ---- Init ----
+loadRequests();
+
+// Auto-refresh every 5 sec
+setInterval(loadRequests, 5000);
+</script>
+</body>
+</html>

@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Crossflag · PDF Checker</title>
+  <style>
+    :root{
+      --bg:#0b1220; --card:#0f1a30; --border:#223255;
+      --text:#e9f0ff; --muted:#9fb0d4;
+      --btn:#2563eb; --warn:#f59e0b; --danger:#ef4444; --ok:#22c55e;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+    body{ margin:0; background:var(--bg); color:var(--text); }
+    .wrap{ max-width:800px; margin:0 auto; padding:18px; }
+    .top{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+    .title{ font-weight:950; font-size:18px; display:flex; align-items:center; gap:10px; }
+    .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px; box-shadow:0 18px 50px rgba(0,0,0,.35); margin-bottom:14px; }
+    .btn{
+      border:0; border-radius:12px; padding:10px 18px; cursor:pointer;
+      color:#fff; font-weight:950; background:var(--btn); font-size:14px;
+    }
+    .btn:hover{ filter:brightness(1.1); }
+    .btn:disabled{ opacity:.5; cursor:not-allowed; }
+    .btn.back{ background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); }
+    .btn.back:hover{ background:rgba(255,255,255,.12); }
+
+    .dropzone{
+      border:2px dashed rgba(255,255,255,.18);
+      border-radius:16px;
+      padding:40px 20px;
+      text-align:center;
+      cursor:pointer;
+      transition: border-color .2s, background .2s;
+      position:relative;
+    }
+    .dropzone:hover, .dropzone.dragover{
+      border-color:rgba(37,99,235,.5);
+      background:rgba(37,99,235,.06);
+    }
+    .dropzone input{
+      position:absolute; inset:0; width:100%; height:100%;
+      opacity:0; cursor:pointer;
+    }
+    .dropIcon{ font-size:36px; margin-bottom:8px; }
+    .dropTitle{ font-weight:950; font-size:15px; margin-bottom:4px; }
+    .dropHint{ font-size:12px; color:var(--muted); font-weight:800; }
+
+    .fileList{ display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+    .fileItem{
+      display:flex; align-items:center; gap:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.03);
+    }
+    .fileIcon{ font-size:20px; flex:0 0 auto; }
+    .fileInfo{ flex:1; min-width:0; }
+    .fileName{ font-weight:900; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .fileSize{ font-size:11px; color:var(--muted); font-weight:800; }
+    .fileRemove{
+      border:0; background:rgba(239,68,68,.15); color:#ef4444;
+      border-radius:8px; padding:6px 10px; cursor:pointer; font-weight:900; font-size:12px;
+    }
+    .fileRemove:hover{ background:rgba(239,68,68,.25); }
+
+    .btnRow{ display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
+
+    .results{ margin-top:14px; display:flex; flex-direction:column; gap:12px; }
+    .result{
+      border-radius:14px;
+      padding:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.02);
+    }
+    .result.clean{
+      border-color:rgba(34,197,94,.35);
+      background:rgba(34,197,94,.06);
+    }
+    .result.suspicious{
+      border-color:rgba(239,68,68,.40);
+      background:rgba(239,68,68,.08);
+    }
+    .resultHeader{
+      display:flex; align-items:center; gap:8px;
+      font-weight:950; font-size:14px; margin-bottom:8px;
+    }
+    .resultBadge{
+      display:inline-flex; align-items:center; gap:4px;
+      padding:4px 10px; border-radius:999px;
+      font-size:11px; font-weight:1000;
+    }
+    .resultBadge.clean{ background:rgba(34,197,94,.15); color:#22c55e; border:1px solid rgba(34,197,94,.3); }
+    .resultBadge.suspicious{ background:rgba(239,68,68,.15); color:#ef4444; border:1px solid rgba(239,68,68,.3); }
+    .resultBadge.whitelist{ background:rgba(37,99,235,.15); color:#60a5fa; border:1px solid rgba(37,99,235,.3); }
+
+    .resultMeta{
+      display:grid; grid-template-columns:auto 1fr; gap:4px 12px;
+      font-size:12px; margin-top:8px;
+    }
+    .metaKey{ color:var(--muted); font-weight:900; }
+    .metaVal{ font-weight:800; word-break:break-all; }
+
+    .reasonList{ margin-top:8px; }
+    .reasonItem{
+      padding:6px 10px; margin-bottom:4px;
+      border-radius:8px;
+      background:rgba(239,68,68,.08);
+      border:1px solid rgba(239,68,68,.15);
+      font-size:12px; font-weight:850;
+    }
+
+    .spinner{
+      display:inline-block; width:16px; height:16px;
+      border:2px solid rgba(255,255,255,.3); border-top-color:#fff;
+      border-radius:50%; animation:spin .8s linear infinite;
+    }
+    @keyframes spin{ to{transform:rotate(360deg)} }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="title">🔍 PDF Checker</div>
+    <button class="btn back" onclick="history.back()">← Назад</button>
+  </div>
+
+  <div class="card">
+    <div class="dropzone" id="dropzone">
+      <input type="file" id="fileInput" accept="application/pdf" multiple />
+      <div class="dropIcon">📄</div>
+      <div class="dropTitle">Перетащите PDF файлы сюда</div>
+      <div class="dropHint">или нажмите чтобы выбрать · можно несколько файлов</div>
+    </div>
+
+    <div class="fileList" id="fileList"></div>
+
+    <div class="btnRow">
+      <button class="btn" id="checkBtn" type="button" disabled>🔍 Проверить</button>
+      <button class="btn back" id="clearBtn" type="button" style="display:none;">Очистить</button>
+    </div>
+  </div>
+
+  <div class="results" id="results"></div>
+</div>
+
+<script>
+const dropzone = document.getElementById("dropzone");
+const fileInput = document.getElementById("fileInput");
+const fileListEl = document.getElementById("fileList");
+const checkBtn = document.getElementById("checkBtn");
+const clearBtn = document.getElementById("clearBtn");
+const resultsEl = document.getElementById("results");
+
+let files = [];
+
+// ── Drag & Drop ──
+dropzone.addEventListener("dragover", e => { e.preventDefault(); dropzone.classList.add("dragover"); });
+dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+dropzone.addEventListener("drop", e => {
+  e.preventDefault();
+  dropzone.classList.remove("dragover");
+  addFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener("change", () => { addFiles(fileInput.files); fileInput.value = ""; });
+
+function addFiles(fl){
+  for (const f of fl){
+    if (f.type !== "application/pdf" && !f.name.toLowerCase().endsWith(".pdf")) continue;
+    if (files.some(x => x.name === f.name && x.size === f.size)) continue;
+    files.push(f);
+  }
+  renderFiles();
+}
+
+function removeFile(idx){
+  files.splice(idx, 1);
+  renderFiles();
+}
+
+function fmtSize(b){
+  if (b < 1024) return b + " B";
+  if (b < 1048576) return (b/1024).toFixed(1) + " KB";
+  return (b/1048576).toFixed(1) + " MB";
+}
+
+function renderFiles(){
+  fileListEl.innerHTML = "";
+  for (let i = 0; i < files.length; i++){
+    const f = files[i];
+    const el = document.createElement("div");
+    el.className = "fileItem";
+    el.innerHTML = `
+      <div class="fileIcon">📄</div>
+      <div class="fileInfo">
+        <div class="fileName">${esc(f.name)}</div>
+        <div class="fileSize">${fmtSize(f.size)}</div>
+      </div>
+      <button class="fileRemove" data-idx="${i}">✕</button>
+    `;
+    fileListEl.appendChild(el);
+  }
+  fileListEl.querySelectorAll(".fileRemove").forEach(b => {
+    b.onclick = () => removeFile(Number(b.dataset.idx));
+  });
+  checkBtn.disabled = files.length === 0;
+  clearBtn.style.display = files.length > 0 ? "" : "none";
+}
+
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+clearBtn.onclick = () => { files = []; renderFiles(); resultsEl.innerHTML = ""; };
+
+// ── PDF Analysis (client-side, same logic as backend) ──
+
+const WHITELIST = [
+  { creator: "jasperreports", producer: "itext" },
+  { creator: "jasperreports", producer: "openpdf" },
+  { creator: "chromium", producer: "skia" },
+  { creator: "wkhtmltopdf", producer: "qt" },
+  { creator: "", producer: "ios version" },
+  { creator: "", producer: "rpdf" },
+  { creator: "chromium", producer: "chromium" },
+  { creator: "mozilla", producer: "skia" },
+  { creator: "itext", producer: "itext" },
+];
+
+const EDITORS = [
+  "adobe acrobat","acrobat pro","acrobat dc",
+  "foxit","phantompdf","phantom pdf",
+  "pdfelement","pdf element","wondershare",
+  "nitro pro","nitro pdf",
+  "master pdf","pdf-xchange","pdf xchange",
+  "libreoffice","openoffice",
+  "ilovepdf","smallpdf","sejda","soda pdf",
+  "canva","figma",
+  "inkscape","gimp","photoshop","illustrator",
+  "pdf editor","pdf-editor",
+  "pdfsam","pdfill","pdftk",
+  "pixelmator","affinity",
+  "nuance","power pdf","kofax",
+  "pdf architect","pdf24",
+  "dochub","kami","xodo",
+  "microsoft word","microsoft excel",
+  "writer2latex","scribus",
+  "pdfcreator","bullzip",
+  "cutepdf","dopdf","primo",
+  "google docs","google slides",
+];
+
+function extractField(raw, field){
+  const re1 = new RegExp("/" + field + "\\s*\\(([^)]{0,500})\\)", "i");
+  const re2 = new RegExp("/" + field + "\\s*<([0-9A-Fa-f]{2,600})>", "i");
+  const m1 = raw.match(re1);
+  if (m1){
+    let v = m1[1];
+    if (v.charCodeAt(0) === 0xFE && v.charCodeAt(1) === 0xFF){
+      let d = "";
+      for (let i=2; i<v.length; i+=2){ const c=(v.charCodeAt(i)<<8)|(v.charCodeAt(i+1)||0); if(c>0) d+=String.fromCharCode(c); }
+      return d.trim();
+    }
+    return v.trim();
+  }
+  const m2 = raw.match(re2);
+  if (m2){
+    const hex = m2[1]; let d = "";
+    if (hex.toUpperCase().startsWith("FEFF")){
+      for(let i=4;i<hex.length;i+=4){ const c=parseInt(hex.substring(i,i+4),16); if(c>0)d+=String.fromCharCode(c); }
+    } else {
+      for(let i=0;i<hex.length;i+=2){ const c=parseInt(hex.substring(i,i+2),16); if(c>0)d+=String.fromCharCode(c); }
+    }
+    return d.trim();
+  }
+  return "";
+}
+
+function analyzePdf(buf, name){
+  const bytes = new Uint8Array(buf);
+  const raw = Array.from(bytes).map(b => String.fromCharCode(b)).join("");
+
+  const r = { file: name, suspicious: false, reasons: [], creator: "", producer: "", creationDate: "", modDate: "", eofCount: 0, whitelisted: false };
+
+  // %%EOF
+  const eofs = raw.match(/%%EOF/g);
+  r.eofCount = eofs ? eofs.length : 0;
+  if (r.eofCount > 1){ r.suspicious = true; r.reasons.push("Несколько %%EOF (" + r.eofCount + ") — инкрементальные правки"); }
+
+  r.creator = extractField(raw, "Creator");
+  r.producer = extractField(raw, "Producer");
+  r.creationDate = extractField(raw, "CreationDate");
+  r.modDate = extractField(raw, "ModDate");
+
+  const cL = r.creator.toLowerCase(), pL = r.producer.toLowerCase();
+  const combined = cL + " | " + pL;
+
+  // Whitelist
+  for (const wl of WHITELIST){
+    const cOk = !wl.creator || cL.includes(wl.creator);
+    const pOk = !wl.producer || pL.includes(wl.producer);
+    if (cOk && pOk && (wl.creator || wl.producer)){ r.whitelisted = true; break; }
+  }
+
+  // Blacklist
+  for (const pat of EDITORS){
+    if (combined.includes(pat)){
+      r.suspicious = true;
+      r.reasons.push("PDF-редактор: \"" + pat + "\"");
+      break;
+    }
+  }
+
+  // Unknown generator
+  if (!r.whitelisted && (r.creator || r.producer) && !r.reasons.some(x => x.includes("PDF-редактор"))){
+    r.suspicious = true;
+    r.reasons.push("Неизвестный генератор — не совпадает с банковскими");
+  }
+
+  // No metadata
+  if (!r.creator && !r.producer && !r.creationDate){
+    r.suspicious = true;
+    r.reasons.push("Метаданные отсутствуют — файл мог быть пересобран");
+  }
+
+  // Date diff
+  const parseD = s => {
+    const m = String(s||"").match(/D:(\d{4})(\d{2})(\d{2})(\d{2})?(\d{2})?(\d{2})?/);
+    return m ? new Date(+m[1],+m[2]-1,+m[3],+(m[4]||0),+(m[5]||0),+(m[6]||0)) : null;
+  };
+  const cD = parseD(r.creationDate), mD = parseD(r.modDate);
+  if (cD && mD){
+    const diff = Math.abs(mD-cD);
+    if (diff > 120000){ r.suspicious = true; r.reasons.push("ModDate отличается от CreationDate на " + Math.round(diff/60000) + " мин"); }
+  }
+
+  // FreeText
+  if (raw.includes("/Subtype /FreeText") || raw.includes("/Subtype/FreeText")){
+    r.suspicious = true; r.reasons.push("FreeText аннотации — текст наложен поверх");
+  }
+
+  // AcroForm
+  if (raw.includes("/AcroForm")){
+    r.suspicious = true; r.reasons.push("AcroForm — интерактивные поля");
+  }
+
+  // Stamp
+  if (raw.includes("/Subtype /Stamp") || raw.includes("/Subtype/Stamp")){
+    r.suspicious = true; r.reasons.push("Stamp аннотации");
+  }
+
+  // Size
+  if (bytes.length > 2*1024*1024){
+    r.suspicious = true; r.reasons.push("Большой файл: " + (bytes.length/1024/1024).toFixed(1) + " MB");
+  }
+
+  return r;
+}
+
+function renderResult(r){
+  const clean = !r.suspicious;
+  const cls = clean ? "clean" : "suspicious";
+
+  let html = `<div class="result ${cls}">`;
+  html += `<div class="resultHeader">`;
+  html += `<span>${esc(r.file)}</span>`;
+  html += `<span class="resultBadge ${cls}">${clean ? "✅ Чисто" : "🚩 Подозрительно"}</span>`;
+  if (r.whitelisted) html += `<span class="resultBadge whitelist">📋 Whitelist</span>`;
+  html += `</div>`;
+
+  html += `<div class="resultMeta">`;
+  if (r.creator) html += `<div class="metaKey">Creator</div><div class="metaVal">${esc(r.creator)}</div>`;
+  if (r.producer) html += `<div class="metaKey">Producer</div><div class="metaVal">${esc(r.producer)}</div>`;
+  if (r.creationDate) html += `<div class="metaKey">Created</div><div class="metaVal">${esc(r.creationDate)}</div>`;
+  if (r.modDate && r.modDate !== r.creationDate) html += `<div class="metaKey">Modified</div><div class="metaVal">${esc(r.modDate)}</div>`;
+  html += `<div class="metaKey">%%EOF</div><div class="metaVal">${r.eofCount}${r.eofCount > 1 ? " ⚠️" : ""}</div>`;
+  html += `<div class="metaKey">Размер</div><div class="metaVal">${fmtSize(r._size || 0)}</div>`;
+  html += `</div>`;
+
+  if (r.reasons.length){
+    html += `<div class="reasonList">`;
+    for (const reason of r.reasons){
+      html += `<div class="reasonItem">• ${esc(reason)}</div>`;
+    }
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+checkBtn.onclick = async () => {
+  if (!files.length) return;
+  checkBtn.disabled = true;
+  checkBtn.innerHTML = '<span class="spinner"></span> Анализ...';
+  resultsEl.innerHTML = "";
+
+  for (const f of files){
+    try {
+      const buf = await f.arrayBuffer();
+      const r = analyzePdf(buf, f.name);
+      r._size = f.size;
+      resultsEl.innerHTML += renderResult(r);
+    } catch(e){
+      resultsEl.innerHTML += `<div class="result suspicious"><div class="resultHeader">${esc(f.name)} <span class="resultBadge suspicious">❌ Ошибка</span></div><div class="reasonList"><div class="reasonItem">• ${esc(e.message||String(e))}</div></div></div>`;
+    }
+  }
+
+  checkBtn.disabled = false;
+  checkBtn.innerHTML = "🔍 Проверить";
+};
+</script>
+</body>
+</html>

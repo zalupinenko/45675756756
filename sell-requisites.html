@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Crossflag · Продажа · Реквизиты</title>
+
+  <style>
+    :root{
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+      --card: rgba(15, 26, 48, 0.52);
+      --border: rgba(255,255,255,.12);
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+      --btn:#2d5bff;
+      --btn2:#1f3fb3;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+    *,*::before,*::after{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0; color:var(--text); background:#071022;
+      overflow-x:hidden; overflow-y:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .overlay{
+      position:fixed; inset:0; z-index:-2;
+      background:
+        radial-gradient(1100px 700px at 50% -220px, rgba(45,91,255,.22), rgba(0,0,0,0) 65%),
+        radial-gradient(900px 600px at 85% 85%, rgba(34,197,94,.10), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(7,16,34,.84), rgba(7,16,34,.94));
+      pointer-events:none;
+    }
+    .page{
+      min-height:100svh;
+      display:flex; justify-content:center; align-items:flex-start;
+      padding: calc(16px + env(safe-area-inset-top)) 16px calc(22px + env(safe-area-inset-bottom)) 16px;
+    }
+    .wrap{ width:100%; max-width:980px; }
+    .card{
+      position:relative;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 14px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      overflow:hidden;
+    }
+    .card::before{
+      content:"";
+      position:absolute; inset:-60px; z-index:0;
+      background:
+        radial-gradient(520px 180px at 35% 20%, rgba(45,91,255,.18), rgba(0,0,0,0) 60%),
+        radial-gradient(520px 180px at 75% 90%, rgba(34,197,94,.10), rgba(0,0,0,0) 60%);
+      filter: blur(18px);
+      pointer-events:none;
+    }
+    .card > *{ position:relative; z-index:1; }
+
+    .top{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; flex-wrap:wrap; margin-bottom:12px;
+    }
+    .title{ font-weight:1000; font-size:16px; }
+    .back{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff; font-weight:950;
+      padding:10px 12px; border-radius:999px;
+      cursor:pointer; text-decoration:none; white-space:nowrap;
+    }
+
+    .section{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      margin-bottom:12px;
+      min-width:0;
+    }
+    .sectionTitle{ font-weight:1000; margin-bottom:10px; display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+
+    .row{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    @media(max-width:700px){ .row{ grid-template-columns:1fr; } }
+    .row > div{ min-width:0; }
+
+    select, input{
+      width:100%;
+      max-width:100%;
+      min-width:0;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      color:var(--text);
+      outline:none;
+      font-weight:1000;
+      font-size:15px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      display:block;
+    }
+    input::placeholder{ color: rgba(159,176,212,.65); font-weight:900; }
+
+    .hint{
+      color: rgba(233,240,255,.78);
+      font-size:12px;
+      font-weight:850;
+      line-height:1.45;
+    }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:12px 18px;
+      background: linear-gradient(180deg, var(--btn), var(--btn2));
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow: 0 10px 26px rgba(0,0,0,.30);
+      min-width: 190px;
+      position:relative;
+    }
+    .btnGhost{
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:14px;
+      padding:12px 18px;
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      min-width: 190px;
+    }
+    .btn:disabled{ opacity:.7; cursor:not-allowed; box-shadow:none; }
+
+    .status{
+      margin-top:10px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+      font-weight:950;
+      font-size:13px;
+      white-space:pre-line;
+      display:none;
+    }
+    .status.show{ display:block; }
+    .status.ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.10); }
+    .status.bad{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.10); }
+    .status.warn{ border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.10); }
+
+    /* auth modal */
+    .authModalBackdrop{
+      position:fixed; inset:0; z-index:9999;
+      display:none; align-items:center; justify-content:center;
+      padding:16px;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+    }
+    .authModalCard{
+      width:100%; max-width:440px;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(15, 26, 48, 0.86);
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      padding:14px;
+    }
+    .authModalTitle{ font-weight:1000; font-size:16px; margin-bottom:6px; }
+    .authModalText{ color: rgba(233,240,255,.82); font-weight:850; font-size:13px; line-height:1.45; }
+    .authModalActions{ display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; margin-top:12px; }
+  </style>
+</head>
+
+<body>
+  <div class="overlay"></div>
+
+  <div class="page">
+    <div class="wrap">
+      <div class="card">
+        <div class="top">
+          <div class="title">Продажа · Реквизиты</div>
+          <a class="back" href="./sell.html">← Назад</a>
+        </div>
+
+        <div class="section">
+          <div class="sectionTitle">
+            <span>Куда перевести RUB</span>
+          </div>
+
+          <div class="hint" style="margin-bottom:10px;">
+            Заполни реквизиты получателя RUB. USDT будут списаны напрямую с единого баланса кошелька Crossflag.
+          </div>
+
+          <div class="row">
+            <div>
+              <div class="hint" style="margin-bottom:6px;">Способ</div>
+              <select id="payMethod">
+                <option value="SBP">СБП</option>
+                <option value="CARD">Карта</option>
+              </select>
+            </div>
+            <div>
+              <div class="hint" style="margin-bottom:6px;">Номер</div>
+              <input id="payNumber" placeholder="+7… или номер карты" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <div class="hint" style="margin-bottom:6px;">Банк</div>
+              <input id="payBank" placeholder="Например: Т-Банк" />
+            </div>
+            <div>
+              <div class="hint" style="margin-bottom:6px;">ФИО получателя</div>
+              <input id="payFio" placeholder="Иванов Иван Иванович" />
+            </div>
+          </div>
+
+          <div class="section" style="margin:12px 0 0 0;">
+            <div class="sectionTitle">
+              <span>Списание из кошелька</span>
+            </div>
+
+            <div class="row" style="margin-bottom:0;">
+              <div>
+                <div class="hint" style="margin-bottom:6px;">Будет списано</div>
+                <input id="walletSpend" value="—" disabled />
+              </div>
+              <div>
+                <div class="hint" style="margin-bottom:6px;">Доступный баланс</div>
+                <input id="walletBalance" value="Загрузка…" disabled />
+              </div>
+            </div>
+
+            <div class="hint" style="margin-top:10px;">
+              Никаких отдельных адресов и ручной отправки тут больше не нужно. После создания сделки USDT сразу резервируются из общего баланса кошелька, а дальше остаётся дождаться выплаты RUB.
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn" id="continueBtn" type="button" disabled>Создать сделку</button>
+          </div>
+
+          <div class="status warn" id="statusBox">—</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- auth modal -->
+  <div class="authModalBackdrop" id="authModal">
+    <div class="authModalCard">
+      <div class="authModalTitle">Нужен аккаунт</div>
+      <div class="authModalText" id="authModalText">Чтобы продолжить, нужно зарегистрироваться / войти.</div>
+      <div class="authModalActions">
+        <button class="btn" id="authGoBtn" type="button">Перейти в аккаунт</button>
+        <button class="btnGhost" id="authCloseBtn" type="button">Отмена</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const WORKER_BASE = "https://api.crossflag.org";
+
+  
+
+  const USER_TOKEN = localStorage.getItem("CF_USER_TOKEN") || localStorage.getItem("user_token") || localStorage.getItem("cf_user_token") || "";
+  const AUTH_HEADERS = USER_TOKEN
+    ? { "Authorization": "Bearer " + USER_TOKEN, "X-User-Token": USER_TOKEN }
+    : {};
+// ===== AUTH =====
+  function getUserToken(){
+    try{
+      return (
+        localStorage.getItem("user_token") ||
+        localStorage.getItem("userToken") ||
+        localStorage.getItem("auth_token") ||
+        localStorage.getItem("authToken") ||
+        localStorage.getItem("crossflag_user_token") ||
+        localStorage.getItem("crossflag_auth_token") ||
+        localStorage.getItem("X_AUTH_TOKEN") ||
+        localStorage.getItem("X_USER_TOKEN") ||
+        sessionStorage.getItem("user_token") ||
+        sessionStorage.getItem("userToken") ||
+        sessionStorage.getItem("auth_token") ||
+        sessionStorage.getItem("authToken") ||
+        sessionStorage.getItem("crossflag_user_token") ||
+        sessionStorage.getItem("crossflag_auth_token") ||
+        ""
+      ).trim();
+    }catch{ return ""; }
+  }
+
+  function showAuthModal(message, redirectAfter){
+    const modal = document.getElementById("authModal");
+    const txt = document.getElementById("authModalText");
+    if (txt) txt.textContent = message || "Чтобы продолжить, нужно зарегистрироваться / войти.";
+
+    const go = document.getElementById("authGoBtn");
+    const close = document.getElementById("authCloseBtn");
+
+    if (go){
+      go.onclick = () => {
+        try{ sessionStorage.setItem("post_auth_redirect", redirectAfter || location.href); }catch{}
+        location.href = "./account.html";
+      };
+    }
+    if (close){
+      close.onclick = () => { if (modal) modal.style.display = "none"; };
+    }
+    if (modal) modal.style.display = "flex";
+  }
+
+  function requireAuthOrPrompt(redirectAfter){
+    const tok = getUserToken();
+    if (tok) return tok;
+    showAuthModal("Чтобы продолжить, нужно зарегистрироваться / войти в аккаунт.", redirectAfter || location.href);
+    return "";
+  }
+
+  function saveSellDraft(draft){
+    try{ sessionStorage.setItem("sell_draft", JSON.stringify(draft)); }catch{}
+    try{ localStorage.setItem("sell_draft", JSON.stringify(draft)); }catch{}
+  }
+
+  function saveSellDraftResume(){
+    try{
+      const rec = {
+        type: "SELL_DRAFT",
+        step: "SELL_REQUISITES",
+        url: location.pathname + location.search + location.hash,
+        ts: Date.now()
+      };
+      sessionStorage.setItem("cf_last_sell_resume_draft", JSON.stringify(rec));
+      localStorage.setItem("cf_last_sell_resume_draft", JSON.stringify(rec));
+    }catch{}
+  }
+
+  function clearSellDraftResume(){
+    try{ sessionStorage.removeItem("cf_last_sell_resume_draft"); }catch{}
+    try{ localStorage.removeItem("cf_last_sell_resume_draft"); }catch{}
+  }
+
+  function setStatus(text, kind){
+    const statusBox = document.getElementById("statusBox");
+    statusBox.textContent = text;
+    statusBox.className = "status show " + (kind || "warn");
+  }
+
+  function getParam(name){
+    try { return new URL(location.href).searchParams.get(name) || ""; }
+    catch { return ""; }
+  }
+
+  const offerId = (getParam("offerId") || getParam("id") || "").trim();
+  const amountRub = Number(getParam("amountRub") || 0);
+  const rate = Number(getParam("rate") || 0);
+
+  const payMethodEl = document.getElementById("payMethod");
+  const payNumberEl = document.getElementById("payNumber");
+  const payBankEl = document.getElementById("payBank");
+  const payFioEl = document.getElementById("payFio");
+  const walletSpendEl = document.getElementById("walletSpend");
+  const walletBalanceEl = document.getElementById("walletBalance");
+
+  const continueBtn = document.getElementById("continueBtn");
+
+  let walletBalanceUsdt = null;
+
+  if (offerId && amountRub > 0 && rate > 0){
+    saveSellDraftResume();
+  }
+
+  function fmtUsdt(n){
+    const x = Number(n);
+    if (!Number.isFinite(x)) return "—";
+    return x.toLocaleString("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: 6 }) + " USDT";
+  }
+
+  function requiredUsdt(){
+    if (!(amountRub > 0) || !(rate > 0)) return NaN;
+    return amountRub / rate;
+  }
+
+  async function fetchWalletBalance(token){
+    const tok = String(token || getUserToken() || "").trim();
+    if (!tok) return null;
+
+    const res = await fetch(WORKER_BASE + "/api/public/wallet/balance", {
+      method: "GET",
+      headers: { "X-User-Token": tok, "Authorization": "Bearer " + tok }
+    });
+    const j = await res.json().catch(() => null);
+    if (!res.ok || !j || !j.ok) {
+      throw new Error((j && j.error) ? j.error : ("HTTP " + res.status));
+    }
+
+    if (Number.isFinite(Number(j.usdt_trc20))) return Number(j.usdt_trc20);
+    if (Number.isFinite(Number(j.balance))) return Number(j.balance);
+    if (Number.isFinite(Number(j.dec6))) return Number(j.dec6) / 1e6;
+    return 0;
+  }
+
+  async function refreshWalletBalance(token){
+    const need = requiredUsdt();
+    walletSpendEl.value = fmtUsdt(need);
+
+    const tok = String(token || getUserToken() || "").trim();
+    if (!tok){
+      walletBalanceUsdt = null;
+      walletBalanceEl.value = "Нужен вход";
+      validate();
+      return;
+    }
+
+    walletBalanceEl.value = "Загрузка…";
+    try{
+      walletBalanceUsdt = await fetchWalletBalance(tok);
+      walletBalanceEl.value = fmtUsdt(walletBalanceUsdt);
+    }catch(e){
+      walletBalanceUsdt = null;
+      walletBalanceEl.value = "Ошибка";
+      setStatus("Не удалось загрузить баланс кошелька: " + (e.message || String(e)), "warn");
+    }
+    validate();
+  }
+
+  function validate(){
+    const need = requiredUsdt();
+    const hasFields =
+      offerId && amountRub > 0 && rate > 0 &&
+      (payNumberEl.value || "").trim() &&
+      (payBankEl.value || "").trim() &&
+      (payFioEl.value || "").trim();
+
+    const hasWallet = Number.isFinite(walletBalanceUsdt);
+    const enoughWallet = hasWallet && Number.isFinite(need) && walletBalanceUsdt + 1e-9 >= need;
+    const ok = hasFields && hasWallet && enoughWallet;
+
+    continueBtn.disabled = !ok;
+
+    if (!offerId || !(amountRub > 0) || !(rate > 0)){
+      setStatus("Ошибка: нет данных заявки. Вернись назад и выбери заявку заново.", "bad");
+      return;
+    }
+
+    if (!getUserToken()){
+      setStatus("Чтобы продать из единого баланса, сначала войди в аккаунт.", "warn");
+      return;
+    }
+
+    if (!hasWallet){
+      setStatus("Загружаем баланс кошелька…", "warn");
+      return;
+    }
+
+    if (!enoughWallet){
+      setStatus("Недостаточно USDT на балансе кошелька для этой продажи.", "bad");
+      return;
+    }
+
+    setStatus("Реквизиты заполнены. После создания сделки USDT сразу спишутся с баланса кошелька.", hasFields ? "ok" : "warn");
+  }
+
+  payMethodEl.addEventListener("change", () => { saveSellDraftResume(); validate(); });
+  payNumberEl.addEventListener("input", () => { saveSellDraftResume(); validate(); });
+  payBankEl.addEventListener("input", () => { saveSellDraftResume(); validate(); });
+  payFioEl.addEventListener("input", () => { saveSellDraftResume(); validate(); });
+
+  window.addEventListener("pagehide", saveSellDraftResume);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") saveSellDraftResume();
+  });
+
+  continueBtn.onclick = async () => {
+    const tok = requireAuthOrPrompt(location.href);
+    if (!tok) return;
+
+    const need = requiredUsdt();
+    if (!Number.isFinite(need) || need <= 0){
+      setStatus("Не удалось посчитать сумму USDT для списания.", "bad");
+      return;
+    }
+
+    const pay = {
+      method: String(payMethodEl.value || "SBP").toUpperCase(),
+      number: String(payNumberEl.value || "").trim(),
+      bank: String(payBankEl.value || "").trim(),
+      fio: String(payFioEl.value || "").trim()
+    };
+
+    const draft = {
+      offerId: String(offerId || "").trim(),
+      amountRub: Number(amountRub),
+      rate: Number(rate),
+      pay
+    };
+
+    saveSellDraft(draft);
+
+    continueBtn.disabled = true;
+    const prevText = continueBtn.textContent;
+    continueBtn.textContent = "Создание…";
+
+    try{
+      const freshBalance = await fetchWalletBalance(tok);
+      walletBalanceUsdt = freshBalance;
+      walletBalanceEl.value = fmtUsdt(freshBalance);
+
+      if (freshBalance + 1e-9 < need){
+        setStatus("Недостаточно средств. Пополни кошелёк или уменьши сумму продажи.", "bad");
+        return;
+      }
+
+      const res = await fetch(WORKER_BASE + "/api/public/sell_submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Token": tok,
+          "Authorization": "Bearer " + tok
+        },
+        body: JSON.stringify({
+          offerId: String(offerId || "").trim(),
+          amountRub: Number(amountRub),
+          rate: Number(rate),
+          pay,
+          useWalletBalance: true,
+          fundingSource: "WALLET",
+          source: "wallet"
+        })
+      });
+
+      const j = await res.json().catch(() => null);
+      if (!res.ok || !j || !j.ok){
+        throw new Error((j && j.error) ? j.error : ("HTTP " + res.status));
+      }
+
+      clearSellDraftResume();
+      try{
+        sessionStorage.setItem("cf_last_sell_resume", JSON.stringify({ dealId: j.dealId, secret: j.secret, url: "./sell-deal.html?dealId=" + encodeURIComponent(j.dealId) + "&secret=" + encodeURIComponent(j.secret), ts: Date.now() }));
+      }catch(_){ }
+      if (window.CrossflagResume) window.CrossflagResume.upsertSell({ id: j.dealId, secret: j.secret, url: "./sell-deal.html?dealId=" + encodeURIComponent(j.dealId) + "&secret=" + encodeURIComponent(j.secret) });
+      location.href =
+        "./sell-deal.html?dealId=" + encodeURIComponent(j.dealId) +
+        "&secret=" + encodeURIComponent(j.secret);
+    }catch(e){
+      setStatus("Ошибка: " + (e.message || String(e)), "bad");
+      await refreshWalletBalance(tok).catch(() => {});
+    }finally{
+      continueBtn.textContent = prevText;
+      validate();
+    }
+  };
+
+  refreshWalletBalance();
+  validate();
+</script>
+<script src="./resume-helper.js"></script>
+</body>
+</html>

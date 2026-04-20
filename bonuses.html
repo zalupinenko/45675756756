@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Crossflag · Бонусы</title>
+  <link rel="icon" href="./favicon.ico" />
+  <style>
+    :root{
+      --bg:#070b14;
+      --card:rgba(16,24,40,.72);
+      --stroke:rgba(255,255,255,.08);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.62);
+      --muted2:rgba(255,255,255,.45);
+      --blue:#2f6bff;
+      --blue2:#1f57e6;
+      --green:#2bd576;
+      --red:#ff4d4d;
+      --shadow:0 24px 70px rgba(0,0,0,.55);
+      --radius:22px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: var(--bg);
+      color: var(--text);
+      overflow-x:hidden;
+    }
+
+    .bg{
+      position:fixed; inset:0;
+      z-index:-2;
+      background: radial-gradient(1200px 600px at 50% 10%, rgba(60,110,255,.22), transparent 55%),
+                  radial-gradient(900px 520px at 10% 30%, rgba(43,213,118,.12), transparent 60%),
+                  radial-gradient(900px 520px at 90% 30%, rgba(255,77,77,.10), transparent 60%),
+                  linear-gradient(180deg, #050813, #070b14);
+    }
+
+    .wrap{
+      min-height:100%;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      padding: 26px 16px 34px;
+    }
+
+    .card{
+      width: min(980px, 100%);
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      overflow:hidden;
+    }
+
+    .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 18px 18px 10px;
+    }
+
+    .title{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .title h1{
+      margin:0;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing:.2px;
+    }
+
+    .title .sub{
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .btnTop{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      text-decoration:none;
+      font-weight: 650;
+      font-size: 13px;
+      transition: transform .08s ease, background .15s ease;
+      user-select:none;
+    }
+    .btnTop:active{ transform: scale(.98); }
+    .btnTop:hover{ background: rgba(255,255,255,.08); }
+
+
+    /* ✅ Top header layout fix (title + button) */
+    .top{
+      flex-wrap: wrap;
+      align-items:flex-start;
+    }
+    .title{
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .title h1,
+    .title .sub{
+      word-break: break-word;
+    }
+    .btnTop{
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+    @media (max-width: 520px){
+      .top{ gap:10px; }
+      .btnTop{ margin-left:auto; }
+    }
+
+
+    .content{ padding: 0 18px 18px; }
+
+    .section{
+      border: 1px solid var(--stroke);
+      background: rgba(0,0,0,.16);
+      border-radius: 18px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+
+    .sectionTitle{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom: 10px;
+    }
+
+    .sectionTitle span:first-child{
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .chip{
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+      color: var(--muted);
+    }
+
+    .chip.ok{ color: rgba(43,213,118,.95); border-color: rgba(43,213,118,.25); background: rgba(43,213,118,.08); }
+
+    .grid2{ display:grid; grid-template-columns: 1.1fr .9fr; gap: 12px; }
+    @media (max-width: 860px){ .grid2{ grid-template-columns:1fr; } }
+
+    .p{ margin: 0 0 10px; color: var(--muted); line-height: 1.45; font-size: 13px; }
+
+    .bul{
+      margin: 10px 0 0;
+      padding-left: 16px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .bul li{ margin: 6px 0; }
+
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+    /* ===== referral UI (moved from account.html) ===== */
+    .refGrid{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 860px){ .refGrid{ grid-template-columns:1fr; } }
+
+    .refCard{
+      border: 1px solid var(--stroke);
+      background: rgba(255,255,255,.05);
+      border-radius: 18px;
+      padding: 14px;
+    }
+
+    .refTitle{ font-weight: 850; font-size: 14px; margin-bottom: 8px; }
+    .refSmall{ color: var(--muted); font-size: 12px; line-height: 1.35; }
+
+    .refRow{ display:flex; align-items:center; gap:10px; justify-content:space-between; }
+    .refCode{
+      flex:1;
+      border: 1px solid var(--stroke);
+      background: rgba(0,0,0,.18);
+      border-radius: 14px;
+      padding: 12px 12px;
+      font-weight: 900;
+      letter-spacing: .6px;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+
+    .refBalanceBox{
+      margin-top: 12px;
+      border: 1px solid rgba(43,213,118,.25);
+      background: rgba(43,213,118,.08);
+      border-radius: 16px;
+      padding: 12px;
+    }
+    .refBalanceLabel{ color: rgba(43,213,118,.85); font-weight: 700; font-size: 12px; }
+    .refBalanceValue{ font-size: 22px; font-weight: 900; margin-top: 4px; }
+
+    .refActions{ display:grid; gap: 10px; margin-top: 10px; }
+    .refActions input, .refActions select{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--stroke);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      outline:none;
+    }
+
+    .btn{
+      border:0;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-weight: 850;
+      color: white;
+      background: linear-gradient(180deg, var(--blue), var(--blue2));
+      cursor:pointer;
+      user-select:none;
+      transition: transform .08s ease, filter .15s ease;
+    }
+    .btn:active{ transform: scale(.99); }
+    .btn:disabled{ opacity:.5; cursor:not-allowed; }
+
+    .btnMini{ padding: 10px 12px; border-radius: 12px; font-size: 13px; }
+
+    .btnGhost{
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--stroke);
+      color: var(--text);
+    }
+
+    .refMsg{ margin-top: 10px; font-size: 12px; color: var(--muted); }
+    .refMsg.ok{ color: rgba(43,213,118,.95); }
+    .refMsg.err{ color: rgba(255,77,77,.95); }
+
+    .footerBack{
+      margin-top: 12px;
+      display:flex;
+      justify-content:center;
+    }
+  
+    /* ✅ Mobile: keep referral code row inside card */
+    @media (max-width: 520px){
+      .refRow{
+        flex-wrap: wrap;
+        justify-content: flex-start;
+      }
+      .refRow .refCode{
+        width: 100%;
+        flex: 1 1 100%;
+      }
+      .refRow .btnMini{
+        width: 100%;
+      }
+    }
+
+
+    /* ✅ Mobile only: center title, move button to top-left (no overlap) */
+    @media (max-width: 520px){
+      .top{
+        position: relative;
+        justify-content: center !important;
+        text-align: center;
+        padding-top: 54px; /* space for the button */
+      }
+
+      .btnTop{
+        position: absolute;
+        left: 14px;
+        top: 14px;
+        margin: 0;
+      }
+
+      .title{
+        width: 100%;
+      }
+
+      .title h1,
+      .title .sub{
+        text-align: center;
+      }
+    }
+
+
+
+
+
+    .bottomNav{
+      position:fixed;
+      left:0; right:0;
+      bottom:0;
+      z-index:999;
+      padding:10px 14px calc(10px + env(safe-area-inset-bottom)) 14px;
+      background: linear-gradient(180deg, rgba(7,16,34,0), rgba(7,16,34,.72) 35%, rgba(7,16,34,.92));
+    }
+    .navBar{
+      max-width:1180px;
+      margin:0 auto;
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(15,26,48,.62);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      padding:8px;
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:6px;
+    }
+    .navItem{
+      border-radius:18px;
+      padding:10px 8px;
+      text-align:center;
+      cursor:pointer;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      color: rgba(233,240,255,.74);
+      font-weight:950;
+      font-size:12px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:6px;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease, color .18s ease;
+    }
+    .navItem svg{ width:20px; height:20px; opacity:.95; }
+    .navItem.active{
+      background: linear-gradient(180deg, rgba(45,91,255,.35), rgba(31,63,179,.22));
+      border: 1px solid rgba(45,91,255,.30);
+      color: rgba(233,240,255,.95);
+    }
+    .navItem:hover,
+    .navItem:focus-visible{
+      transform: translateY(-2px);
+      background: rgba(255,255,255,.04);
+      color: rgba(233,240,255,.92);
+    }
+    .navItem:active{ transform: translateY(1px); }
+
+</style>
+
+  <style id="cfPageTransitionStyle">
+    html.cfPageEntering body{
+      opacity:0;
+      transform:translateY(8px);
+    }
+    html.cfPageEntering body.cfPageReady{
+      opacity:1;
+      transform:none;
+      transition:opacity .22s ease, transform .22s ease;
+    }
+    body.cfPageLeaving{
+      opacity:0;
+      transform:translateY(8px);
+      transition:opacity .18s ease, transform .18s ease;
+      pointer-events:none;
+    }
+    @media (prefers-reduced-motion: reduce){
+      html.cfPageEntering body,
+      html.cfPageEntering body.cfPageReady,
+      body.cfPageLeaving{
+        opacity:1 !important;
+        transform:none !important;
+        transition:none !important;
+      }
+    }
+  </style>
+
+</head>
+
+<script>
+(function initCrossflagPageTransition(){
+  try { document.documentElement.classList.add('cfPageEntering'); } catch(e) {}
+  const markReady = () => {
+    try { document.body.classList.add('cfPageReady'); } catch(e) {}
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(markReady), { once:true });
+  } else {
+    requestAnimationFrame(markReady);
+  }
+  window.cfNavigate = function(href){
+    if (!href) return;
+    if (window.__cfNavigating) return;
+    window.__cfNavigating = true;
+    try { document.body.classList.add('cfPageLeaving'); } catch(e) {}
+    window.setTimeout(() => { location.href = href; }, 170);
+  };
+})();
+</script>
+
+<body>
+  <div class="bg" aria-hidden="true"></div>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="top">
+        <div class="title">
+          <h1>Бонусы</h1>
+          <div class="sub">Реферальная программа Crossflag</div>
+        </div>
+              </div>
+
+      <div class="content">
+
+        <div class="section">
+          <div class="sectionTitle">
+            <span>Как это работает</span>
+            <span class="chip" id="meChip">—</span>
+          </div>
+
+          <div class="grid2">
+            <div>
+              <p class="p">
+                Приглашай друзей по своему реферальному коду — и получай бонус в USDT, когда они совершают сделки.
+              </p>
+              <ul class="bul">
+                <li><b>0.1%</b> от объёма <b>покупки</b> (BUY) твоего реферала.</li>
+                <li><b>0.5%</b> от объёма <b>продажи</b> (SELL) твоего реферала.</li>
+                <li>Код можно привязать к аккаунту <b>один раз</b>.</li>
+                <li>Бонусы начисляются автоматически после завершения сделки.</li>
+              </ul>
+            </div>
+            <div>
+              <p class="p">
+                <b>Важно:</b> бонусы можно вывести на Bybit/HTX UID или на USDT-кошелёк (BEP20/TRC20).
+                После отправки заявки она уйдёт в обработку.
+              </p>
+              <p class="p" style="margin-top:10px; color: var(--muted2);">
+                Если ты уже авторизован — ниже увидишь свой код и текущий баланс.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="section" id="refSection" style="display:none;">
+          <div class="sectionTitle">
+            <span>Реферальная программа</span>
+            <span class="chip ok">ACTIVE</span>
+          </div>
+
+          <div class="refGrid" id="refBox">
+            <div class="refCard">
+              <div class="refTitle">Твой реферальный код</div>
+              <div class="refSmall">Поделись кодом с другом — он введёт его один раз и станет твоим рефералом.</div>
+
+              <div class="refRow" style="margin-top:10px">
+                <div class="refCode mono" id="refMyCode">—</div>
+                <button class="btn btnMini" id="refCopyBtn" type="button">Код</button>
+              </div>
+
+              <div class="refRow" style="margin-top:8px">
+                <div class="refCode mono" id="refMyLink" style="font-size:11px; letter-spacing:0;">—</div>
+                <button class="btn btnMini" id="refCopyLinkBtn" type="button">Ссылку</button>
+              </div>
+
+              <div class="refBalanceBox">
+                <div class="refBalanceLabel">Реферальный баланс (USDT)</div>
+                <div class="refBalanceValue" id="refBalance">0.00</div>
+              </div>
+
+              <div class="refMsg" id="refMsg"></div>
+            </div>
+
+            <div class="refCard">
+              <div class="refTitle">Применить реферальный код</div>
+              <div class="refSmall">Если ты не вводил код при регистрации — можешь сделать это здесь (один раз).</div>
+
+              <div class="refActions">
+                <input id="refApplyInput" placeholder="Например: CF-AB12CD34" />
+                <button class="btn btnMini" id="refApplyBtn" type="button">Применить</button>
+              </div>
+
+              <div class="refTitle" style="margin-top:14px">Вывод бонусов</div>
+              <div class="refSmall">Бонусы поступают на внутренний баланс кошелька.</div>
+
+              <div class="refActions">
+                <input id="refWithdrawAmount" placeholder="Сумма USDT" inputmode="decimal"/>
+                <button class="btn btnMini" id="refWithdrawBtn" type="button">Вывести</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+</div>
+    </div>
+  </div>
+
+<script>
+  const WORKER_BASE = String(
+    new URLSearchParams(location.search).get("wb") ||
+    localStorage.getItem("worker_base") ||
+    localStorage.getItem("WORKER_BASE") ||
+    "https://api.crossflag.org"
+  ).replace(/\/+$/, "");
+
+  function getToken(){
+    // bonuses page uses same token set as account/auth pages
+    const t = (
+      localStorage.getItem("CF_USER_TOKEN") ||
+      localStorage.getItem("user_token") ||
+      localStorage.getItem("X_AUTH_TOKEN") ||
+      localStorage.getItem("AUTH_TOKEN") ||
+      localStorage.getItem("userToken") ||
+      ""
+    ).trim();
+    // mirror into both keys to keep app consistent
+    if (t){
+      try { if (!localStorage.getItem("CF_USER_TOKEN")) localStorage.setItem("CF_USER_TOKEN", t); } catch(_){ }
+      try { if (!localStorage.getItem("user_token")) localStorage.setItem("user_token", t); } catch(_){ }
+    }
+    return t;
+  }
+
+  async function apiJson(path, method="GET", body=null){
+    const tok = getToken();
+    const headers = { "Content-Type":"application/json" };
+    if (tok){
+      headers["X-Auth-Token"] = tok;
+      headers["X-User-Token"] = tok;
+      headers["Authorization"] = "Bearer " + tok;
+    }
+    const res = await fetch(WORKER_BASE + path, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : null
+    });
+    const text = await res.text();
+    let j;
+    try{ j = JSON.parse(text); }catch{ throw new Error("Ответ не JSON: " + text.slice(0,200)); }
+    if (!res.ok || !j.ok) throw new Error(j.error || ("HTTP " + res.status));
+    return j;
+  }
+
+  const els = {
+    meChip: document.getElementById("meChip"),
+    refSection: document.getElementById("refSection"),
+    refBox: document.getElementById("refBox"),
+    refMyCode: document.getElementById("refMyCode"),
+    refCopyBtn: document.getElementById("refCopyBtn"),
+    refBalance: document.getElementById("refBalance"),
+    refApplyInput: document.getElementById("refApplyInput"),
+    refApplyBtn: document.getElementById("refApplyBtn"),
+    refWithdrawAmount: document.getElementById("refWithdrawAmount"),
+    refWithdrawBtn: document.getElementById("refWithdrawBtn"),
+    refMsg: document.getElementById("refMsg"),
+  };
+
+  function setRefMsg(text, kind){
+    if(!els.refMsg) return;
+    els.refMsg.textContent = text || "";
+    els.refMsg.className = "refMsg" + (kind ? (" " + kind) : "");
+  }
+
+  function fmtUsdt(v){
+    const n = Number(v || 0);
+    if(!isFinite(n)) return "0.00";
+    return n.toFixed(2);
+  }
+
+  // prevent re-apply if already set
+  function lockRefApplyUI(referrerCode){
+    const v = String(referrerCode || "").trim();
+    if (els.refApplyInput) {
+      if (v) els.refApplyInput.value = v;
+      els.refApplyInput.disabled = true;
+    }
+    if (els.refApplyBtn) els.refApplyBtn.disabled = true;
+  }
+  function unlockRefApplyUI(){
+    if (els.refApplyInput) els.refApplyInput.disabled = false;
+    if (els.refApplyBtn) els.refApplyBtn.disabled = false;
+  }
+
+  // pending ref from url
+  function getPendingRef(){
+    try{ return localStorage.getItem("pending_ref") || ""; }catch(_){ return ""; }
+  }
+  function setPendingRef(code){
+    try{
+      if(code) localStorage.setItem("pending_ref", code);
+      else localStorage.removeItem("pending_ref");
+    }catch(_){ }
+  }
+  function parseRefFromUrl(){
+    try{
+      const u = new URL(location.href);
+      const ref = (u.searchParams.get("ref") || "").trim();
+      if(ref) setPendingRef(ref);
+    }catch(_){ }
+  }
+
+  async function loadMeOrAuth(){
+    const tok = getToken();
+    if(!tok){
+      const ret = location.pathname + location.search;
+      location.href = "./auth.html?return=" + encodeURIComponent(ret);
+      return;
+    }
+
+    try{
+      const j = await apiJson("/api/public/auth/me", "GET");
+      const u = j.user || null;
+      const uname = u && u.username ? String(u.username).replace(/^@/, "") : "";
+      els.meChip.textContent = uname ? ("@" + uname) : "OK";
+      els.meChip.className = "chip ok";
+      els.refSection.style.display = "block";
+      await loadRefMe();
+    }catch(_){
+      // token invalid -> go auth
+      const ret = location.pathname + location.search;
+      location.href = "./auth.html?return=" + encodeURIComponent(ret);
+    }
+  }
+
+  async function loadRefMe(){
+    if(!els.refBox) return;
+    try{
+      const j = await apiJson("/api/public/ref/me", "GET");
+      const ref = j?.ref || {};
+
+      const code = String(ref.code || ref.myCode || "").trim();
+      const referrerCode = String(ref.referrerCode || ref.ref || "").trim();
+      const hasReferrer = !!(ref.referrerUserId || referrerCode);
+      const bal = ref.balanceUsdt ?? ref.balance ?? 0;
+
+      els.refMyCode.textContent = code || "—";
+      const linkEl = document.getElementById("refMyLink");
+      if (linkEl) linkEl.textContent = code ? ("https://crossflag.org/register.html?ref=" + code) : "—";
+      els.refBalance.textContent = fmtUsdt(bal);
+
+      const pendingCode = getPendingRef();
+      if(pendingCode && els.refApplyInput && !els.refApplyInput.value) els.refApplyInput.value = pendingCode;
+
+      if (hasReferrer) lockRefApplyUI(referrerCode || String(els.refApplyInput?.value || "").trim());
+      else unlockRefApplyUI();
+
+      setRefMsg("", "");
+    }catch(e){
+      if (els.refMyCode) els.refMyCode.textContent = "—";
+      if (els.refBalance) els.refBalance.textContent = "0.00";
+      const msg = (e && e.message) ? String(e.message) : "Ошибка";
+      setRefMsg("Реферальная система временно недоступна: " + msg, "err");
+      console.error("loadRefMe failed", e);
+    }
+  }
+
+  async function applyReferralCode(code){
+    code = String(code || "").trim();
+    if(!code){ setRefMsg("Введите реферальный код.", "err"); return; }
+    try{
+      await apiJson("/api/public/ref/apply", "POST", { code });
+      setPendingRef("");
+      setRefMsg("Код применён.", "ok");
+      lockRefApplyUI(code);
+      await loadRefMe();
+    }catch(e){
+      const msg = String(e?.message || "");
+      if (msg.toLowerCase().includes("referrer already set") || msg.toLowerCase().includes("already set")){
+        setPendingRef("");
+        setRefMsg("Реферальный код уже привязан к аккаунту ✅", "ok");
+        lockRefApplyUI(code);
+        await loadRefMe().catch(()=>{});
+        return;
+      }
+      setRefMsg(msg ? ("Ошибка: " + msg) : "Ошибка применения кода.", "err");
+    }
+  }
+
+  async function withdrawReferral(){
+    const amount = String(els.refWithdrawAmount?.value || "").trim().replace(",", ".");
+    const n = Number(amount);
+
+    if(!amount || !isFinite(n) || n <= 0){ setRefMsg("Укажите корректную сумму.", "err"); return; }
+    try{
+      await apiJson("/api/public/ref/withdraw", "POST", { amountUsdt: n });
+      setRefMsg("Бонусы зачислены на баланс кошелька.", "ok");
+      if (els.refWithdrawAmount) els.refWithdrawAmount.value = "";
+      await loadRefMe();
+    }catch(e){
+      setRefMsg(e?.message ? ("Ошибка: " + e.message) : "Ошибка вывода.", "err");
+    }
+  }
+
+  // init
+  parseRefFromUrl();
+
+  if (els.refCopyBtn) els.refCopyBtn.onclick = async () => {
+    const code = String(els.refMyCode?.textContent || "").trim();
+    if(!code || code === "—"){ setRefMsg("Сначала войдите в аккаунт.", "err"); return; }
+    try{
+      await navigator.clipboard.writeText(code);
+      setRefMsg("Код скопирован.", "ok");
+    }catch(_){
+      prompt("Скопируйте код:", code);
+    }
+  };
+
+  const refCopyLinkBtn = document.getElementById("refCopyLinkBtn");
+  if (refCopyLinkBtn) refCopyLinkBtn.onclick = async () => {
+    const code = String(els.refMyCode?.textContent || "").trim();
+    if(!code || code === "—"){ setRefMsg("Сначала войдите в аккаунт.", "err"); return; }
+    const link = "https://crossflag.org/register.html?ref=" + code;
+    try{
+      await navigator.clipboard.writeText(link);
+      setRefMsg("Ссылка скопирована.", "ok");
+    }catch(_){
+      prompt("Скопируйте ссылку:", link);
+    }
+  };
+
+  if (els.refApplyBtn) els.refApplyBtn.onclick = () => applyReferralCode(els.refApplyInput?.value);
+  if (els.refApplyInput) els.refApplyInput.onkeydown = (e) => { if(e.key === "Enter") applyReferralCode(els.refApplyInput.value); };
+  if (els.refWithdrawBtn) els.refWithdrawBtn.onclick = withdrawReferral;
+
+  loadMeOrAuth();
+</script>
+
+  <div class="bottomNav">
+    <div class="navBar">
+      <div class="navItem" id="navWallet">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4.5 8.5h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-14a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2Z" stroke="rgba(233,240,255,.92)" stroke-width="2"/><path d="M16 13h3" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/></svg>
+        Кошелёк
+      </div>
+      <div class="navItem" id="navTrade">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h13" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/><path d="M14 4l3 3-3 3" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 17H7" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/><path d="M10 20l-3-3 3-3" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        P2P
+      </div>
+      <div class="navItem active" id="navBonus">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.8c3 2.1 5.8 2.1 9.2 0v9.3c0 6.2-4.4 9.3-9.2 9.3S2.8 18.3 2.8 12.1V2.8c3.4 2.1 6.2 2.1 9.2 0Z" stroke="rgba(233,240,255,.92)" stroke-width="2"/><path d="M9.2 12.1 11 14l4.8-5" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Бонусы
+      </div>
+      <div class="navItem" id="navHistory">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 8v5l3 2" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/><path d="M21 12a9 9 0 1 1-3-6.7" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/></svg>
+        История
+      </div>
+    </div>
+  </div>
+
+<script>
+(function initBottomNav(){
+  const params = new URLSearchParams(location.search);
+  const wb = params.get('wb') || localStorage.getItem('worker_base') || localStorage.getItem('WORKER_BASE') || '';
+  const withWb = (href) => {
+    if (!wb) return href;
+    return href + (href.includes('?') ? '&' : '?') + 'wb=' + encodeURIComponent(wb);
+  };
+  const go = (href) => { const next = withWb(href); if (window.cfNavigate) return window.cfNavigate(next); location.href = next; };
+  const navWallet = document.getElementById('navWallet');
+  const navTrade = document.getElementById('navTrade');
+  const navBonus = document.getElementById('navBonus');
+  const navHistory = document.getElementById('navHistory');
+  if (navWallet) navWallet.onclick = () => go('./qr.html');
+  if (navTrade) navTrade.onclick = () => go('./trade.html');
+  if (navBonus) navBonus.onclick = () => go('./bonuses.html');
+  if (navHistory) navHistory.onclick = () => go('./history.html');
+})();
+</script>
+</body>
+</html>

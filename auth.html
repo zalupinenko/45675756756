@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Crossflag · Аккаунт · Вход</title>
+  <style>
+    :root{
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+      --card: rgba(15, 26, 48, 0.52);
+      --border: rgba(255,255,255,.12);
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+      --btn:#2d5bff;
+      --btn2:#1f3fb3;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+    *,*::before,*::after{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0; color:var(--text); background:#071022;
+      overflow-x:hidden; overflow-y:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .overlay{
+      position:fixed; inset:0; z-index:-2;
+      background:
+        radial-gradient(1100px 700px at 50% -220px, rgba(45,91,255,.22), rgba(0,0,0,0) 65%),
+        radial-gradient(900px 600px at 85% 85%, rgba(34,197,94,.10), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(7,16,34,.84), rgba(7,16,34,.94));
+      pointer-events:none;
+    }
+    .page{
+      min-height:100svh;
+      display:flex; justify-content:center; align-items:flex-start;
+      padding: calc(16px + env(safe-area-inset-top)) 16px calc(22px + env(safe-area-inset-bottom)) 16px;
+    }
+    .wrap{ width:100%; max-width:720px; }
+    .card{
+      position:relative;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 14px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      overflow:hidden;
+    }
+    .card::before{
+      content:"";
+      position:absolute; inset:-60px; z-index:0;
+      background:
+        radial-gradient(520px 180px at 35% 20%, rgba(45,91,255,.18), rgba(0,0,0,0) 60%),
+        radial-gradient(520px 180px at 75% 90%, rgba(34,197,94,.10), rgba(0,0,0,0) 60%);
+      filter: blur(18px);
+      pointer-events:none;
+    }
+    .card > *{ position:relative; z-index:1; }
+    .top{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; flex-wrap:wrap; margin-bottom:12px;
+    }
+    .title{ font-weight:1000; font-size:16px; }
+    .back{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff; font-weight:950;
+      padding:10px 12px; border-radius:999px;
+      cursor:pointer; text-decoration:none; white-space:nowrap;
+    }
+    .section{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      margin-bottom:12px;
+      min-width:0;
+    }
+    .label{ color:var(--muted); font-size:12px; font-weight:950; margin-bottom:6px; }
+    input{
+      width:100%;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      color:var(--text);
+      outline:none;
+      font-weight:1000;
+      font-size:15px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      display:block;
+    }
+    input::placeholder{ color: rgba(159,176,212,.65); font-weight:900; }
+    .hint{
+      color: rgba(233,240,255,.78);
+      font-size:12px;
+      font-weight:850;
+      line-height:1.45;
+    }
+    .actions{
+      display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; margin-top:10px;
+    }
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:12px 18px;
+      background: linear-gradient(180deg, var(--btn), var(--btn2));
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow: 0 10px 26px rgba(0,0,0,.30);
+      min-width: 190px;
+      position:relative;
+    }
+    .btnGhost{
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:14px;
+      padding:12px 18px;
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      min-width: 190px;
+    }
+    .btn:disabled, .btnGhost:disabled{ opacity:.7; cursor:not-allowed; box-shadow:none; }
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+    .loading{ pointer-events:none; opacity:.88; }
+    .loading::after{
+      content:"";
+      position:absolute;
+      top:50%;
+      right:12px;
+      width:16px;
+      height:16px;
+      margin-top:-8px;
+      border-radius:999px;
+      border:2px solid rgba(255,255,255,.25);
+      border-top-color: rgba(255,255,255,.95);
+      animation: spin .9s linear infinite;
+    }
+    .status{
+      margin-top:10px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+      font-weight:950;
+      font-size:13px;
+      white-space:pre-line;
+      display:none;
+    }
+    .status.show{ display:block; }
+    .status.ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.10); }
+    .status.bad{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.10); }
+    .status.warn{ border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.10); }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    a.link{ color:#cfe0ff; font-weight:950; text-decoration:none; }
+    a.link:hover{ text-decoration:underline; }
+  </style>
+</head>
+<body>
+  <div class="overlay"></div>
+
+  <div class="page">
+    <div class="wrap">
+      <div class="card">
+        <div class="top">
+          <div class="title">Аккаунт · Вход</div>
+          <a class="back" href="./index.html">← На главную</a>
+        </div>
+
+        <div class="section">
+          <div class="hint">
+            1) Открой бота и нажми <span class="mono">/start</span> (это привяжет твой username к чату).<br/>
+            2) Введи username ниже — придёт код в ЛС.<br/>
+            Важно: username должен быть задан в Telegram (например <span class="mono">@crossflag_user</span>).
+          </div>
+
+          <div style="margin-top:10px;">
+            <div class="label">Telegram username</div>
+            <input id="u" placeholder="@username" autocomplete="username" />
+          </div>
+
+          <div class="actions">
+            <button class="btn" id="sendBtn" type="button">Отправить код</button>
+            <button class="btnGhost" id="openBotBtn" type="button">Открыть бота</button>
+          </div>
+        </div>
+
+        <div class="section" id="codeBox" style="display:none;">
+          <div class="label">Код из Telegram</div>
+          <input id="code" placeholder="6 цифр" inputmode="numeric" autocomplete="one-time-code" />
+          <div class="actions">
+            <button class="btn" id="loginBtn" type="button" disabled>Войти</button>
+          </div>
+          <div class="hint" style="margin-top:8px;">Код действует 10 минут.</div>
+        </div>
+
+        <div class="status warn" id="status">—</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const WORKER_BASE = String(
+    localStorage.getItem("worker_base") ||
+    localStorage.getItem("WORKER_BASE") ||
+    "https://api.crossflag.org"
+  ).replace(/\/+$/, "");
+
+  const USER_TOKEN_KEY = "user_token";
+
+  function norm(u){
+    u = String(u || "").trim();
+    if (!u) return "";
+    if (!u.startsWith("@")) u = "@" + u;
+    return u;
+  }
+
+  function setStatus(text, kind){
+    const el = document.getElementById("status");
+    el.textContent = text;
+    el.className = "status show " + (kind || "warn");
+  }
+
+  function setLoading(btn, on, text){
+    if (!btn) return;
+    if (on){
+      btn.classList.add("loading");
+      btn.dataset._txt = btn.textContent;
+      btn.textContent = text || "Отправка…";
+      btn.disabled = true;
+    }else{
+      btn.classList.remove("loading");
+      btn.textContent = btn.dataset._txt || btn.textContent;
+      btn.disabled = false;
+    }
+  }
+
+  async function api(path, method, body){
+    const res = await fetch(WORKER_BASE + path, {
+      method,
+      headers: { "Content-Type":"application/json" },
+      body: body ? JSON.stringify(body) : null
+    });
+    const j = await res.json().catch(()=>null);
+    if (!j || !j.ok) throw new Error(j?.error || ("HTTP " + res.status));
+    return j;
+  }
+
+  function getReturnUrl(){
+    try{
+      const p = new URL(location.href).searchParams.get("return");
+      if (p) return p;
+    }catch{}
+    try{
+      const s = sessionStorage.getItem("auth_return");
+      if (s) return s;
+    }catch{}
+    return "./account.html";
+  }
+
+  const uEl = document.getElementById("u");
+  const sendBtn = document.getElementById("sendBtn");
+  const openBotBtn = document.getElementById("openBotBtn");
+  const codeBox = document.getElementById("codeBox");
+  const codeEl = document.getElementById("code");
+  const loginBtn = document.getElementById("loginBtn");
+
+  openBotBtn.onclick = () => {
+    // заменишь на своего бота, если нужно
+    location.href = "https://t.me/" + (localStorage.getItem("tg_bot") || "CrossflagEx_bot");
+  };
+
+  function validateCode(){
+    const c = String(codeEl.value || "").trim();
+    loginBtn.disabled = !/^\d{6}$/.test(c);
+  }
+  codeEl.addEventListener("input", validateCode);
+  uEl.addEventListener("input", () => {
+    const u = norm(uEl.value);
+    uEl.value = u;
+  });
+
+  sendBtn.onclick = async () => {
+    try{
+      const username = norm(uEl.value);
+      if (!username || username.length < 6){
+        setStatus("Введи корректный username (например @username).", "warn");
+        return;
+      }
+      setLoading(sendBtn, true, "Отправка…");
+      await api("/api/public/auth/request_code", "POST", { username });
+      codeBox.style.display = "block";
+      setStatus("Код отправлен в Telegram ✅", "ok");
+      codeEl.focus();
+    }catch(e){
+      setStatus("Ошибка: " + (e.message || String(e)), "bad");
+    }finally{
+      setLoading(sendBtn, false);
+    }
+  };
+
+  loginBtn.onclick = async () => {
+    try{
+      const username = norm(uEl.value);
+      const code = String(codeEl.value || "").trim();
+      if (!/^\d{6}$/.test(code)) return;
+
+      setLoading(loginBtn, true, "Вход…");
+      const j = await api("/api/public/auth/verify_code", "POST", { username, code });
+
+      if (j.userToken){
+        try {
+          const _t = String(j.userToken);
+          ["CF_USER_TOKEN","user_token","crossflag_user_token","X_AUTH_TOKEN","AUTH_TOKEN","userToken","cf_user_token"].forEach(k=>{
+            try{ localStorage.setItem(k, _t); }catch(_){}
+          });
+        } catch {}
+      }
+      setStatus("Готово ✅ Вход выполнен.", "ok");
+
+      const back = getReturnUrl();
+      setTimeout(() => { location.href = back; }, 350);
+    }catch(e){
+      setStatus("Ошибка: " + (e.message || String(e)), "bad");
+    }finally{
+      setLoading(loginBtn, false);
+    }
+  };
+</script>
+</body>
+</html>

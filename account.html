@@ -1,0 +1,1198 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Crossflag · Аккаунт</title>
+
+  <style>
+    :root{
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+      --card: rgba(15, 26, 48, 0.52);
+      --border: rgba(255,255,255,.12);
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+      --btn:#2d5bff;
+      --btn2:#1f3fb3;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+    *,*::before,*::after{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0; color:var(--text); background:#071022;
+      overflow-x:hidden; overflow-y:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .overlay{
+      position:fixed; inset:0; z-index:-2;
+      background:
+        radial-gradient(1100px 700px at 50% -220px, rgba(45,91,255,.22), rgba(0,0,0,0) 65%),
+        radial-gradient(900px 600px at 85% 85%, rgba(34,197,94,.10), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(7,16,34,.84), rgba(7,16,34,.94));
+      pointer-events:none;
+    }
+    .page{
+      min-height:100svh;
+      display:flex; justify-content:center; align-items:flex-start;
+      padding: calc(16px + env(safe-area-inset-top)) 16px calc(22px + env(safe-area-inset-bottom)) 16px;
+    }
+    .wrap{ width:100%; max-width:980px; }
+    .card{
+      position:relative;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 14px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      overflow:hidden;
+    }
+    .card::before{
+      content:"";
+      position:absolute; inset:-60px; z-index:0;
+      background:
+        radial-gradient(520px 180px at 35% 20%, rgba(45,91,255,.18), rgba(0,0,0,0) 60%),
+        radial-gradient(520px 180px at 75% 90%, rgba(34,197,94,.10), rgba(0,0,0,0) 60%);
+      filter: blur(18px);
+      pointer-events:none;
+    }
+    .card > *{ position:relative; z-index:1; }
+
+    .top{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; flex-wrap:wrap; margin-bottom:12px;
+    }
+    .title{ font-weight:1000; font-size:16px; }
+    .back{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff; font-weight:950;
+      padding:10px 12px; border-radius:999px;
+      cursor:pointer; text-decoration:none; white-space:nowrap;
+    }
+
+    .section{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      margin-bottom:12px;
+      min-width:0;
+    }
+    .sectionTitle{
+      font-weight:1000; margin-bottom:10px;
+      display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+    }
+    .row{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    @media(max-width:700px){ .row{ grid-template-columns:1fr; } }
+
+    input{
+      width:100%;
+      max-width:100%;
+      min-width:0;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      color:var(--text);
+      outline:none;
+      font-weight:1000;
+      font-size:15px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      display:block;
+    }
+    input::placeholder{ color: rgba(159,176,212,.65); font-weight:900; }
+
+    .hint{
+      color: rgba(233,240,255,.78);
+      font-size:12px;
+      font-weight:850;
+      line-height:1.45;
+    }
+
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:12px 18px;
+      background: linear-gradient(180deg, var(--btn), var(--btn2));
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow: 0 10px 26px rgba(0,0,0,.30);
+      min-width: 190px;
+      position:relative;
+    }
+    .btnGhost{
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:14px;
+      padding:12px 18px;
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      min-width: 190px;
+    }
+    .btn:disabled, .btnGhost:disabled{ opacity:.7; cursor:not-allowed; box-shadow:none; }
+
+    .actions{
+      display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;
+      margin-top:10px;
+    }
+
+    .status{
+      margin-top:10px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+      font-weight:950;
+      font-size:13px;
+      white-space:pre-line;
+      display:none;
+    }
+    .status.show{ display:block; }
+    .status.ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.10); }
+    .status.bad{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.10); }
+    .status.warn{ border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.10); }
+
+    .list{
+      margin-top:10px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      overflow:hidden;
+    }
+    .item{
+      padding:10px 12px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.16);
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      font-weight:950;
+      font-size:13px;
+    }
+    .item:last-child{ border-bottom:0; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12px; color:#cfe0ff; }
+    .chip{
+      display:inline-flex;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.03);
+      font-weight:1000;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .chip.ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.10); }
+    .chip.warn{ border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.10); }
+
+    /* --- subtle animations (no layout changes) --- */
+    @keyframes softGlow{ 0%,100%{ box-shadow: 0 0 0 rgba(45,91,255,0); } 50%{ box-shadow: 0 0 24px rgba(45,91,255,.18); } }
+    @keyframes floatY{ 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-2px); } }
+    .chip.ok.anim{ animation: softGlow 2.4s ease-in-out infinite; }
+    .authedBanner{
+      margin-top:10px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(34,197,94,.28);
+      background: rgba(34,197,94,.08);
+      font-weight:950;
+      font-size:13px;
+      display:none;
+      animation: floatY 2.2s ease-in-out infinite;
+    }
+    .authedBanner.show{ display:block; }
+    .authedBanner .dots{ display:inline-flex; gap:6px; margin-left:8px; vertical-align:middle; }
+    .authedBanner .dots span{ width:7px; height:7px; border-radius:999px; background:rgba(233,240,255,.75); opacity:.55; display:block; animation: dotsBounce 1.1s infinite ease-in-out; }
+    .authedBanner .dots span:nth-child(2){ animation-delay:.15s; opacity:.65; }
+    .authedBanner .dots span:nth-child(3){ animation-delay:.30s; opacity:.75; }
+    @keyframes dotsBounce{ 0%,100%{ transform: translateY(0); opacity:.45; } 50%{ transform: translateY(-6px); opacity:1; } }
+
+    /* ===== Referrals ===== */
+    .refGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+    .refCard{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:14px}
+    .refTitle{font-weight:800;margin:0 0 8px 0}
+    .refRow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .refCode{
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,0.10);
+      background:rgba(0,0,0,0.20);color:#e9f1ff
+    }
+    .refSmall{opacity:.85;font-size:13px}
+    .refMsg{margin-top:10px}
+    .refMsg.ok{color:#7dffcf}
+    .refMsg.err{color:#ff7d9a}
+    .refActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .refActions input, .refActions select{flex:1;min-width:180px}
+    .btnMini{padding:10px 14px;border-radius:14px}
+
+    /* ✅ стиль select под дизайн (убираем белый) */
+    .refActions select{
+      width:100%;
+      max-width:100%;
+      min-width:0;
+      padding:12px 44px 12px 12px; /* место под стрелку */
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      outline:none;
+      font-weight:1000;
+      font-size:15px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      display:block;
+      appearance:none;
+      -webkit-appearance:none;
+      -moz-appearance:none;
+      color-scheme: dark;
+      background-image:
+        linear-gradient(45deg, rgba(233,240,255,.85) 50%, rgba(0,0,0,0) 50%),
+        linear-gradient(135deg, rgba(233,240,255,.85) 50%, rgba(0,0,0,0) 50%),
+        linear-gradient(to right, rgba(255,255,255,.12), rgba(255,255,255,.12));
+      background-position:
+        calc(100% - 18px) 50%,
+        calc(100% - 12px) 50%,
+        calc(100% - 38px) 50%;
+      background-size: 6px 6px, 6px 6px, 1px 22px;
+      background-repeat:no-repeat;
+    }
+    .refActions select:focus{
+      border-color: rgba(45,91,255,.45);
+      box-shadow: 0 0 0 3px rgba(45,91,255,.12), inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    .refActions select option{
+      background:#071022;
+      color:#e9f0ff;
+    }
+
+    /* ✅ большой блок текущего баланса */
+    .refBalanceBox{
+      margin-top:12px;
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.14);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    .refBalanceLabel{
+      font-size:12px;
+      font-weight:900;
+      opacity:.78;
+      margin-bottom:8px;
+    }
+    .refBalanceValue{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      border-radius:14px;
+      padding:14px 12px;
+      font-weight:1000;
+      font-size:22px;
+      color:#cfe0ff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    }
+
+    /* ===== Telegram / mobile layout fix (added) ===== */
+    html, body {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
+    * { box-sizing: border-box; }
+
+    /* если у тебя есть общий контейнер — не даём ему распирать экран */
+    .container, .wrap, .page, .content {
+      max-width: 100%;
+    }
+
+    /* на всякий: любые "две колонки" должны уметь ужиматься */
+    .grid, .row, .cols, .refGrid, .refRow {
+      min-width: 0;
+    }
+
+    /* ВАЖНО: на узких экранах делаем колонки в 1 столбец */
+    @media (max-width: 520px) {
+
+      /* если это grid из 2 колонок */
+      .refGrid {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+      }
+
+      /* если это flex-ряд из 2 карточек */
+      .refRow, .row, .cols {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+      }
+
+      /* карточки/блоки — на всю ширину */
+      .card, .refCard, .panel {
+        width: 100% !important;
+        min-width: 0 !important;
+      }
+
+      /* кнопки — на всю ширину (чтобы не ломали верстку) */
+      button, .btn {
+        max-width: 100% !important;
+        width: 100% !important;
+      }
+
+      /* реф-код не должен раздвигать карточку */
+      .refCode, .code, .pill {
+        max-width: 100% !important;
+        word-break: break-all !important;
+        overflow-wrap: anywhere !important;
+      }
+    }
+    /* ===== end fix ===== */
+
+  /* Prevent login box flash: authBox hidden by default, shown only when no token */
+    html.noToken #authBox{ display:block !important; }
+
+  /* ===== Stats ===== */
+  @keyframes modalIn{ from{ opacity:0; transform:translateY(12px) scale(.97); } to{ opacity:1; transform:translateY(0) scale(1); } }
+  @keyframes statPop{ 0%{ opacity:0; transform:translateY(8px) scale(.95); } 100%{ opacity:1; transform:translateY(0) scale(1); } }
+  .statsGrid{
+    display:grid;
+    grid-template-columns: repeat(3,1fr);
+    gap:10px;
+    margin-top:12px;
+  }
+  @media(max-width:520px){ .statsGrid{ grid-template-columns: repeat(2,1fr); } }
+  .statCard{
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius:16px;
+    padding:14px 10px 12px;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+    transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+    animation: statPop .35s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  .statCard:nth-child(1){ animation-delay:.05s; }
+  .statCard:nth-child(2){ animation-delay:.10s; }
+  .statCard:nth-child(3){ animation-delay:.15s; }
+  .statCard:nth-child(4){ animation-delay:.20s; }
+  .statCard:nth-child(5){ animation-delay:.25s; }
+  .statCard:nth-child(6){ animation-delay:.30s; }
+  .statCard:hover{ transform:translateY(-3px); border-color:rgba(45,91,255,.35); box-shadow:0 8px 24px rgba(45,91,255,.12); }
+  .statCard::before{
+    content:"";
+    position:absolute; inset:0;
+    background: radial-gradient(ellipse at 50% -10%, rgba(45,91,255,.12), transparent 65%);
+    pointer-events:none;
+  }
+  .statCard.hi{ border-color:rgba(34,197,94,.22); }
+  .statCard.hi::before{ background: radial-gradient(ellipse at 50% -10%, rgba(34,197,94,.12), transparent 65%); }
+  .statCard.hi:hover{ border-color:rgba(34,197,94,.45); box-shadow:0 8px 24px rgba(34,197,94,.10); }
+  .statIcon{ font-size:20px; margin-bottom:6px; line-height:1; }
+  .statValue{
+    font-size:24px;
+    font-weight:1000;
+    color:#cfe0ff;
+    font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+    line-height:1;
+    transition: color .3s;
+  }
+  .statCard.hi .statValue{ color:#7dffcf; }
+  .statLabel{
+    font-size:10px;
+    font-weight:800;
+    color:rgba(159,176,212,.78);
+    margin-top:5px;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    line-height:1.3;
+  }
+</style>
+
+  <script>
+  (function () {
+    try {
+      var tok = "";
+      ["CF_USER_TOKEN","user_token","crossflag_user_token","X_AUTH_TOKEN","AUTH_TOKEN","userToken","cf_user_token"].some(function(k){
+        try{ var v = localStorage.getItem(k); if(v && v.trim()){ tok = v; return true; } }catch(e){}
+      });
+      if (tok) document.documentElement.classList.add("hasToken");
+      else document.documentElement.classList.add("noToken");
+    } catch (_) {}
+  })();
+</script>
+
+  </head>
+
+<body>
+  <div class="overlay"></div>
+
+  <div class="page">
+    <div class="wrap">
+      <div class="card">
+        <div class="top">
+          <div class="title">Аккаунт</div>
+          <a class="back" id="backBtn" href="./index.html">← Назад</a>
+        </div>
+
+        <div class="section" id="authBox" style="display:none;">
+          <div class="sectionTitle">
+            <span>Вход / Регистрация</span>
+            <span class="chip warn" id="authStateChip">Не авторизован</span>
+          </div>
+
+          <div class="hint">
+            Важно: пользователь должен один раз открыть бота и нажать <span class="mono">/start</span>.
+          </div>
+
+          <div class="row" id="loginFields" style="margin-top:10px;">
+            <div>
+              <div class="hint" style="margin-bottom:6px;">Telegram username</div>
+              <input id="username" placeholder="@username" />
+            </div>
+            <div>
+              <div class="hint" style="margin-bottom:6px;">Код из Telegram</div>
+              <input id="code" placeholder="123456" inputmode="numeric" />
+            </div>
+
+            <div>
+              <div class="hint" style="margin-bottom:6px;">Реферальный код (необязательно)</div>
+              <input id="refFirst" placeholder="Например: CFAB12CD34EF" />
+            </div>
+
+          </div>
+
+          <div class="actions" id="loginActions">
+            <button class="btnGhost" id="sendCodeBtn" type="button">Отправить код</button>
+            <button class="btn" id="verifyBtn" type="button" disabled>Подтвердить</button>
+          </div>
+
+          <div class="authedBanner" id="authedBanner">
+            Вы уже вошли в аккаунт. Можешь смотреть активные сделки и историю.
+            <span class="dots" aria-hidden="true"><span></span><span></span><span></span></span>
+          </div>
+
+          <div class="status warn" id="statusBox">—</div>
+        </div>
+
+        <div class="section" id="profileBox" style="display:none;">
+          <div class="sectionTitle">
+            <span>Профиль</span>
+            <span class="chip ok" id="profileChip">OK</span>
+          </div>
+
+          <div class="row">
+            <div>
+              <div class="hint" style="margin-bottom:6px;">Username</div>
+              <div class="mono" id="meUsername">—</div>
+            </div>
+            <div style="display:flex; align-items:end; justify-content:flex-end; gap:10px; flex-wrap:wrap;">
+              <button class="btnGhost" id="logoutBtn" type="button">Выйти</button>
+              <button class="btn" id="refreshBtn" type="button">Обновить</button>
+            </div>
+          </div>
+
+          <div class="hint">
+          </div>
+        </div>
+
+        <div class="section" id="activeDealsBox" style="display:none;">
+          <div class="sectionTitle">
+            <span>Активные сделки</span>
+            <span class="hint" id="activeHint">—</span>
+          </div>
+          <div class="list" id="activeList"></div>
+
+          <!-- Реферальная программа перенесена в раздел «Бонусы» -->
+        </div>
+
+        <!-- ===== Статистика ===== -->
+        <div class="section" id="statsBox" style="display:none;">
+          <div class="sectionTitle">
+            <span>Статистика</span>
+            <span class="chip ok anim" id="statsChip">— сделок</span>
+          </div>
+          <div class="statsGrid">
+            <div class="statCard">
+              <div class="statIcon">📅</div>
+              <div class="statValue" id="statDaysVal">—</div>
+              <div class="statLabel">Дней с нами</div>
+            </div>
+            <div class="statCard">
+              <div class="statIcon">💸</div>
+              <div class="statValue" id="statBuyVal">—</div>
+              <div class="statLabel">Покупок всего</div>
+            </div>
+            <div class="statCard">
+              <div class="statIcon">📤</div>
+              <div class="statValue" id="statSellVal">—</div>
+              <div class="statLabel">Продаж всего</div>
+            </div>
+            <div class="statCard hi">
+              <div class="statIcon">✅</div>
+              <div class="statValue" id="statBuyDoneVal">—</div>
+              <div class="statLabel">Покупок завершено</div>
+            </div>
+            <div class="statCard hi">
+              <div class="statIcon">📊</div>
+              <div class="statValue" id="statBuyRateVal">—</div>
+              <div class="statLabel">% успешных</div>
+            </div>
+            <div class="statCard">
+              <div class="statIcon">⚡</div>
+              <div class="statValue" id="statActiveVal">—</div>
+              <div class="statLabel">Активных</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+<script>
+  const WORKER_BASE = String(
+    new URLSearchParams(location.search).get("wb") ||
+    localStorage.getItem("worker_base") ||
+    localStorage.getItem("WORKER_BASE") ||
+    "https://api.crossflag.org"
+  ).replace(/\/+$/, "");
+
+  // back keeps wb and next
+  (function(){
+    const p = new URLSearchParams(location.search);
+    const wb = p.get("wb") || "";
+    const next = p.get("next") || "";
+    const b = document.getElementById("backBtn");
+    const href = next ? next : "./index.html";
+    b.href = href + (wb && !href.includes("wb=") ? (href.includes("?") ? "&" : "?") + "wb=" + encodeURIComponent(wb) : "");
+  })();
+
+  const els = {
+    authBox: document.getElementById("authBox"),
+    profileBox: document.getElementById("profileBox"),
+    activeDealsBox: document.getElementById("activeDealsBox"),
+    username: document.getElementById("username"),
+    code: document.getElementById("code"),
+    refFirst: document.getElementById("refFirst"),
+    sendCodeBtn: document.getElementById("sendCodeBtn"),
+    verifyBtn: document.getElementById("verifyBtn"),
+    statusBox: document.getElementById("statusBox"),
+    authedBanner: document.getElementById("authedBanner"),
+    loginFields: document.getElementById("loginFields"),
+    loginActions: document.getElementById("loginActions"),
+    authStateChip: document.getElementById("authStateChip"),
+    profileChip: document.getElementById("profileChip"),
+    meUsername: document.getElementById("meUsername"),
+    logoutBtn: document.getElementById("logoutBtn"),
+    refreshBtn: document.getElementById("refreshBtn"),
+    activeList: document.getElementById("activeList"),
+    activeHint: document.getElementById("activeHint"),
+
+    // referrals
+    refBox: document.getElementById("refBox"),
+    refMyCode: document.getElementById("refMyCode"),
+    refCopyBtn: document.getElementById("refCopyBtn"),
+    refBalance: document.getElementById("refBalance"),
+    refApplyInput: document.getElementById("refApplyInput"),
+    refApplyBtn: document.getElementById("refApplyBtn"),
+    refWithdrawAmount: document.getElementById("refWithdrawAmount"),
+    refWithdrawType: document.getElementById("refWithdrawType"),
+    refWithdrawDest: document.getElementById("refWithdrawDest"),
+    refWithdrawBtn: document.getElementById("refWithdrawBtn"),
+    refMsg: document.getElementById("refMsg"),
+  };
+
+  function setStatus(text, kind){
+    els.statusBox.textContent = text;
+    els.statusBox.className = "status show " + (kind || "warn");
+  }
+
+  function normUsername(u){
+    u = String(u||"").trim();
+    if (!u) return "";
+    if (u.startsWith("@")) u = u.slice(1);
+    u = u.trim();
+    if (!/^[a-zA-Z0-9_]{5,32}$/.test(u)) return "";
+    return u;
+  }
+
+  const _ALL_TOKEN_KEYS = ["CF_USER_TOKEN","user_token","crossflag_user_token","X_AUTH_TOKEN","AUTH_TOKEN","userToken","cf_user_token"];
+
+  function getToken(){
+    for (const k of _ALL_TOKEN_KEYS){
+      try{ const v = localStorage.getItem(k); if(v && v.trim()) return v.trim(); }catch(_){}
+    }
+    return "";
+  }
+
+  function setToken(tok){
+    _ALL_TOKEN_KEYS.forEach(k=>{
+      try{ localStorage.setItem(k, tok); }catch(_){}
+    });
+  }
+
+  async function apiJson(path, method="GET", body=null){
+    const tok = getToken();
+    const headers = { "Content-Type":"application/json" };
+    if (tok){
+      headers["X-Auth-Token"] = tok;
+      headers["X-User-Token"] = tok;            // на всякий случай
+      headers["Authorization"] = "Bearer " + tok; // на всякий случай
+    }
+    const res = await fetch(WORKER_BASE + path, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : null
+    });
+    const text = await res.text();
+    let j;
+    try{ j = JSON.parse(text); }catch{ throw new Error("Ответ не JSON: " + text.slice(0,200)); }
+    if (!res.ok || !j.ok) throw new Error(j.error || ("HTTP " + res.status));
+    return j;
+  }
+
+  function getHistory(){
+    try{
+      const s = localStorage.getItem("cf_deals_history");
+      const a = s ? JSON.parse(s) : [];
+      return Array.isArray(a) ? a : [];
+    }catch{ return []; }
+  }
+  function setHistory(a){
+    try{ localStorage.setItem("cf_deals_history", JSON.stringify(a.slice(0,200))); }catch{}
+  }
+
+  function getActiveDeals(){
+    // активные сделки храним отдельным ключом
+    try{
+      const s = localStorage.getItem("cf_active_deals");
+      const a = s ? JSON.parse(s) : [];
+      return Array.isArray(a) ? a : [];
+    }catch{ return []; }
+  }
+  function setActiveDeals(a){
+    try{ localStorage.setItem("cf_active_deals", JSON.stringify(a.slice(0,50))); }catch{}
+  }
+
+    // ✅ терминальные статусы (для автo-очистки "Активных")
+  function isBuyTerminalStatus(st, txHash){
+    st = String(st||"").toUpperCase();
+    const ok = new Set(["SUCCESS","DONE","COMPLETED","BYBIT_DONE"]);
+    const bad = new Set(["FAILED","CANCELED","CANCELLED","ERROR","BYBIT_CANCELED"]);
+    if (bad.has(st) || ok.has(st)) return true;
+    if (txHash && String(txHash).trim()) return true;
+    return false;
+  }
+  function isSellTerminalStatus(st){
+    st = String(st||"").toUpperCase();
+    return st === "COMPLETED" || st === "DONE" || st === "SUCCESS" ||
+           st === "CANCELED" || st === "CANCELLED" || st === "FAILED" || st === "CRYPTO_NOT_RECEIVED";
+  }
+
+  async function syncActiveDeals(){
+    const a = getActiveDeals();
+    if (!a || !a.length) return;
+
+    const next = [];
+    const hist = getHistory();
+
+    for (const it of a){
+      const type = String(it.type || "").toUpperCase();
+      const did = String(it.id || "").trim();
+      const rid = String(it.reserveId || it.secret || "").trim();
+      if (!type || !did || !rid){
+        // битая запись — пропускаем
+        continue;
+      }
+
+      try{
+        const url = type === "SELL"
+          ? (WORKER_BASE + "/api/public/order_info?type=SELL&id=" + encodeURIComponent(did) + "&reserveId=" + encodeURIComponent(rid))
+          : (WORKER_BASE + "/api/public/order_info?id=" + encodeURIComponent(did) + "&reserveId=" + encodeURIComponent(rid));
+
+        const res = await fetch(url, { cache: "no-store" });
+        const txt = await res.text();
+        let j;
+        try{ j = JSON.parse(txt); }catch{ throw new Error("bad_json"); }
+        if (!res.ok || !j.ok) throw new Error(j.error || ("HTTP " + res.status));
+
+        const st = String(j.status || "").toUpperCase();
+        const txHash = j.txHash ? String(j.txHash).trim() : "";
+
+        const isDone = (type === "SELL") ? isSellTerminalStatus(st) : isBuyTerminalStatus(st, txHash);
+
+        if (isDone){
+          hist.unshift({
+            ts: Date.now(),
+            type,
+            id: did,
+            reserveId: rid,
+            status: st,
+            txHash: txHash || "",
+            url: type === "SELL"
+              ? ("./sell-check.html?dealId=" + encodeURIComponent(did) + "&secret=" + encodeURIComponent(rid))
+              : ("./check.html?id=" + encodeURIComponent(did) + "&reserveId=" + encodeURIComponent(rid))
+          });
+          continue;
+        }
+
+        next.push({ ...it, status: st, txHash: txHash || "" });
+      }catch(e){
+        const msg = String(e && (e.message || e) || "").toLowerCase();
+        // если резерва/сделки нет — считаем закрытой и убираем
+        if (msg.includes("reserve not found") || (msg.includes("not found") && (msg.includes("reserve") || msg.includes("deal")))){
+          hist.unshift({
+            ts: Date.now(),
+            type,
+            id: did,
+            reserveId: rid,
+            status: "CANCELED",
+            txHash: "",
+            url: type === "SELL"
+              ? ("./sell-check.html?dealId=" + encodeURIComponent(did) + "&secret=" + encodeURIComponent(rid))
+              : ("./check.html?id=" + encodeURIComponent(did) + "&reserveId=" + encodeURIComponent(rid))
+          });
+          continue;
+        }
+        // иначе оставляем как есть
+        next.push(it);
+      }
+    }
+
+    setActiveDeals(next);
+    setHistory(hist);
+  }
+
+function tsToRu(ts){
+    try{
+      const d = new Date(Number(ts));
+      return isNaN(d.getTime()) ? "—" : d.toLocaleString("ru-RU");
+    }catch{ return "—"; }
+  }
+
+  function renderActive(){
+    const a = getActiveDeals();
+    els.activeList.innerHTML = "";
+    if (!a.length){
+      els.activeHint.textContent = "—";
+      els.activeList.innerHTML = `<div class="item"><span class="hint">Нет активных сделок</span><span class="mono">—</span></div>`;
+      return;
+    }
+    els.activeHint.textContent = a.length + " шт";
+    for (const it of a){
+      const el = document.createElement("div");
+      el.className = "item";
+      const left = it.id ? ("ID: " + it.id) : "—";
+
+      el.innerHTML = `
+        <span>
+          <span class="chip warn">${it.type || "—"}</span>
+          <span class="mono" style="margin-left:8px;">${left}</span>
+          <div class="hint"></div>
+        </span>
+        <button class="btnGhost" data-act="go" data-i="${it._i}">Продолжить</button>
+      `;
+      els.activeList.appendChild(el);
+    }
+
+    // индексируем чтобы кнопки работали
+    const indexed = a.map((x,i)=>({ ...x, _i:i }));
+    setActiveDeals(indexed);
+  }
+
+  els.activeList.addEventListener("click", (e)=>{
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    if (btn.dataset.act !== "go") return;
+    const idx = Number(btn.dataset.i);
+    const a = getActiveDeals();
+    const it = a[idx];
+    if (!it) return;
+
+    // wb пробрасываем
+    const wb = new URLSearchParams(location.search).get("wb") || "";
+    const addWb = (url)=>{
+      if (!wb) return url;
+      return url + (url.includes("?") ? "&" : "?") + "wb=" + encodeURIComponent(wb);
+    };
+
+    // если страница продолжения сохранена — используем её
+    if (it && it.url){
+      location.href = addWb(String(it.url));
+      return;
+    }
+
+    if (it.type === "SELL" && it.id && it.secret){
+      location.href = addWb("./sell-deal.html?dealId=" + encodeURIComponent(it.id) + "&secret=" + encodeURIComponent(it.secret));
+      return;
+    }
+
+    if (it.type === "BUY" && it.id && it.reserveId){
+      location.href = addWb("./buy-order.html?id=" + encodeURIComponent(it.id) + "&reserveId=" + encodeURIComponent(it.reserveId));
+      return;
+    }
+
+    setStatus("Не удалось продолжить: нет данных сделки на этом устройстве.", "bad");
+  });
+
+  async function updateUIAuthed(user){
+    els.authStateChip.textContent = "Авторизован";
+    els.authStateChip.className = "chip ok";
+
+    // ✅ после успешной регистрации/входа полностью скрываем блок "Вход/регистрация"
+    if (els.authBox) els.authBox.style.display = "none";
+
+    if (els.loginFields) els.loginFields.style.display = "none";
+    if (els.loginActions) els.loginActions.style.display = "none";
+    if (els.authedBanner) els.authedBanner.classList.add("show");
+
+    els.profileBox.style.display = "block";
+    els.activeDealsBox.style.display = "block";
+
+    els.meUsername.textContent = "@" + (user?.username || "—");
+
+    if (els.profileChip) els.profileChip.classList.add("anim");
+
+    syncActiveDeals().then(()=>{ renderActive(); renderStats(user); }).catch(()=>{ renderActive(); renderStats(user); });
+  }
+
+  function updateUINotAuthed(){
+    els.authStateChip.textContent = "Не авторизован";
+    els.authStateChip.className = "chip warn";
+
+    // ✅ возвращаем блок при выходе
+    if (els.authBox) els.authBox.style.display = "";
+
+    if (els.loginFields) els.loginFields.style.display = "";
+    if (els.loginActions) els.loginActions.style.display = "";
+    if (els.authedBanner) els.authedBanner.classList.remove("show");
+    if (els.profileChip) els.profileChip.classList.remove("anim");
+
+    els.profileBox.style.display = "none";
+    els.activeDealsBox.style.display = "none";
+  }
+
+  async function loadMe(){
+    const tok = getToken();
+    if (!tok){
+      updateUINotAuthed();
+      try{ updateRefUI(null); }catch(_){ }
+      return;
+    }
+    try{
+      const j = await apiJson("/api/public/auth/me", "GET");
+      await updateUIAuthed(j.user);
+
+      try{ await loadRefMe(); }catch(e){
+        try{ updateRefUI(null); }catch(_){ }
+      }
+      setStatus("Готово ✅", "ok");
+    }catch(e){
+      updateUINotAuthed();
+      setStatus("Требуется вход. (" + (e.message || String(e)) + ")", "warn");
+    }
+  }
+
+  function validateVerify(){
+    const u = normUsername(els.username.value);
+    const c = String(els.code.value||"").trim();
+    els.verifyBtn.disabled = !(u && /^\d{6}$/.test(c));
+  }
+  els.username.addEventListener("input", validateVerify);
+  els.code.addEventListener("input", validateVerify);
+
+  els.sendCodeBtn.onclick = async ()=>{
+    try{
+      const u = normUsername(els.username.value);
+      if (!u){
+        setStatus("Введите корректный username (5–32 символа, латиница/цифры/_).", "bad");
+        return;
+      }
+      setStatus("Отправляем код в Telegram...", "warn");
+      // ✅ передаём refCode при запросе кода входа,
+      // чтобы Worker мог навсегда привязать реферала к аккаунту при verify_code
+      const refCode = String(els.refFirst?.value || "").trim() || getPendingRef();
+      await apiJson("/api/public/auth/request_code", "POST", { username: u, refCode });
+
+      setStatus(
+        "Код отправлен ✅\nЕсли пришла ошибка про /start — пользователь должен открыть бота и нажать /start.",
+        "ok"
+      );
+    }catch(e){
+      setStatus("Ошибка: " + (e.message || String(e)), "bad");
+    }
+  };
+
+  els.verifyBtn.onclick = async ()=>{
+    try{
+      const u = normUsername(els.username.value);
+      const c = String(els.code.value||"").trim();
+      if (!u || !/^\d{6}$/.test(c)) return;
+
+      setStatus("Проверяем код...", "warn");
+      const j = await apiJson("/api/public/auth/verify_code", "POST", { username: u, code: c });
+
+      const tok = j.userToken || j.token;
+      if (!tok) throw new Error("Токен не получен");
+      setToken(tok);
+
+      setStatus("Успешно ✅", "ok");
+      await loadMe();
+
+      // AUTO_APPLY_REF_AFTER_LOGIN (one-time)
+      try{
+        const fromField = String(els.refFirst?.value || "").trim();
+        const pending = fromField || getPendingRef();
+        if (pending) {
+          await apiJson("/api/public/ref/apply", "POST", { code: pending }).catch(()=>null);
+          setPendingRef("");
+          if (els.refApplyInput) els.refApplyInput.value = "";
+          await loadRefMe().catch(()=>null);
+        }
+      }catch(_){ }
+
+      const next = new URLSearchParams(location.search).get("next") || "";
+      if (next){
+        setTimeout(()=> location.href = next, 450);
+      }
+    }catch(e){
+      setStatus("Ошибка: " + (e.message || String(e)), "bad");
+    }
+  };
+
+  els.logoutBtn.onclick = ()=>{
+    _ALL_TOKEN_KEYS.forEach(k=>{ try{ localStorage.removeItem(k); }catch(_){} });
+    updateUINotAuthed();
+    setStatus("Вышли из аккаунта.", "warn");
+  };
+
+  els.refreshBtn.onclick = loadMe;
+
+  // referrals init
+  parseRefFromUrl();
+
+  // ✅ копируем теперь КОД, а не ссылку
+  if (els.refCopyBtn) els.refCopyBtn.onclick = async () => {
+    const code = String(els.refMyCode?.textContent || "").trim();
+    if(!code || code === "—"){ setRefMsg("Сначала войдите в аккаунт.", "err"); return; }
+    try{
+      await navigator.clipboard.writeText(code);
+      setRefMsg("Код скопирован.", "ok");
+    }catch(_){
+      prompt("Скопируйте код:", code);
+    }
+  };
+
+  if (els.refApplyBtn) els.refApplyBtn.onclick = () => applyReferralCode(els.refApplyInput?.value);
+  if (els.refApplyInput) els.refApplyInput.onkeydown = (e) => {
+    if(e.key === "Enter") applyReferralCode(els.refApplyInput.value);
+  };
+
+  if (els.refWithdrawBtn) els.refWithdrawBtn.onclick = withdrawReferral;
+
+  // ===== Referrals logic =====
+  function getPendingRef(){
+    try{ return localStorage.getItem("pending_ref") || ""; }catch(_){ return ""; }
+  }
+  function setPendingRef(code){
+    try{
+      if(code) localStorage.setItem("pending_ref", code);
+      else localStorage.removeItem("pending_ref");
+    }catch(_){}
+  }
+  function parseRefFromUrl(){
+    try{
+      const u = new URL(location.href);
+      const ref = (u.searchParams.get("ref") || "").trim();
+      if(ref) setPendingRef(ref);
+    }catch(_){}
+  }
+  function setRefMsg(text, kind){
+    if(!els.refMsg) return;
+    els.refMsg.textContent = text || "";
+    els.refMsg.className = "refMsg" + (kind ? (" " + kind) : "");
+  }
+
+  // ✅ блокируем повторное применение рефкода (если он уже установлен на аккаунте)
+  function lockRefApplyUI(referrerCode){
+    const v = String(referrerCode || "").trim();
+    if (els.refApplyInput) {
+      if (v) els.refApplyInput.value = v;
+      els.refApplyInput.disabled = true;
+    }
+    if (els.refApplyBtn) els.refApplyBtn.disabled = true;
+  }
+  function unlockRefApplyUI(){
+    if (els.refApplyInput) els.refApplyInput.disabled = false;
+    if (els.refApplyBtn) els.refApplyBtn.disabled = false;
+  }
+
+  // ✅ баланс до сотых
+  function fmtUsdt(v){
+    const n = Number(v || 0);
+    if(!isFinite(n)) return "0.00";
+    return n.toFixed(2);
+  }
+
+  function makeRefLink(code){
+    return location.origin + "/account.html?ref=" + encodeURIComponent(code);
+  }
+
+  async function loadRefMe(){
+    if(!els.refBox) return;
+    try{
+      const j = await apiJson("/api/public/ref/me", "GET");
+      const ref = j?.ref || j?.me?.ref || j?.user?.ref || {};
+      const code = String(ref.code || ref.myCode || "").trim();
+      const referrerCode = String(ref.referrerCode || ref.ref || "").trim();
+      const hasReferrer = !!(ref.referrerUserId || referrerCode);
+
+      const bal = ref.balanceUsdt ?? ref.balance ?? 0;
+
+      els.refMyCode.textContent = code || "—";
+      els.refBalance.textContent = fmtUsdt(bal);
+
+      els.refBox.style.display = "grid";
+
+      const pendingCode = getPendingRef();
+      if(pendingCode && els.refApplyInput && !els.refApplyInput.value) els.refApplyInput.value = pendingCode;
+
+      // ✅ если реферер уже установлен — показываем его код в поле и блокируем кнопку
+      if (hasReferrer) {
+        lockRefApplyUI(referrerCode || String(els.refApplyInput?.value || "").trim());
+      } else {
+        unlockRefApplyUI();
+      }
+
+      setRefMsg("", "");
+    }catch(e){
+      els.refBox.style.display = "grid";
+      if (els.refMyCode) els.refMyCode.textContent = "—";
+      if (els.refBalance) els.refBalance.textContent = "0.00";
+      if (els.refMsg) {
+        const msg = (e && (e.userMessage || e.message)) ? String(e.userMessage || e.message) : "Ошибка загрузки";
+        els.refMsg.textContent = "Реферальная система временно недоступна: " + msg;
+      }
+      console.error("loadRefMe failed", e);
+    }
+  }
+
+  async function applyReferralCode(code){
+    code = String(code || "").trim();
+    if(!code){ setRefMsg("Введите реферальный код.", "err"); return; }
+    try{
+      await apiJson("/api/public/ref/apply", "POST", { code });
+      setPendingRef("");
+      setRefMsg("Код применён.", "ok");
+      // ✅ сразу показываем введённый код и блокируем повторное применение
+      lockRefApplyUI(code);
+      await loadRefMe();
+    }catch(e){
+      const msg = String(e?.message || "");
+      // если реферер уже установлен — это не ошибка для пользователя
+      if (msg.toLowerCase().includes("referrer already set") || msg.toLowerCase().includes("already set")) {
+        setPendingRef("");
+        setRefMsg("Реферальный код уже привязан к аккаунту ✅", "ok");
+        // ✅ блокируем кнопку, чтобы не жали снова
+        lockRefApplyUI(code);
+        await loadRefMe().catch(()=>{});
+        return;
+      }
+      setRefMsg(msg ? ("Ошибка: " + msg) : "Ошибка применения кода.", "err");
+    }
+  }
+
+  async function withdrawReferral(){
+    const amount = String(els.refWithdrawAmount?.value || "").trim().replace(",", ".");
+    const type = String(els.refWithdrawType?.value || "").trim();
+    const dest = String(els.refWithdrawDest?.value || "").trim();
+    const n = Number(amount);
+
+    if(!amount || !isFinite(n) || n <= 0){
+      setRefMsg("Укажите корректную сумму.", "err"); return;
+    }
+    if(!type){ setRefMsg("Выберите способ вывода.", "err"); return; }
+    if(!dest){ setRefMsg("Укажите UID или адрес.", "err"); return; }
+
+    try{
+      await apiJson("/api/public/ref/withdraw", "POST", { amountUsdt: n, type, dest });
+      setRefMsg("Заявка на вывод отправлена.", "ok");
+      els.refWithdrawAmount.value = "";
+      await loadRefMe();
+    }catch(e){
+      setRefMsg(e?.message ? ("Ошибка: " + e.message) : "Ошибка вывода.", "err");
+    }
+  }
+
+  // ===== Stats =====
+  function renderStats(user){
+    const box = document.getElementById("statsBox");
+    if (!box) return;
+    box.style.display = "block";
+
+    const history = getHistory();
+    const active  = getActiveDeals();
+    const all     = [...history, ...active];
+
+    const buyDeals  = all.filter(d => String(d.type||"").toUpperCase() === "BUY");
+    const sellDeals = all.filter(d => String(d.type||"").toUpperCase() === "SELL");
+
+    const okSet = new Set(["SUCCESS","DONE","COMPLETED","BYBIT_DONE"]);
+    const buyDone = buyDeals.filter(d => okSet.has(String(d.status||"").toUpperCase()));
+    const buyRate = buyDeals.length ? Math.round(buyDone.length / buyDeals.length * 100) : 0;
+
+    // days since registration
+    let days = 0;
+    const raw = user?.createdAt || user?.created_at || user?.registeredAt || user?.createdTs;
+    if (raw) {
+      const ms = typeof raw === "number" ? raw : new Date(raw).getTime();
+      if (!isNaN(ms)) days = Math.max(0, Math.floor((Date.now() - ms) / 86400000));
+    }
+    if (!days) {
+      let fs = localStorage.getItem("cf_first_seen");
+      if (!fs){ fs = String(Date.now()); localStorage.setItem("cf_first_seen", fs); }
+      days = Math.max(0, Math.floor((Date.now() - Number(fs)) / 86400000));
+    }
+
+    const chip = document.getElementById("statsChip");
+    if (chip) chip.textContent = all.length + " сделок";
+
+    function animCount(id, target, suffix){
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (typeof target !== "number"){ el.textContent = target; return; }
+      const dur = 700, start = Date.now();
+      const tick = () => {
+        const t = Math.min(1, (Date.now() - start) / dur);
+        const ease = 1 - Math.pow(1 - t, 3);
+        el.textContent = Math.round(ease * target) + (suffix||"");
+        if (t < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    }
+
+    animCount("statDaysVal",    days);
+    animCount("statBuyVal",     buyDeals.length);
+    animCount("statSellVal",    sellDeals.length);
+    animCount("statBuyDoneVal", buyDone.length);
+    animCount("statBuyRateVal", buyRate, "%");
+    animCount("statActiveVal",  active.length);
+  }
+
+  // init
+  setStatus("Ожидаем авторизацию...", "warn");
+  loadMe();
+</script>
+</body>
+</html>

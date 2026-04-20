@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Crossflag · Продажа · Куда отправить USDT</title>
+
+  <style>
+    :root{
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+      --card: rgba(15, 26, 48, 0.52);
+      --border: rgba(255,255,255,.12);
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+      --btn:#2d5bff;
+      --btn2:#1f3fb3;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+    *,*::before,*::after{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0; color:var(--text); background:#071022;
+      overflow-x:hidden; overflow-y:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .overlay{
+      position:fixed; inset:0; z-index:-2;
+      background:
+        radial-gradient(1100px 700px at 50% -220px, rgba(45,91,255,.22), rgba(0,0,0,0) 65%),
+        radial-gradient(900px 600px at 85% 85%, rgba(34,197,94,.10), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(7,16,34,.84), rgba(7,16,34,.94));
+      pointer-events:none;
+    }
+    .page{
+      min-height:100svh;
+      display:flex; justify-content:center; align-items:flex-start;
+      padding: calc(16px + env(safe-area-inset-top)) 16px calc(22px + env(safe-area-inset-bottom)) 16px;
+    }
+    .wrap{ width:100%; max-width:980px; }
+    .card{
+      position:relative;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 14px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      overflow:hidden;
+    }
+    .card::before{
+      content:"";
+      position:absolute; inset:-60px; z-index:0;
+      background:
+        radial-gradient(520px 180px at 35% 20%, rgba(45,91,255,.18), rgba(0,0,0,0) 60%),
+        radial-gradient(520px 180px at 75% 90%, rgba(34,197,94,.10), rgba(0,0,0,0) 60%);
+      filter: blur(18px);
+      pointer-events:none;
+    }
+    .card > *{ position:relative; z-index:1; }
+
+    .top{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; flex-wrap:wrap; margin-bottom:12px;
+    }
+    .title{ font-weight:1000; font-size:16px; }
+    .back{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff; font-weight:950;
+      padding:10px 12px; border-radius:999px;
+      cursor:pointer; text-decoration:none; white-space:nowrap;
+    }
+
+    .section{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      margin-bottom:12px;
+      min-width:0;
+    }
+    .sectionTitle{ font-weight:1000; margin-bottom:10px; display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+    .hint{
+      color: rgba(233,240,255,.78);
+      font-size:12px;
+      font-weight:850;
+      line-height:1.45;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:10px;
+    }
+    @media(max-width:700px){ .grid{ grid-template-columns:1fr; } }
+
+    .dest{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      cursor:pointer;
+      transition: transform .08s ease, border-color .15s ease, background .15s ease;
+      user-select:none;
+    }
+    .dest:hover{ transform: translateY(-1px); }
+    .dest.active{
+      border-color: rgba(45,91,255,.55);
+      background: rgba(45,91,255,.10);
+    }
+    .destName{ font-weight:1000; }
+    .destVal{ margin-top:6px; color: rgba(233,240,255,.8); font-weight:900; font-size:12px; }
+
+    .reveal{
+      margin-top:10px;
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      display:none;
+    }
+    .reveal.show{ display:block; }
+    .label{ color:var(--muted); font-size:12px; font-weight:950; margin-bottom:6px; }
+    .value{ font-weight:1000; font-size:14px; word-break:break-word; overflow-wrap:anywhere; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:12px 18px;
+      background: linear-gradient(180deg, var(--btn), var(--btn2));
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow: 0 10px 26px rgba(0,0,0,.30);
+      min-width: 190px;
+      position:relative;
+    }
+    .btnGhost{
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:14px;
+      padding:12px 18px;
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      min-width: 190px;
+    }
+    .btn:disabled{ opacity:.7; cursor:not-allowed; box-shadow:none; }
+
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+    .loading{ pointer-events:none; opacity:.88; }
+    .loading::after{
+      content:"";
+      position:absolute;
+      top:50%;
+      right:12px;
+      width:16px;
+      height:16px;
+      margin-top:-8px;
+      border-radius:999px;
+      border:2px solid rgba(255,255,255,.25);
+      border-top-color: rgba(255,255,255,.95);
+      animation: spin .9s linear infinite;
+    }
+
+    .status{
+      margin-top:10px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+      font-weight:950;
+      font-size:13px;
+      white-space:pre-line;
+      display:none;
+    }
+    .status.show{ display:block; }
+    .status.ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.10); }
+    .status.bad{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.10); }
+    .status.warn{ border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.10); }
+  </style>
+</head>
+
+<body>
+  <div class="overlay"></div>
+
+  <div class="page">
+    <div class="wrap">
+      <div class="card">
+        <div class="top">
+          <div class="title">Продажа · Куда отправить USDT</div>
+          <a class="back" href="./sell-requisites.html">← Назад</a>
+        </div>
+
+        <div class="section">
+          <div class="sectionTitle">Выбери способ перевода</div>
+          <div class="hint">
+            Ты выберешь, куда отправишь USDT. После этого создадим сделку и откроем страницу проверки поступления.
+          </div>
+
+          <div class="grid" id="destGrid"></div>
+
+          <div class="reveal" id="reveal">
+            <div class="label">Адрес / UID</div>
+            <div class="value mono" id="revealVal">—</div>
+          </div>
+
+          <div class="actions">
+            <button class="btnGhost" id="copyBtn" type="button" disabled>Скопировать</button>
+            <button class="btn" id="goBtn" type="button" disabled>Продолжить</button>
+          </div>
+
+          <div class="status warn" id="statusBox">—</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ✅ Правильный воркер-домен (у тебя уже настроен как Custom domain)
+  const WORKER_BASE = "https://api.crossflag.org";
+
+  
+
+  const USER_TOKEN = localStorage.getItem("CF_USER_TOKEN") || localStorage.getItem("user_token") || localStorage.getItem("cf_user_token") || "";
+  const AUTH_HEADERS = USER_TOKEN ? { "Authorization": "Bearer " + USER_TOKEN } : {};
+async function apiJson(path, method, body){
+    const res = await fetch(WORKER_BASE + path, {
+      method,
+      headers:{ "Content-Type":"application/json", ...AUTH_HEADERS },
+      body: body ? JSON.stringify(body) : null
+    });
+
+    const text = await res.text();
+    let j = null;
+    try{ j = JSON.parse(text); }catch{}
+
+    if (!res.ok || !j || !j.ok){
+      const preview = String(text || "").slice(0, 200);
+      throw new Error((j && j.error) ? j.error : ("HTTP " + res.status + ": " + preview));
+    }
+    return j;
+  }
+
+  function setStatus(text, kind){
+    const box = document.getElementById("statusBox");
+    box.textContent = text;
+    box.className = "status show " + (kind || "warn");
+  }
+
+  function setLoading(btn, on){
+    if (!btn) return;
+    if (on){
+      btn.classList.add("loading");
+      btn.dataset._txt = btn.textContent;
+      btn.textContent = "Отправка…";
+      btn.disabled = true;
+    }else{
+      btn.classList.remove("loading");
+      btn.textContent = btn.dataset._txt || btn.textContent;
+      btn.disabled = false;
+    }
+  }
+
+  function readSellDraft(){
+    try{
+      const a = sessionStorage.getItem("sell_draft");
+      if (a) return JSON.parse(a);
+    }catch{}
+    try{
+      const b = localStorage.getItem("sell_draft");
+      if (b) return JSON.parse(b);
+    }catch{}
+    return null;
+  }
+
+  const DESTS = [
+    { type:"HTX_UID",   label:"HTX UID",   value:"504959890" },
+    { type:"BYBIT_UID", label:"BYBIT UID", value:"510517445" },
+    { type:"BEP20",     label:"BEP20",     value:"0x77e9d8f23851a1cf40a0c3b493166b33a92bc075" },
+    { type:"TRC20",     label:"TRC20",     value:"TXd3MJh3XJvMABXLTkauhp2ZarhJD8HuZb" }
+  ];
+
+  const destGrid = document.getElementById("destGrid");
+  const reveal = document.getElementById("reveal");
+  const revealVal = document.getElementById("revealVal");
+  const copyBtn = document.getElementById("copyBtn");
+  const goBtn = document.getElementById("goBtn");
+
+  let selectedDest = null;
+
+  function buildDestCards(){
+    destGrid.innerHTML = "";
+    reveal.classList.remove("show");
+    revealVal.textContent = "—";
+    copyBtn.disabled = true;
+    goBtn.disabled = true;
+    selectedDest = null;
+
+    for (const d of DESTS){
+      const el = document.createElement("div");
+      el.className = "dest";
+      el.innerHTML = `
+        <div class="destName">${d.label}</div>
+        <div class="destVal">Нажми, чтобы выбрать</div>
+      `;
+      el.onclick = () => {
+        document.querySelectorAll(".dest").forEach(x => x.classList.remove("active"));
+        el.classList.add("active");
+        selectedDest = d;
+
+        revealVal.textContent = d.value;
+        reveal.classList.add("show");
+
+        copyBtn.disabled = false;
+        goBtn.disabled = false;
+        setStatus("Отправь USDT на выбранные реквизиты и нажми «Продолжить».", "ok");
+      };
+      destGrid.appendChild(el);
+    }
+  }
+
+  copyBtn.onclick = async () => {
+    try{
+      if (!selectedDest) return;
+      await navigator.clipboard.writeText(selectedDest.value);
+      setStatus("Скопировано ✅", "ok");
+    }catch{
+      setStatus("Не удалось скопировать. Скопируй вручную.", "warn");
+    }
+  };
+
+  goBtn.onclick = async () => {
+    const draft = readSellDraft();
+    if (!draft){
+      setStatus("Нет данных сделки. Вернись назад и заполни реквизиты заново.", "bad");
+      return;
+    }
+    if (!selectedDest){
+      setStatus("Выбери способ перевода.", "warn");
+      return;
+    }
+
+    try{
+      setLoading(goBtn, true);
+
+      const j = await apiJson("/api/public/sell_submit", "POST", {
+        offerId: draft.offerId,
+        amountRub: draft.amountRub,
+        rate: draft.rate,
+        pay: draft.pay,
+        cryptoDest: selectedDest
+      });
+
+      try{
+        sessionStorage.setItem("cf_last_sell_resume", JSON.stringify({ dealId: j.dealId, secret: j.secret, url: "./sell-check.html?dealId=" + encodeURIComponent(j.dealId) + "&secret=" + encodeURIComponent(j.secret), ts: Date.now() }));
+      }catch(_){ }
+      if (window.CrossflagResume) window.CrossflagResume.upsertSell({ id: j.dealId, secret: j.secret, url: "./sell-check.html?dealId=" + encodeURIComponent(j.dealId) + "&secret=" + encodeURIComponent(j.secret) });
+      location.href =
+        "./sell-check.html?dealId=" + encodeURIComponent(j.dealId) +
+        "&secret=" + encodeURIComponent(j.secret);
+
+    }catch(e){
+      setStatus("Ошибка: " + (e.message || String(e)), "bad");
+    }finally{
+      setLoading(goBtn, false);
+    }
+  };
+
+  buildDestCards();
+  setStatus("Выбери сеть/кошелёк. Сделка создастся после нажатия «Продолжить».", "warn");
+</script>
+<script src="./resume-helper.js"></script>
+</body>
+</html>

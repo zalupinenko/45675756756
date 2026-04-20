@@ -1,0 +1,1313 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>P2P · Купить</title>
+  <style>
+    :root{
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+
+      --card: rgba(15, 26, 48, 0.52);
+      --row:  rgba(12, 22, 42, 0.40);
+      --border: rgba(255,255,255,.12);
+
+      --buy:#16a34a;
+      --chip: rgba(255,255,255,.08);
+
+      --bad:#ffb4b4;
+      --ok:#c7ffd7;
+
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      color:var(--text);
+      overflow-x:hidden;
+      background:#071022;
+    }
+
+    .bg{
+      position:fixed;
+      inset:0;
+      z-index:-3;
+      overflow:hidden;
+      background:#071022;
+    }
+    .bg video{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      transform: scale(1.02);
+    }
+
+    .overlay{
+      position:fixed;
+      inset:0;
+      z-index:-2;
+      background:
+        radial-gradient(900px 600px at 50% 20%, rgba(60,120,255,.18), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(7,16,34,.82), rgba(7,16,34,.90));
+      pointer-events:none;
+    }
+
+    .page{
+      min-height:100svh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:
+        calc(16px + env(safe-area-inset-top))
+        16px
+        calc(22px + env(safe-area-inset-bottom))
+        16px;
+      box-sizing:border-box;
+    }
+
+    .wrap{ width:100%; max-width:820px; }
+
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow:hidden;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:14px 14px 10px;
+      min-width:0;
+    }
+
+    .leftBtns{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .back{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:950;
+      padding:10px 12px;
+      border-radius:999px;
+      cursor:pointer;
+      text-decoration:none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      white-space:nowrap;
+    }
+
+    .sortWrap{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex:1;
+      justify-content:flex-end;
+      min-width:0;
+      padding-right:16px;
+    }
+
+    .sortLabel{
+      font-size:12px;
+      font-weight:950;
+      color: rgba(233,240,255,.75);
+      white-space:nowrap;
+    }
+
+    .sortSelect{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:950;
+      padding:10px 40px;
+      border-radius:12px;
+      outline:none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+
+      text-align:center;
+      text-align-last:center;
+      -moz-text-align-last:center;
+
+      transition: transform .12s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+    .sortSelect:hover{
+      border-color: rgba(45,91,255,.45);
+      box-shadow: 0 0 0 3px rgba(45,91,255,.14);
+      transform: translateY(-1px);
+    }
+    .sortSelect:active{ transform: translateY(0) scale(.99); }
+    .sortSelect:focus{
+      border-color: rgba(45,91,255,.55);
+      box-shadow: 0 0 0 3px rgba(45,91,255,.18);
+    }
+    .sortSelect option{ text-align:center; }
+
+    .status{
+      padding: 0 14px 12px;
+      font-size:13px;
+      font-weight:850;
+      color: rgba(233,240,255,.78);
+    }
+    .status.bad{ color: var(--bad); font-weight:950; }
+    .status.ok{ color: var(--ok); font-weight:950; }
+
+    .resumeBox{ margin:0 14px 12px; display:none; }
+    .resumeCard{
+      display:flex; align-items:center; justify-content:space-between; gap:14px;
+      padding:14px; border-radius:16px;
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(45,91,255,.08));
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow: 0 10px 26px rgba(0,0,0,.18);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    }
+    .resumeTitle{ font-size:14px; font-weight:1000; color:#fff; margin-bottom:4px; }
+    .resumeText{ font-size:12px; font-weight:900; color:rgba(233,240,255,.72); }
+    .resumeActions{ display:flex; align-items:center; gap:10px; flex-shrink:0; }
+    .resumeGo, .resumeClose{
+      border:1px solid rgba(255,255,255,.14); color:#fff; cursor:pointer;
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    }
+    .resumeGo{
+      border:none; border-radius:14px; padding:12px 18px; font-weight:1000;
+      background:linear-gradient(180deg,#3f6bff,#2d5bff); box-shadow:0 10px 24px rgba(45,91,255,.28);
+    }
+    .resumeClose{
+      width:38px; height:38px; border-radius:12px; background:rgba(255,255,255,.06); font-size:18px;
+    }
+    @media (max-width:640px){
+      .resumeCard{ align-items:flex-start; }
+      .resumeActions{ width:auto; }
+    }
+
+
+    .tableWrap{ padding: 0 14px 14px; }
+
+    .thead{
+      display:grid;
+      grid-template-columns: 1.2fr 0.8fr 0.9fr 0.7fr;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      color: rgba(233,240,255,.75);
+      font-size:12px;
+      font-weight:950;
+      letter-spacing:.2px;
+      margin-bottom:10px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .list{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .item{
+      background: var(--row);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:14px;
+      padding:12px;
+      display:grid;
+      grid-template-columns: 1.2fr 0.8fr 0.9fr 0.7fr;
+      gap:10px;
+      align-items:center;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .amountReqItem{
+      position: relative;
+      overflow: hidden;
+      border:1px solid rgba(255,255,255,.16);
+      background: linear-gradient(
+        180deg,
+        rgba(255,255,255,.06),
+        rgba(45, 91, 255, .08)
+      );
+      box-shadow: 0 14px 36px rgba(0,0,0,.28);
+      padding:14px;
+      grid-template-columns: 1fr;
+      justify-items: stretch;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .amountReqItem::before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background:
+        radial-gradient(420px 140px at 20% 30%, rgba(45,91,255,.22), rgba(0,0,0,0) 60%),
+        radial-gradient(420px 140px at 80% 70%, rgba(120,170,255,.18), rgba(0,0,0,0) 60%);
+      opacity:.9;
+      filter: blur(0.5px);
+      pointer-events:none;
+      transform: translateZ(0);
+      animation: cfGlowMove 5.4s ease-in-out infinite;
+    }
+    .amountReqItem::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: linear-gradient(
+        110deg,
+        rgba(255,255,255,0) 0%,
+        rgba(255,255,255,.10) 35%,
+        rgba(255,255,255,0) 70%
+      );
+      transform: translateX(-120%) translateZ(0);
+      pointer-events:none;
+      opacity:.55;
+      animation: cfShimmer 3.2s ease-in-out infinite;
+    }
+
+    @keyframes cfGlowMove{
+      0%   { transform: translate3d(0,0,0) scale(1); }
+      50%  { transform: translate3d(0,-6px,0) scale(1.02); }
+      100% { transform: translate3d(0,0,0) scale(1); }
+    }
+    @keyframes cfShimmer{
+      0%   { transform: translateX(-120%) translateZ(0); }
+      55%  { transform: translateX(120%) translateZ(0); }
+      100% { transform: translateX(120%) translateZ(0); }
+    }
+
+    .amountReqGo{
+      position: relative;
+      z-index: 1;
+      width:100%;
+      border:1px solid rgba(255,255,255,.18);
+      border-radius:16px;
+      padding:14px 16px;
+
+      cursor:pointer;
+      color:#fff;
+      text-align:left;
+
+      background: linear-gradient(180deg, rgba(45,91,255,.92), rgba(31,63,179,.88));
+      box-shadow: 0 12px 30px rgba(0,0,0,.30);
+
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+
+      transform: translateZ(0);
+      will-change: transform, box-shadow, filter;
+      transition: transform .16s ease, box-shadow .18s ease, filter .18s ease;
+      animation: cfReqFloat 3.2s ease-in-out infinite;
+    }
+
+    .amountReqTxt{ display:flex; flex-direction:column; min-width:0; }
+    .amountReqTitle{
+      font-weight:1000;
+      font-size:15px;
+      letter-spacing:.2px;
+      line-height:1.1;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .amountReqSub{
+      margin-top:4px;
+      font-weight:900;
+      font-size:12px;
+      color: rgba(233,240,255,.78);
+      line-height:1.15;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .amountReqArrow{
+      flex:0 0 auto;
+      width:38px;
+      height:38px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.08);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+    }
+    .amountReqArrow svg{
+      width:18px;
+      height:18px;
+      opacity:.9;
+    }
+
+    @keyframes cfReqFloat{
+      0%   { transform: translateZ(0) translateY(0) scale(1); filter: brightness(1); }
+      50%  { transform: translateZ(0) translateY(-2px) scale(1.01); filter: brightness(1.05); }
+      100% { transform: translateZ(0) translateY(0) scale(1); filter: brightness(1); }
+    }
+
+    .amountReqGo:hover{
+      transform: translateZ(0) translateY(-2px) scale(1.005);
+      box-shadow: 0 16px 38px rgba(0,0,0,.36);
+    }
+    .amountReqGo:active{ transform: translateZ(0) translateY(0) scale(.995); }
+
+    .amountReqHint{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .amountReqDot{
+      width:6px;
+      height:6px;
+      border-radius:999px;
+      background: rgba(233,240,255,.65);
+      box-shadow: 0 0 0 3px rgba(255,255,255,.06);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .amountReqItem::before,
+      .amountReqItem::after,
+      .amountReqGo{ animation: none !important; }
+    }
+
+    .big{
+      font-weight:1000;
+      font-size:16px;
+      letter-spacing:.2px;
+    }
+    .muted{
+      font-size:12px;
+      color: rgba(233,240,255,.70);
+      font-weight:850;
+      margin-top:2px;
+    }
+
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:6px 10px;
+      border-radius:999px;
+      background: var(--chip);
+      border:1px solid rgba(255,255,255,.12);
+      font-weight:950;
+      font-size:12px;
+      white-space:nowrap;
+      width:max-content;
+    }
+
+    .buyBtn{
+      border:0;
+      border-radius:12px;
+      padding:12px 12px;
+      font-weight:1000;
+      font-size:14px;
+      color:#fff;
+      cursor:pointer;
+      background: var(--buy);
+      width:100%;
+      box-shadow: 0 10px 26px rgba(0,0,0,.30);
+    }
+
+    .empty{
+      background: rgba(255,255,255,.04);
+      border:1px dashed rgba(255,255,255,.16);
+      border-radius:14px;
+      padding:16px 12px;
+      text-align:center;
+      color: rgba(233,240,255,.75);
+      font-weight:900;
+    }
+
+    .playOverlay{
+      position:fixed;
+      left:50%;
+      bottom: calc(18px + env(safe-area-inset-bottom));
+      transform:translateX(-50%);
+      z-index: 20;
+      display:none;
+    }
+    .playBtn{
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(15,26,48,.55);
+      color:#fff;
+      font-weight:1000;
+      padding:10px 14px;
+      border-radius:999px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 14px 40px rgba(0,0,0,.40);
+      cursor:pointer;
+    }
+
+    @media (max-width: 740px){
+      .wrap{ max-width:560px; }
+      .thead{ display:none; }
+      .item{ grid-template-columns: 1fr; gap:8px; }
+      .buyBtn{ padding:14px 12px; font-size:16px; border-radius:14px; }
+      .big{ font-size:18px; }
+      .sortWrap{ flex:1; justify-content:flex-end; }
+      .sortLabel{ display:none; }
+    }
+
+    @media (max-width: 520px){
+      .topbar{ flex-wrap:wrap; justify-content:flex-start; }
+      .leftBtns{ width:100%; }
+      .sortWrap{ width:100%; flex:0 0 100%; justify-content:flex-start; padding-right:12px; padding-left:12px; }
+      .sortSel{ width:100%; }
+    }
+
+    .authModalOverlay{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:9999;
+      padding:16px;
+    }
+    .authModalOverlay.show{ display:flex; }
+
+    .authModal{
+      width:100%;
+      max-width:420px;
+      border-radius:20px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(15,26,48,.92);
+      box-shadow: 0 18px 50px rgba(0,0,0,.55);
+      padding:14px;
+    }
+    .authModalTitle{ font-weight:1000; font-size:15px; margin-bottom:6px; }
+    .authModalText{ color: rgba(233,240,255,.80); font-weight:850; font-size:13px; line-height:1.35; }
+    .authModalActions{
+      display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;
+      margin-top:12px;
+    }
+    .authBtn{
+      border:0;
+      border-radius:14px;
+      padding:12px 14px;
+      font-weight:1000;
+      cursor:pointer;
+    }
+    .authBtn.primary{
+      background: linear-gradient(180deg, #2d5bff, #1f3fb3);
+      color:#fff;
+    }
+    .authBtn.ghost{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+    }
+
+    @media (max-width: 420px) {
+      .topbar { display: block !important; }
+      .leftBtns { display: flex !important; gap: 8px; margin-bottom: 8px; }
+      .leftBtns a, .leftBtns button { flex: 1 1 auto; text-align: center; }
+      .sortWrap { width: 100% !important; }
+    }
+
+    .request-offer, .request-offer button{font-weight:600;letter-spacing:.2px}
+
+    @keyframes cfPulseSoft {
+      0%   { transform: translateZ(0) scale(1); }
+      50%  { transform: translateZ(0) scale(1.02); }
+      100% { transform: translateZ(0) scale(1); }
+    }
+    .request-offer button,
+    .request-offer .btn,
+    .request-offer .button,
+    .request-offer a {
+      will-change: transform;
+      animation: cfPulseSoft 2.4s ease-in-out infinite;
+    }
+    .request-offer button:hover,
+    .request-offer .btn:hover,
+    .request-offer .button:hover,
+    .request-offer a:hover {
+      transform: translateZ(0) scale(1.03);
+    }
+    .request-offer button:active,
+    .request-offer .btn:active,
+    .request-offer .button:active,
+    .request-offer a:active {
+      transform: translateZ(0) scale(0.99);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .request-offer button,
+      .request-offer .btn,
+      .request-offer .button,
+      .request-offer a {
+        animation: none !important;
+      }
+    }
+
+    .request-offer button,
+    .request-offer a{
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      text-transform: none;
+    }
+
+    .sortNative{ display:none !important; }
+    .sortSel{
+      position:relative;
+      width:260px;
+      max-width:100%;
+      min-width:0;
+    }
+
+    .sortField{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      width:100%;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.18));
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.06),
+        0 10px 22px rgba(0,0,0,.18);
+      transition: border-color .15s ease, box-shadow .15s ease;
+      cursor:pointer;
+      user-select:none;
+    }
+    .sortField:focus-within{
+      border-color: rgba(45,91,255,.55);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.08),
+        0 0 0 3px rgba(45,91,255,.18),
+        0 12px 24px rgba(0,0,0,.22);
+    }
+    .sortField:focus{ outline:none; }
+
+    .sortInput{
+      flex:1;
+      width:100%;
+      min-width:0;
+      border:0 !important;
+      outline:0 !important;
+      background: transparent !important;
+      color: var(--text) !important;
+      font-weight:950;
+      font-size:14px;
+      padding:0 !important;
+      box-shadow:none !important;
+      -webkit-appearance:none;
+      appearance:none;
+      cursor:pointer;
+    }
+
+    .sortChevron{
+      width:18px;
+      height:18px;
+      flex:0 0 auto;
+      opacity:.75;
+      transform: translateY(1px);
+      pointer-events:none;
+      transition: transform .15s ease;
+    }
+    .sortSel.open .sortChevron{ transform: translateY(1px) rotate(180deg); }
+
+    .sortDd{
+      position:absolute;
+      left:0; right:0;
+      top: calc(100% + 6px);
+      z-index: 50;
+      border-radius: 16px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(8, 15, 30, .94);
+      box-shadow: 0 14px 40px rgba(0,0,0,.55);
+      max-height: 280px;
+      overflow:auto;
+      display:none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .sortSel.open .sortDd{ display:block; }
+
+    .sortOpt{
+      padding: 10px 12px;
+      cursor:pointer;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      font-weight:900;
+      font-size:13px;
+      color: rgba(233,240,255,.92);
+      background: transparent;
+    }
+    .sortOpt:last-child{ border-bottom:0; }
+    .sortOpt:hover{ background: rgba(37,99,235,.22); }
+    .sortOpt.active{ background: rgba(37,99,235,.32); }
+
+    @media (max-width: 520px){
+      .sortWrap{
+        width:100% !important;
+        justify-content:center !important;
+        padding-right:0 !important;
+        padding-left:0 !important;
+      }
+      .sortSel{
+        width: min(320px, 100%) !important;
+        margin: 0 auto !important;
+      }
+      .sortField{ width:100% !important; }
+    }
+  
+/* === Telegram mobile sort width fix === */
+@media (max-width: 520px){
+  .sortSel{
+    width:100% !important;
+    max-width:100% !important;
+  }
+  .sortField{
+    width:100% !important;
+    box-sizing:border-box;
+  }
+  .sortWrap{
+    padding-left:12px !important;
+    padding-right:12px !important;
+    box-sizing:border-box;
+  }
+}
+
+</style>
+</head>
+<body>
+  <div class="bg">
+    <video id="bgVideo" autoplay muted loop playsinline preload="auto" poster="./buy-bg.jpg">
+      <source src="./buy-bg.mp4" type="video/mp4">
+    </video>
+  </div>
+  <div class="overlay"></div>
+
+  <div class="authModalOverlay" id="authModal">
+    <div class="authModal">
+      <div class="authModalTitle">Нужна регистрация</div>
+      <div class="authModalText" id="authModalText">
+        Чтобы купить/продать, нужно зарегистрироваться в аккаунте.
+      </div>
+      <div class="authModalActions">
+        <button class="authBtn ghost" id="authCancel" type="button">Отмена</button>
+        <button class="authBtn primary" id="authGo" type="button">Перейти в аккаунт</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="playOverlay" id="playOverlay">
+    <button class="playBtn" id="playBtn" type="button">▶ Включить фон</button>
+  </div>
+
+  <div class="page">
+    <div class="wrap">
+      <div class="card">
+        <div class="topbar">
+          <div class="leftBtns">
+            <a class="back" href="./trade.html" id="backToTrade">← Назад</a>
+          </div>
+
+          <div class="sortWrap">
+            <div class="sortLabel">Сортировка</div>
+            <div class="sortSel">
+              <div class="sortField" id="sortField" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false">
+                <input id="sortInput" class="sortInput" readonly />
+                <svg class="sortChevron" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M7 10l5 5 5-5" stroke="rgba(233,240,255,.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="sortDd" id="sortDD" role="listbox">
+                <div class="sortOpt" data-value="cheap" role="option">Самый дешевый курс</div>
+                <div class="sortOpt" data-value="big" role="option">Самая большая сумма</div>
+              </div>
+            </div>
+            <select class="sortSelect sortNative" id="sort" aria-hidden="true" tabindex="-1">
+              <option value="cheap">Самый дешевый курс</option>
+              <option value="big">Самая большая сумма</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="status" id="status">Загружаю заявки…</div>
+
+        <div class="tableWrap">
+          <div class="thead">
+            <div>Сумма (RUB)</div>
+            <div>Метод</div>
+            <div>Курс</div>
+            <div>Действие</div>
+          </div>
+
+          <div class="list" id="list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script src="./resume-helper.js"></script>
+<script>
+    (function(){
+    const backToTrade = document.getElementById("backToTrade");
+    if (!backToTrade) return;
+    const sp = new URLSearchParams(location.search);
+    const wb = sp.get("wb");
+    const qs = new URLSearchParams();
+    if (wb) qs.set("wb", wb);
+    backToTrade.href = `./trade.html${qs.toString() ? `?${qs.toString()}` : ""}`;
+  })();
+
+const WORKER_BASE = new URLSearchParams(location.search).get("wb") || "https://api.crossflag.org";
+
+  // ===== AUTH helpers =====
+  const USER_TOKEN_KEY = "user_token";
+
+  function getUserToken(){
+    try { return (localStorage.getItem(USER_TOKEN_KEY) || "").trim(); } catch { return ""; }
+  }
+  function setUserToken(t){
+    try { localStorage.setItem(USER_TOKEN_KEY, String(t||"")); } catch {}
+  }
+
+  async function authMe(){
+    const tok = getUserToken();
+    if (!tok) return null;
+    try{
+      const res = await fetch(WORKER_BASE + "/api/public/auth/me", {
+        method: "GET",
+        headers: { "X-User-Token": tok }
+      });
+      const j = await res.json().catch(()=>null);
+      if (!res.ok || !j || !j.ok) return null;
+      return j.user || null;
+    }catch{
+      return null;
+    }
+  }
+
+  function goAuth(returnUrl){
+    const back = returnUrl || (location.pathname + location.search);
+    try { sessionStorage.setItem("auth_return", back); } catch {}
+    location.href = "./auth.html?return=" + encodeURIComponent(back);
+  }
+
+  async function ensureAuth(){
+    const u = await authMe();
+    if (u) return u;
+    goAuth();
+    return null;
+  }
+
+  // ===== BUY BAN CHECK =====
+  function checkBuyBan(user){
+    if (!user) return false;
+    const until = Number(user.buyBannedUntil || 0);
+    if (!until || until <= Date.now()) return false;
+
+    const d = new Date(until);
+    const dd = String(d.getDate()).padStart(2,"0");
+    const mm = String(d.getMonth()+1).padStart(2,"0");
+    const hh = String(d.getHours()).padStart(2,"0");
+    const mi = String(d.getMinutes()).padStart(2,"0");
+    const dateStr = dd + "." + mm + "." + d.getFullYear() + " " + hh + ":" + mi;
+
+    const reasons = {
+      "AUTO_LOW_COMPLETION": "Процент выполнения заявок ниже 50%",
+      "AUTO_CONSECUTIVE_CANCELS": "Две отмены подряд без выполненных заявок",
+      "ADMIN_MANUAL": "Установлен администратором"
+    };
+    const reasonText = reasons[user.buyBanReason] || user.buyBanReason || "Нарушение правил";
+
+    document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:#071022;">'
+      + '<div style="max-width:440px;width:100%;background:rgba(15,26,48,.85);border:1px solid rgba(239,68,68,.25);border-radius:24px;padding:28px 22px;text-align:center;backdrop-filter:blur(12px);box-shadow:0 24px 60px rgba(0,0,0,.5);">'
+      + '<div style="font-size:48px;margin-bottom:12px;">🚫</div>'
+      + '<div style="font-weight:1000;font-size:20px;color:#fca5a5;margin-bottom:8px;">Покупка временно ограничена</div>'
+      + '<div style="font-size:14px;color:rgba(233,240,255,.7);margin-bottom:16px;line-height:1.5;">Вы не можете покупать крипту до<br><b style="color:#fff;font-size:16px;">' + dateStr + '</b></div>'
+      + '<div style="padding:10px 14px;border-radius:14px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);font-size:13px;color:#fca5a5;font-weight:700;margin-bottom:18px;">' + reasonText + '</div>'
+      + '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">'
+      + '<a href="./sell.html" style="padding:12px 24px;border-radius:14px;background:linear-gradient(180deg,#2d5bff,#1f3fb3);color:#fff;font-weight:900;text-decoration:none;font-size:14px;">Продать крипту</a>'
+      + '<a href="./index.html" style="padding:12px 24px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(233,240,255,.6);font-weight:900;text-decoration:none;font-size:14px;">На главную</a>'
+      + '</div></div></div>';
+    return true;
+  }
+
+  const statusEl = document.getElementById("status");
+  const listEl = document.getElementById("list");
+  const sortEl = document.getElementById("sort");
+
+  // ===== Custom Sort UI =====
+  const sortSel = document.querySelector(".sortSel");
+  const sortField = document.getElementById("sortField");
+  const sortInput = document.getElementById("sortInput");
+  const sortDD = document.getElementById("sortDD");
+
+  function syncSortUI(){
+    if (!sortEl || !sortInput) return;
+    const opt = sortEl.options[sortEl.selectedIndex];
+    sortInput.value = opt ? opt.textContent.trim() : "";
+    if (sortDD){
+      [...sortDD.querySelectorAll(".sortOpt")].forEach(el=>{
+        el.classList.toggle("active", el.getAttribute("data-value") === sortEl.value);
+      });
+    }
+  }
+
+  function openSortDD(){
+    if (!sortSel) return;
+    sortSel.classList.add("open");
+    if (sortField) sortField.setAttribute("aria-expanded","true");
+    syncSortUI();
+  }
+  function closeSortDD(){
+    if (!sortSel) return;
+    sortSel.classList.remove("open");
+    if (sortField) sortField.setAttribute("aria-expanded","false");
+  }
+  function toggleSortDD(){
+    if (!sortSel) return;
+    sortSel.classList.contains("open") ? closeSortDD() : openSortDD();
+  }
+
+  try{
+    const saved = localStorage.getItem("cf_buy_sort");
+    if (saved && sortEl && (saved === "cheap" || saved === "big")){
+      sortEl.value = saved;
+    }
+  }catch(_){}
+
+  syncSortUI();
+
+  if (sortField){
+    sortField.addEventListener("click", (e)=>{ e.preventDefault(); toggleSortDD(); });
+    sortField.addEventListener("keydown", (e)=>{
+      if (e.key === "Enter" || e.key === " "){ e.preventDefault(); toggleSortDD(); }
+      if (e.key === "Escape"){ e.preventDefault(); closeSortDD(); }
+    });
+  }
+
+  if (sortDD){
+    sortDD.addEventListener("click", (e)=>{
+      const el = e.target.closest(".sortOpt");
+      if (!el) return;
+      const v = el.getAttribute("data-value");
+      if (!v) return;
+      sortEl.value = v;
+      try{ localStorage.setItem("cf_buy_sort", v); }catch(_){}
+      syncSortUI();
+      closeSortDD();
+      sortEl.onchange && sortEl.onchange();
+    });
+  }
+
+  document.addEventListener("click", (e)=>{
+    if (!sortSel) return;
+    if (!sortSel.contains(e.target)) closeSortDD();
+  });
+  document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") closeSortDD(); });
+
+  let lastOffers = [];
+
+  // ===== RAPIRA rate (+1%) =====
+  let promoBtnEl = null;
+  let promoSubEl = null;
+  let rapiraPlusRate = null;
+
+  function setPromoText(){
+    if (!promoSubEl) return;
+    if (!Number.isFinite(rapiraPlusRate)){
+      promoSubEl.innerHTML = `<span class="amountReqHint"><span class="amountReqDot"></span>Ожидаемый курс</span>`;
+      return;
+    }
+    const v = rapiraPlusRate.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
+    promoSubEl.innerHTML = `<span class="amountReqHint"><span class="amountReqDot"></span>Примерный курс · ${v} ₽</span>`;
+  }
+
+  async function loadRapiraPlusRate(){
+    const url = WORKER_BASE + "/api/public/rapira_rate";
+    try{
+      const res = await fetch(url, { cache: "no-store" });
+      const j = await res.json().catch(()=>null);
+      if (!res.ok || !j || !j.ok) return;
+      const base = Number(j.rate);
+      if (!Number.isFinite(base)) return;
+      rapiraPlusRate = base * 1.01;
+      setPromoText();
+    }catch(_){}
+  }
+
+  // ===== AUTH MODAL =====
+  function getUserToken2(){
+    return (
+      localStorage.getItem("CF_USER_TOKEN") ||
+      localStorage.getItem("X_AUTH_TOKEN") ||
+      localStorage.getItem("AUTH_TOKEN") ||
+      localStorage.getItem("userToken") ||
+      ""
+    ).trim();
+  }
+  function isAuthed(){ return !!getUserToken2(); }
+
+  const authModal = document.getElementById("authModal");
+  const authModalText = document.getElementById("authModalText");
+  const authCancel = document.getElementById("authCancel");
+  const authGo = document.getElementById("authGo");
+
+  let _authNextUrl = "";
+
+  function openAuthModal(nextUrl){
+    _authNextUrl = nextUrl || "";
+    authModalText.textContent = "Чтобы купить/продать, нужно зарегистрироваться в аккаунте.";
+    authModal.classList.add("show");
+  }
+  function closeAuthModal(){ authModal.classList.remove("show"); }
+  authCancel.onclick = closeAuthModal;
+  authModal.onclick = (e)=>{ if(e.target === authModal) closeAuthModal(); };
+
+  authGo.onclick = ()=>{
+    const next = encodeURIComponent(_authNextUrl || location.href);
+    location.href = "./account.html?next=" + next;
+  };
+
+  function setStatus(text, kind){
+    statusEl.textContent = text;
+    statusEl.classList.remove("bad","ok");
+    if (kind) statusEl.classList.add(kind);
+  }
+
+  // ===== fetch helper with timeout (чтобы не висеть на "Загружаю…") =====
+  async function fetchJson(url, opts={}, timeoutMs=8000){
+    const ctrl = new AbortController();
+    const t = setTimeout(()=>ctrl.abort(), timeoutMs);
+    try{
+      const res = await fetch(url, { ...opts, signal: ctrl.signal });
+      const text = await res.text().catch(()=> "");
+      let j = null;
+      try{ j = text ? JSON.parse(text) : null; }catch{ j = null; }
+      return { res, json: j, text };
+    }finally{
+      clearTimeout(t);
+    }
+  }
+
+  // ===== live lock statuses for стакан =====
+  let _lockTimer = null;
+  let _locks = Object.create(null); // { [offerId]: { locked:boolean, until:number } }
+
+  function setBtnLocked(offerId, locked){
+    const sel = `button.buyBtn[data-offer-id="${CSS.escape(String(offerId))}"]`;
+    const btn = document.querySelector(sel);
+    if (!btn) return;
+    if (locked){
+      btn.disabled = true;
+      btn.classList.add("disabled");
+      btn.textContent = "Занято";
+    }else{
+      btn.disabled = false;
+      btn.classList.remove("disabled");
+      btn.textContent = "Купить";
+    }
+  }
+
+  function applyLocksToRendered(){
+    for (const [id, info] of Object.entries(_locks)){
+      setBtnLocked(id, !!(info && info.locked));
+    }
+  }
+
+  async function pollLocks(){
+    try{
+      if (!lastOffers || !lastOffers.length) return;
+      const ids = lastOffers.map(o=>o && o.id).filter(Boolean);
+      if (!ids.length) return;
+      const url = WORKER_BASE + "/api/public/buy_lock_status?ids=" + encodeURIComponent(ids.join(","));
+      const { res, json } = await fetchJson(url, { method:"GET", cache:"no-store" }, 5000);
+      if (!res.ok || !json || !json.ok) return; // не ломаем стакан
+      const locks = json.locks || {};
+      _locks = Object.create(null);
+      for (const [id, v] of Object.entries(locks)){
+        _locks[id] = { locked: !!(v && v.locked), until: Number(v && v.until || 0) };
+      }
+      applyLocksToRendered();
+    }catch(_){}
+  }
+
+  function startLockPolling(){
+    if (_lockTimer) return;
+    _lockTimer = setInterval(pollLocks, 3000);
+  }
+
+
+  function fmtRub(n){
+    const num = Number(n);
+    if (!Number.isFinite(num)) return "—";
+    return num.toLocaleString("ru-RU") + " ₽";
+  }
+  function fmtRate(n){
+    const num = Number(n);
+    if (!Number.isFinite(num)) return "—";
+    return num.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
+  }
+  function methodLabel(m){
+    m = String(m||"").toUpperCase();
+    if(m === "SBP") return "СБП";
+    if(m === "CARD") return "Карта";
+    if(m === "QR") return "QR";
+    return m || "—";
+  }
+
+  // ✅ NEW: QR бронь в стакане + пропуск buy-order.html
+  async function goBuyOrder(o){
+    const method = String(o.method || "").toUpperCase();
+
+    // если не авторизован — модалка как раньше
+    if (!isAuthed()){
+      const fallbackTarget = (method === "QR")
+        ? ("./crossflag-buy-order.html?id=" + encodeURIComponent(o.id || ""))
+        : ("./buy-order.html?id=" + encodeURIComponent(o.id || ""));
+      openAuthModal(fallbackTarget);
+      return;
+    }
+
+    // если уже видно что занято — не пускаем
+    const li = _locks[String(o.id||"")];
+    if (li && li.locked){
+      setStatus("Эта заявка уже занята другим пользователем.", "bad");
+      setBtnLocked(o.id, true);
+      return;
+    }
+
+    // ✅ бронируем прямо на клике
+    try{
+      setStatus("Бронирую заявку…");
+
+      const reserveKey = "cf_reserve_buy_" + String(o.id || "");
+      let prevReserveId = "";
+      try{ prevReserveId = (localStorage.getItem(reserveKey) || "").trim(); }catch(_){}
+
+      // ✅ важно: передаём токен пользователя, чтобы Worker смог определить покупателя
+      // и отправить личное уведомление в бота (tgNotifyUserText).
+      const userToken = getUserToken2();
+      const headers = { "Content-Type":"application/json" };
+      if (userToken) headers["X-User-Token"] = userToken;
+
+      const { res, json } = await fetchJson(WORKER_BASE + "/api/public/reserve_offer", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ id: o.id, reserveId: prevReserveId, notifyOpen: true })
+      }, 8000);
+
+      if (res.status === 409){
+        setStatus("Заявка уже занята другим пользователем.", "bad");
+        setBtnLocked(o.id, true);
+        pollLocks();
+        return;
+      }
+
+      if (!res.ok || !json || !json.ok){
+        throw new Error(json?.error || ("HTTP " + res.status));
+      }
+
+      const reserveId = String(json.reserveId || "");
+      try{ if (reserveId) localStorage.setItem(reserveKey, reserveId); }catch(_){}
+
+      if (method === "QR"){
+        const qs = new URLSearchParams({ id: o.id, reserveId });
+        location.href = "./crossflag-buy-order.html?" + qs.toString();
+        return;
+      }
+
+      const qs = new URLSearchParams({
+        id: o.id || "",
+        reserveId,
+        amountRub: String(o.amountRub),
+        method: String(o.method),
+        rate: String(o.rate),
+      });
+
+      location.href = "./buy-order.html?" + qs.toString();
+      return;
+    }catch(e){
+      setStatus("Ошибка брони: " + (e && e.message ? e.message : e), "bad");
+      return;
+    }
+  }
+
+  function goAmountRequest(){
+    const target = "./buy-request.html";
+    if (!isAuthed()){
+      openAuthModal(target);
+      return;
+    }
+    location.href = target;
+  }
+
+  function applySort(offers){
+    const mode = sortEl.value;
+    const arr = [...(offers || [])];
+    if (mode === "big"){
+      arr.sort((a,b) => Number(b.amountRub) - Number(a.amountRub));
+    } else {
+      arr.sort((a,b) => Number(a.rate) - Number(b.rate));
+    }
+    return arr;
+  }
+
+  function renderOffers(offers){
+    listEl.innerHTML = "";
+
+    const promo = document.createElement("div");
+    promo.className = "item amountReqItem";
+    promo.innerHTML = `
+      <button class="amountReqGo" type="button">
+        <span class="amountReqTxt">
+          <span class="amountReqTitle">Запросить сумму</span>
+          <span class="amountReqSub" id="promoSub">
+            <span class="amountReqHint"><span class="amountReqDot"></span>Примерный курс</span>
+          </span>
+        </span>
+        <span class="amountReqArrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M10 7l5 5-5 5" stroke="rgba(233,240,255,.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+      </button>
+    `;
+    promoBtnEl = promo.querySelector("button");
+    promoSubEl = promo.querySelector("#promoSub");
+    promoBtnEl.onclick = goAmountRequest;
+    setPromoText();
+
+    listEl.appendChild(promo);
+
+    if (!offers || !offers.length){
+      const div = document.createElement("div");
+      div.className = "empty";
+      div.textContent = "Нет активных заявок";
+      listEl.appendChild(div);
+      return;
+    }
+
+    for (const o of offers){
+      const item = document.createElement("div");
+      item.className = "item";
+
+      item.innerHTML = `
+        <div>
+          <div class="big">${fmtRub(o.amountRub)}</div>
+          <div class="muted">Доступно</div>
+        </div>
+
+        <div>
+          <span class="chip">${methodLabel(o.method)}</span>
+        </div>
+
+        <div>
+          <div class="big">${fmtRate(o.rate)}</div>
+          <div class="muted">RUB/USDT</div>
+        </div>
+
+        <div>
+          <button class="buyBtn" data-offer-id="${String(o.id||"")}" type="button">Купить</button>
+        </div>
+      `;
+
+      const btn = item.querySelector("button");
+      btn.onclick = () => goBuyOrder(o);
+      listEl.appendChild(item);
+    }
+
+    applyLocksToRendered();
+  }
+
+  async function loadOffers(){
+    try{
+      setStatus("Загружаю заявки…");
+      const { res, json } = await fetchJson(WORKER_BASE + "/api/public/buy_offers", { method:"GET", cache:"no-store" }, 8000);
+      if (!res.ok || !json || !json.ok) throw new Error(json?.error || ("HTTP " + res.status));
+
+      lastOffers = json.offers || [];
+      renderOffers(applySort(lastOffers));
+      setStatus("Обновлено", "ok");
+      loadRapiraPlusRate();
+      startLockPolling();
+      pollLocks();
+    }catch(e){
+      setStatus("Ошибка: " + e.message, "bad");
+    }
+  }
+
+  sortEl.onchange = () => {
+    renderOffers(applySort(lastOffers));
+  };
+
+  // Check buy ban before loading offers
+  (async()=>{
+    try{
+      const u = await authMe();
+      if (u && checkBuyBan(u)) return; // banned — page replaced
+    }catch(_){}
+    loadOffers();
+    setInterval(loadOffers, 10000);
+  })();
+
+  // ===== Video autoplay =====
+  const video = document.getElementById("bgVideo");
+  const playOverlay = document.getElementById("playOverlay");
+  const playBtn = document.getElementById("playBtn");
+
+  function isMobile(){
+    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  }
+
+  async function tryAutoplay(){
+    try{
+      await video.play();
+      playOverlay.style.display = "none";
+    }catch(e){
+      if (isMobile()) playOverlay.style.display = "block";
+    }
+  }
+
+  playBtn.onclick = async () => {
+    try{
+      await video.play();
+      playOverlay.style.display = "none";
+    }catch(e){
+      playOverlay.style.display = "block";
+    }
+  };
+
+  setTimeout(tryAutoplay, 250);
+
+
+  // ===== resume active BUY =====
+  (async function(){
+    const box = document.getElementById("resumeBox");
+    const go = document.getElementById("resumeGo");
+    const close = document.getElementById("resumeClose");
+    if (!box || !window.CrossflagResume) return;
+    const rec = await window.CrossflagResume.findLatestActive("BUY");
+    if (!rec || !rec.url) return;
+    box.style.display = "block";
+    if (go) go.onclick = () => { location.href = rec.url; };
+    if (close) close.onclick = () => { box.style.display = "none"; };
+  })();
+
+</script>
+</body>
+</html>

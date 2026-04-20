@@ -1,0 +1,965 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Crossflag · Оплата</title>
+  <style>
+    :root{
+      --bg:#070f1f;
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+
+      --card: rgba(15, 24, 42, .58);
+      --border: rgba(255,255,255,.10);
+
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+
+      --btn:#3b82f6;
+      --btn2:#2563eb;
+
+      --shadow: 0 18px 50px rgba(0,0,0,.45);
+      --radius: 22px;
+
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      color:var(--text);
+      background: var(--bg);
+      overflow-x:hidden;
+    }
+
+    .overlay{
+      position:fixed; inset:0; pointer-events:none; z-index:-2;
+      background:
+        radial-gradient(900px 520px at 50% -200px, rgba(59,130,246,.28), rgba(0,0,0,0) 60%),
+        radial-gradient(900px 600px at 85% 85%, rgba(34,197,94,.10), rgba(0,0,0,0) 65%),
+        linear-gradient(180deg, rgba(7,15,31,.78), rgba(7,15,31,.92));
+    }
+
+    .wrap{
+      max-width:720px;
+      margin:0 auto;
+      padding: calc(14px + env(safe-area-inset-top)) 14px calc(20px + env(safe-area-inset-bottom)) 14px;
+    }
+
+    /* Minimal top: only back + subtle title */
+    .topRow{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; margin-bottom:12px;
+    }
+    .back{
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      padding:10px 12px;
+      border-radius:14px;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .topTitle{
+      font-weight:900;
+      font-size:12px;
+      color: rgba(233,240,255,.62);
+      letter-spacing:.2px;
+    }
+
+    .card{
+      position:relative;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      overflow:hidden;
+    }
+    .card::before{
+      content:"";
+      position:absolute; inset:-70px; z-index:0; pointer-events:none;
+      background:
+        radial-gradient(520px 220px at 25% 10%, rgba(59,130,246,.18), rgba(0,0,0,0) 62%),
+        radial-gradient(520px 220px at 85% 85%, rgba(34,197,94,.10), rgba(0,0,0,0) 62%);
+      filter: blur(18px);
+    }
+    .card > *{ position:relative; z-index:1; }
+
+    .center{
+      text-align:center;
+      padding: 6px 0 4px;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:7px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      font-weight:900;
+      font-size:12px;
+      color: rgba(233,240,255,.75);
+    }
+    .badge i{
+      width:9px;height:9px;border-radius:999px;
+      background: rgba(59,130,246,.9);
+      box-shadow: 0 0 0 6px rgba(59,130,246,.12);
+      display:inline-block;
+    }
+
+    .rub{
+      font-size:58px;
+      line-height:1;
+      font-weight:1000;
+      letter-spacing:.3px;
+      margin: 10px 0 6px;
+      text-shadow: 0 14px 40px rgba(0,0,0,.35);
+    }
+
+    .merchantPill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      border-radius:999px;
+      padding:8px 12px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      color: rgba(233,240,255,.86);
+      font-weight:900;
+      font-size:13px;
+      margin-top:6px;
+      max-width:100%;
+    }
+    .merchantPill .dot{
+      width:8px; height:8px; border-radius:999px;
+      background: rgba(34,197,94,.85);
+      box-shadow: 0 0 0 6px rgba(34,197,94,.12);
+      flex:0 0 auto;
+    }
+    .merchantPill .txt{
+      display:block;
+      min-width:0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 520px;
+    }
+
+    .block{
+      margin-top:14px;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      overflow:hidden;
+    }
+
+    .row{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 14px;
+      border-top:1px solid rgba(255,255,255,.08);
+      align-items:flex-start;
+      flex-wrap:nowrap;
+    }
+    .row:first-child{ border-top:0; }
+
+    .k{
+      font-size:12px;
+      color: rgba(233,240,255,.60);
+      font-weight:900;
+      letter-spacing:.15px;
+    }
+    .v{
+      font-size:15px;
+      font-weight:1000;
+      margin-top:3px;
+    }
+
+    .left{
+      display:flex; flex-direction:column;
+      min-width:0;
+      flex:1 1 0;
+    }
+    .right{
+      text-align:right;
+      display:flex; flex-direction:column;
+      align-items:flex-end;
+      font-weight:1000;
+      min-width:112px;
+      max-width:42%;
+      flex:0 0 auto;
+    }
+    .right .big{ font-size:16px; line-height:1.18; white-space:normal; overflow-wrap:anywhere; }
+    .right .sub{ font-size:12px; color: rgba(233,240,255,.55); font-weight:900; margin-top:2px; line-height:1.25; white-space:normal; overflow-wrap:anywhere; }
+
+    .payCard{
+      margin-top:12px;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      overflow:hidden;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    .payTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px;
+      flex-wrap:nowrap;
+    }
+    .token{
+      display:flex; align-items:center; gap:10px; min-width:0;
+      flex:0 1 46%;
+    }
+    .tokenIcon{
+      width:34px; height:34px; border-radius:999px;
+      background: rgba(54, 231, 186, .16);
+      border:1px solid rgba(255,255,255,.12);
+      display:flex; align-items:center; justify-content:center;
+      font-weight:1000;
+      flex:0 0 auto;
+    }
+    .tokenTxt{ min-width:0; }
+    .tokenTxt b{ display:block; font-size:14px; }
+    .tokenTxt span{ display:block; font-size:12px; color: rgba(233,240,255,.60); font-weight:900; margin-top:2px; }
+
+    .bal{
+      text-align:right;
+      display:flex; flex-direction:column;
+      gap:4px;
+      flex:1 1 54%;
+      min-width:0;
+      align-items:flex-end;
+    }
+    .bal b{
+      font-size:14px;
+      white-space:normal;
+      word-break:break-word;
+      line-height:1.25;
+      max-width:100%;
+    }
+    .bal span{
+      font-size:12px;
+      color: rgba(233,240,255,.55);
+      font-weight:900;
+      white-space:normal;
+      line-height:1.35;
+      overflow-wrap:anywhere;
+      max-width:100%;
+    }
+
+    .btn{
+      width:100%;
+      border:0;
+      border-radius:16px;
+      padding:14px 16px;
+      background: linear-gradient(180deg, var(--btn), var(--btn2));
+      color: var(--text);
+      font-weight:1000;
+      font-size:16px;
+      cursor:pointer;
+      box-shadow: 0 14px 32px rgba(0,0,0,.30);
+      margin-top:12px;
+      position:relative;
+    }
+    .btn:hover{ filter: brightness(1.05); }
+    .btn:disabled{ opacity:.65; cursor:not-allowed; box-shadow:none; }
+
+    @keyframes spin{ to{ transform:rotate(360deg);} }
+    .loading{ opacity:.92; pointer-events:none; }
+    .loading::after{
+      content:"";
+      position:absolute;
+      right:16px; top:50%;
+      width:16px; height:16px;
+      margin-top:-8px;
+      border-radius:999px;
+      border:2px solid rgba(255,255,255,.45);
+      border-top-color: transparent;
+      animation: spin .85s linear infinite;
+    }
+
+    .tinyNote{
+      margin-top:10px;
+      font-size:12px;
+      color: rgba(233,240,255,.70);
+      font-weight:900;
+      line-height:1.35;
+      text-align:center;
+    }
+
+    .status{
+      margin-top:12px;
+      padding:12px 12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      font-size:12px;
+      font-weight:900;
+      line-height:1.35;
+      white-space:pre-wrap;
+      display:none;
+    }
+    .status.show{ display:block; }
+    .status.ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.10); }
+    .status.bad{ border-color: rgba(239,68,68,.40); background: rgba(239,68,68,.12); }
+    .status.warn{ border-color: rgba(245,158,11,.40); background: rgba(245,158,11,.10); }
+  
+    .waitScreen{ display:none; }
+    .waitScreen.show{ display:block; }
+    .mainScreen.hide{ display:none; }
+    .waitIcon{
+      width:62px;height:62px;border-radius:999px;
+      margin:4px auto 12px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:28px;font-weight:1000;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.05);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    .waitTitle{ font-size:26px; font-weight:1000; line-height:1.15; text-align:center; }
+    .waitSub{ margin-top:10px; color:rgba(233,240,255,.72); font-size:14px; font-weight:850; line-height:1.5; text-align:center; }
+    .waitMeta{ margin-top:14px; padding:12px 14px; border-radius:16px; border:1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.04); }
+    .waitMeta .line{ display:flex; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid rgba(255,255,255,.06); }
+    .waitMeta .line:first-child{ border-top:0; }
+    .waitMeta .lk{ color:rgba(233,240,255,.55); font-size:12px; font-weight:900; }
+    .waitMeta .lv{ font-size:13px; font-weight:1000; text-align:right; }
+    .ghostBtn{ width:100%; margin-top:12px; border-radius:16px; padding:13px 16px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05); color:var(--text); font-weight:1000; font-size:15px; cursor:pointer; }
+
+    @media (max-width: 560px){
+      .wrap{ padding-left:12px; padding-right:12px; }
+      .card{ padding:14px; }
+      .rub{ font-size: clamp(42px, 13vw, 58px); }
+      .merchantPill{ display:flex; width:100%; }
+      .merchantPill .txt{ max-width:none; }
+      .row{ gap:10px; padding:12px; }
+      .left{ flex:1 1 54%; }
+      .right{ min-width:98px; max-width:40%; }
+      .right .big, .right .sub{ text-align:right; }
+      .payTop{ align-items:flex-start; gap:10px; }
+      .token{ flex:0 1 42%; }
+      .bal{ flex:1 1 58%; width:auto; text-align:right; align-items:flex-end; }
+    }
+
+    @media (max-width: 420px){
+      .row{ display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:start; }
+      .right{ min-width:92px; max-width:118px; }
+      .payTop{ display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1.25fr); align-items:center; }
+      .token{ min-width:0; }
+      .bal b{ font-size:13px; }
+      .bal span{ font-size:11.5px; }
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="overlay"></div>
+
+  <div class="wrap">
+    <div class="topRow">
+      <button class="back" id="backBtn">←</button>
+      <div class="topTitle">Оплата</div>
+    </div>
+
+    <div class="card mainScreen" id="mainScreen">
+      <div class="center">
+        <div class="badge"><i></i> QR оплата</div>
+        <div class="rub" id="rubSum">— ₽</div>
+
+        <div class="merchantPill" title="">
+          <span class="dot"></span>
+          <span class="txt" id="merchantTxt">Получатель не определён</span>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="row">
+          <div class="left">
+            <div class="k">Сумма</div>
+            <div class="v" id="rubLine">—</div>
+          </div>
+          <div class="right">
+            <div class="big" id="rateLine">—</div>
+            <div class="sub">курс</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="left">
+            <div class="k">Списание</div>
+            <div class="v" id="usdtSpend">— USDT</div>
+          </div>
+          <div class="right">
+            <div class="big" id="rubLineRight">—</div>
+            <div class="sub">≈ ₽</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="left">
+            <div class="k">Из доп. остатка</div>
+            <div class="v" id="cashbackSpendLine">— USDT</div>
+          </div>
+          <div class="right">
+            <div class="big" id="walletSpendLine">— USDT</div>
+            <div class="sub">из основного кошелька</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="payCard">
+        <div class="payTop">
+          <div class="token">
+            <div class="tokenIcon">₮</div>
+            <div class="tokenTxt">
+              <b>USDT</b>
+              <span>баланс</span>
+            </div>
+          </div>
+          <div class="bal">
+            <b id="balUsdt">— USDT</b>
+            <span id="balMeta">доступно</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn" id="payBtn" type="button" disabled>Оплатить</button>
+
+      <div class="tinyNote">Проверь сумму и нажми &quot;Оплатить&quot;.</div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <div class="card waitScreen" id="waitScreen">
+      <div class="waitIcon">⏳</div>
+      <div class="waitTitle" id="waitTitle">Ищем исполнителя</div>
+      <div class="waitSub" id="waitSub">Заявка создана. Как только исполнитель возьмёт её и оплатит QR, статус обновится автоматически.</div>
+      <div class="waitMeta">
+        <div class="line"><div class="lk">ID заявки</div><div class="lv" id="waitId">—</div></div>
+        <div class="line"><div class="lk">Сумма</div><div class="lv" id="waitRub">—</div></div>
+        <div class="line"><div class="lk">Статус</div><div class="lv" id="waitStatus">Ожидание</div></div>
+      </div>
+      <button class="ghostBtn" id="homeBtn" type="button">В главное меню</button>
+      <div class="status show warn" id="waitStatusBox">Мы ищем исполнителя для оплаты QR.</div>
+    </div>
+  </div>
+
+<script>
+  const WORKER_BASE = "https://api.crossflag.org";
+  const BACK_URL = "./qr.html";
+  const AUTH_URL = "./auth.html";
+  const USER_TOKEN_KEY = "user_token";
+  const QR_PAYLOAD_KEY = "qr_payload";
+  const QR_PAYLOAD_AT_KEY = "qr_payload_at";
+  const QR_WAIT_ID_KEY = "qr_wait_offer_id";
+  const QR_WAIT_RUB_KEY = "qr_wait_rub";
+  const QR_WAIT_PAYLOAD_KEY = "qr_wait_payload";
+
+  function getUserToken(){
+    try {
+      return (
+        localStorage.getItem(USER_TOKEN_KEY) ||
+        localStorage.getItem("CF_USER_TOKEN") ||
+        localStorage.getItem("X_AUTH_TOKEN") ||
+        localStorage.getItem("AUTH_TOKEN") ||
+        localStorage.getItem("userToken") ||
+        ""
+      ).trim();
+    } catch { return ""; }
+  }
+
+  async function apiPost(path, body, token){
+    const res = await fetch(WORKER_BASE + path, {
+      method: "POST",
+      headers: {
+        "Content-Type":"application/json",
+        ...(token ? { "X-User-Token": token } : {})
+      },
+      body: JSON.stringify(body || {})
+    });
+    const j = await res.json().catch(()=>null);
+    if (!res.ok || !j) throw new Error((j && j.error) ? j.error : ("HTTP " + res.status));
+    return j;
+  }
+  async function apiGet(path, token){
+    const res = await fetch(WORKER_BASE + path, {
+      method: "GET",
+      headers: {
+        ...(token ? { "X-User-Token": token } : {})
+      },
+      cache: "no-store"
+    });
+    const j = await res.json().catch(()=>null);
+    if (!res.ok || !j) throw new Error((j && j.error) ? j.error : ("HTTP " + res.status));
+    return j;
+  }
+
+  function goAuth(returnUrl){
+    const back = returnUrl || (location.pathname + location.search);
+    try { sessionStorage.setItem("auth_return", back); } catch {}
+    location.href = AUTH_URL + "?return=" + encodeURIComponent(back);
+  }
+
+  const statusEl = document.getElementById("status");
+  const mainScreen = document.getElementById("mainScreen");
+  const waitScreen = document.getElementById("waitScreen");
+  const waitTitleEl = document.getElementById("waitTitle");
+  const waitSubEl = document.getElementById("waitSub");
+  const waitIdEl = document.getElementById("waitId");
+  const waitRubEl = document.getElementById("waitRub");
+  const waitStatusEl = document.getElementById("waitStatus");
+  const waitStatusBoxEl = document.getElementById("waitStatusBox");
+  document.getElementById("homeBtn").onclick = () => { location.href = "./index.html"; };
+
+  function setStatus(text, kind){
+    statusEl.textContent = String(text || "");
+    statusEl.className = "status show " + (kind || "warn");
+  }
+  function showWaitScreen(show){
+    mainScreen.classList.toggle("hide", !!show);
+    waitScreen.classList.toggle("show", !!show);
+  }
+  function waitBox(text, kind){
+    waitStatusBoxEl.textContent = String(text || "");
+    waitStatusBoxEl.className = "status show " + (kind || "warn");
+  }
+
+  function setLoading(btn, on){
+    if (!btn) return;
+    if (on){
+      btn.classList.add("loading");
+      btn.dataset._txt = btn.textContent;
+      btn.textContent = "…";
+      btn.disabled = true;
+    } else {
+      btn.classList.remove("loading");
+      btn.textContent = btn.dataset._txt || btn.textContent;
+      btn.disabled = false;
+    }
+  }
+
+  document.getElementById("backBtn").onclick = () => location.href = BACK_URL;
+
+  function fmtRub(n){
+    const x = Number(n || 0);
+    if (!Number.isFinite(x)) return "—";
+    return x.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ₽";
+  }
+  function fmtUsdt(n){
+    const x = Number(n || 0);
+    if (!Number.isFinite(x)) return "—";
+    return x.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 6 }) + " USDT";
+  }
+
+  function getPayloadRaw(){
+    const sp = new URLSearchParams(location.search);
+    const p = String(sp.get("payload") || "").trim();
+    if (!p) return "";
+    try {
+      sessionStorage.setItem(QR_PAYLOAD_KEY, p);
+      sessionStorage.setItem(QR_PAYLOAD_AT_KEY, String(Date.now()));
+    } catch(_){ }
+    return p;
+  }
+
+  function clearStoredQrWait(){
+    try { sessionStorage.removeItem(QR_WAIT_ID_KEY); } catch(_){ }
+    try { sessionStorage.removeItem(QR_WAIT_RUB_KEY); } catch(_){ }
+    try { sessionStorage.removeItem(QR_WAIT_PAYLOAD_KEY); } catch(_){ }
+  }
+
+  function readStoredQrWait(){
+    try {
+      return {
+        id: String(sessionStorage.getItem(QR_WAIT_ID_KEY) || ""),
+        rub: Number(sessionStorage.getItem(QR_WAIT_RUB_KEY) || 0),
+        payload: String(sessionStorage.getItem(QR_WAIT_PAYLOAD_KEY) || "")
+      };
+    } catch(_){
+      return { id: "", rub: 0, payload: "" };
+    }
+  }
+
+  function parseAmountMaybeKopecks(x){
+    let n = Number(String(x).replace(",", "."));
+    if (!Number.isFinite(n)) return 0;
+    if (n >= 1000 && Math.abs(n - Math.round(n)) < 1e-9) {
+      if (n % 100 === 0) return n / 100;
+      if (n >= 10000) return n / 100;
+    }
+    return n;
+  }
+
+  function parseQrPayload(raw){
+    const out = { rub: 0, to: "", title: "", raw: String(raw || "") };
+
+    const s = String(raw || "").trim();
+    if (!s) return out;
+
+    // URL
+    if (/^https?:\/\//i.test(s)) {
+      try{
+        const u = new URL(s);
+        const qp = u.searchParams;
+
+        const a =
+          qp.get("amount") || qp.get("sum") || qp.get("payment_sum") || qp.get("rub") ||
+          qp.get("txnAmount") || qp.get("am") || "";
+        if (a) out.rub = parseAmountMaybeKopecks(a);
+
+        const m =
+          qp.get("merchantName") || qp.get("merchant") || qp.get("receiver") || qp.get("name") ||
+          qp.get("to") || qp.get("shop") || "";
+        if (m) out.to = m;
+
+        const t = qp.get("title") || qp.get("purpose") || qp.get("desc") || "";
+        if (t && !out.to) out.title = t;
+
+        return out;
+      }catch(_){}
+    }
+
+    // ST00012|...|Sum=57900|Name=...|
+    const mSum = s.match(/(?:^|[?&|;,\s])(?:sum|amount|rub|pay(?:ment)?sum)\s*=\s*([0-9]+(?:[.,][0-9]+)?)/i);
+    if (mSum) out.rub = parseAmountMaybeKopecks(mSum[1]);
+
+    const mName = s.match(/(?:^|[?&|;,\s])(?:name|receiver|to|shop|merchant)\s*=\s*([^|&;\n]+)/i);
+    if (mName) {
+      try { out.to = decodeURIComponent(mName[1]).trim(); }
+      catch { out.to = String(mName[1]).trim(); }
+    }
+    return out;
+  }
+
+  async function fetchUsdtRateRub(){
+    const urls = [
+      WORKER_BASE + "/api/public/rapira_rate",
+      WORKER_BASE + "/api/public/quotes",
+      WORKER_BASE + "/rates?symbol=USDT/RUB"
+    ];
+
+    for (const url of urls){
+      try{
+        const r = await fetch(url, { cache: "no-store" });
+        const j = await r.json().catch(()=>null);
+        if (!r.ok || !j) continue;
+
+        if (j.rate != null) {
+          const num = Number(j.rate);
+          if (Number.isFinite(num) && num > 0) return num;
+        }
+        if (j.adjusted && j.adjusted.buy != null) {
+          const num = Number(j.adjusted.buy);
+          if (Number.isFinite(num) && num > 0) return num;
+        }
+        if (j.ask != null) {
+          const num = Number(j.ask);
+          if (Number.isFinite(num) && num > 0) return num;
+        }
+      }catch(_){}
+    }
+    return 0;
+  }
+
+  async function fetchWalletUsdt(token){
+    const urls = [
+      WORKER_BASE + "/api/public/wallet/balance",
+      WORKER_BASE + "/api/public/balance",
+      WORKER_BASE + "/api/public/wallet"
+    ];
+
+    for (const url of urls){
+      try{
+        const res = await fetch(url, {
+          method: "GET",
+          cache: "no-store",
+          headers: token ? { "X-User-Token": token } : {}
+        });
+        const j = await res.json().catch(()=>null);
+        if (!res.ok || !j) continue;
+
+        const raw =
+          (j.usdt_trc20 ?? j.usdt ??
+           (j.balance && (j.balance.usdt_trc20 ?? j.balance.usdt)) ??
+           (j.data && (j.data.usdt_trc20 ?? j.data.usdt)));
+
+        const rawCashback =
+          (j.cashback_usdt ?? j.cashback ??
+           (j.balance && (j.balance.cashback_usdt ?? j.balance.cashback)) ??
+           (j.data && (j.data.cashback_usdt ?? j.data.cashback)));
+
+        if (raw == null) {
+          if (j.ok) return { usdt: 0, cashbackUsdt: 0, qrSpendableUsdt: 0 };
+          continue;
+        }
+
+        let usdt = 0;
+        if (typeof raw === "string") usdt = Number(raw.replace(",", "."));
+        else if (typeof raw === "number") usdt = raw;
+        else usdt = Number(raw);
+
+        let cashbackUsdt = 0;
+        if (typeof rawCashback === "string") cashbackUsdt = Number(rawCashback.replace(",", "."));
+        else if (typeof rawCashback === "number") cashbackUsdt = rawCashback;
+        else if (rawCashback != null) cashbackUsdt = Number(rawCashback);
+
+        if (usdt > 1e7) usdt = usdt / 1e6;
+        if (cashbackUsdt > 1e7) cashbackUsdt = cashbackUsdt / 1e6;
+        if (!Number.isFinite(usdt)) usdt = 0;
+        if (!Number.isFinite(cashbackUsdt)) cashbackUsdt = 0;
+        return { usdt, cashbackUsdt, qrSpendableUsdt: usdt + cashbackUsdt };
+      }catch(_){}
+    }
+    return 0;
+  }
+
+  function qrStatusRu(st){
+    st = String(st || "").toUpperCase();
+    if (st === "NEW") return "Ищем исполнителя";
+    if (st === "ON_PAY") return "Исполнитель оплачивает QR";
+    if (st === "PAID") return "QR оплачен";
+    if (st === "ON_CHECK") return "Проверяем оплату";
+    if (st === "SUCCESS") return "Оплата завершена";
+    if (st === "FAILED" || st === "ERROR") return "Ошибка";
+    if (st === "CANCELED" || st === "CANCELLED") return "Отменено";
+    return st || "Ожидание";
+  }
+
+  function renderWaitState(info, rub){
+    const st = String(info && info.status || "NEW").toUpperCase();
+    waitIdEl.textContent = info && info.id ? String(info.id) : "—";
+    waitRubEl.textContent = fmtRub(rub || 0);
+    waitStatusEl.textContent = qrStatusRu(st);
+
+    if (st === "NEW") {
+      waitTitleEl.textContent = "Ищем исполнителя";
+      waitSubEl.textContent = "Заявка создана. Как только исполнитель возьмёт её и оплатит QR, статус обновится автоматически.";
+      waitBox("Мы ищем исполнителя для оплаты QR.", "warn");
+      return;
+    }
+    if (st === "ON_PAY") {
+      waitTitleEl.textContent = "Исполнитель оплачивает QR";
+      waitSubEl.textContent = "Заявка уже взята в работу. Пожалуйста, дождитесь оплаты по QR.";
+      waitBox("Исполнитель взял заявку и сейчас оплачивает ваш QR.", "warn");
+      return;
+    }
+    if (st === "PAID" || st === "ON_CHECK") {
+      waitTitleEl.textContent = "QR оплачен";
+      waitSubEl.textContent = "Исполнитель отметил оплату. Мы проверяем и завершаем сделку.";
+      waitBox("Оплата по QR отмечена. Ожидайте завершения сделки и списания USDT.", "ok");
+      return;
+    }
+    if (st === "SUCCESS") {
+      waitTitleEl.textContent = "Оплата завершена";
+      waitSubEl.textContent = "QR был успешно оплачен. Сделка завершена.";
+      waitBox("Всё готово: QR оплачен, сделка завершена.", "ok");
+      return;
+    }
+    if (st === "FAILED" || st === "ERROR") {
+      waitTitleEl.textContent = "Ошибка оплаты";
+      waitSubEl.textContent = "По заявке возникла ошибка. Попробуйте позже или обратитесь в поддержку.";
+      waitBox("Заявка завершилась с ошибкой.", "bad");
+      return;
+    }
+    if (st === "CANCELED" || st === "CANCELLED") {
+      waitTitleEl.textContent = "Заявка отменена";
+      waitSubEl.textContent = "Заявка была отменена или закрыта.";
+      waitBox("Заявка закрыта без оплаты.", "bad");
+      return;
+    }
+    waitBox("Статус заявки обновляется автоматически.", "warn");
+  }
+
+  async function pollQrStatus(id, token, rub){
+    if (!id) return;
+    let timer = null;
+    const tick = async () => {
+      try{
+        const info = await apiGet('/api/public/qr_buy_status?id=' + encodeURIComponent(id), token);
+        renderWaitState(info, rub);
+        const st = String(info && info.status || '').toUpperCase();
+        if (["SUCCESS","FAILED","ERROR","CANCELED","CANCELLED"].includes(st)) {
+          clearStoredQrWait();
+          if (timer){
+            clearInterval(timer);
+            timer = null;
+          }
+        }
+      }catch(e){
+        waitBox('Не удалось обновить статус заявки. Попробуйте чуть позже.', 'bad');
+      }
+    };
+    await tick();
+    timer = setInterval(tick, 3000);
+  }
+
+  const rubSumEl = document.getElementById("rubSum");
+  const merchantEl = document.getElementById("merchantTxt");
+  const rubLine = document.getElementById("rubLine");
+  const rubLineRight = document.getElementById("rubLineRight"); // тут теперь ≈ руб
+  const rateLine = document.getElementById("rateLine");         // тут теперь курс
+  const usdtSpend = document.getElementById("usdtSpend");
+  const balUsdt = document.getElementById("balUsdt");
+  const balMeta = document.getElementById("balMeta");
+  const cashbackSpendLine = document.getElementById("cashbackSpendLine");
+  const walletSpendLine = document.getElementById("walletSpendLine");
+  const payBtn = document.getElementById("payBtn");
+  const merchantPill = document.querySelector(".merchantPill");
+
+  (async () => {
+    const tok = getUserToken();
+    if (!tok){
+      goAuth(location.pathname + location.search);
+      return;
+    }
+
+    const raw = getPayloadRaw();
+    const data = parseQrPayload(raw);
+
+    const merchant = (data.to || data.title || "Получатель не определён");
+    merchantEl.textContent = merchant;
+    if (merchantPill) merchantPill.title = merchant;
+
+    const savedWait = readStoredQrWait();
+    if (raw && savedWait.id && savedWait.payload && savedWait.payload !== raw) {
+      clearStoredQrWait();
+    }
+
+    const activeWait = readStoredQrWait();
+    if (activeWait.id && (!raw || !activeWait.payload || activeWait.payload === raw)) {
+      showWaitScreen(true);
+      renderWaitState({ id: activeWait.id, status: "NEW" }, activeWait.rub || data.rub || 0);
+      await pollQrStatus(activeWait.id, tok, activeWait.rub || data.rub || 0);
+      return;
+    }
+
+    if (!Number.isFinite(data.rub) || data.rub <= 0){
+      rubSumEl.textContent = "— ₽";
+      rubLine.textContent = "—";
+      rateLine.textContent = "—";
+      usdtSpend.textContent = "— USDT";
+      rubLineRight.textContent = "—";
+      cashbackSpendLine.textContent = "— USDT";
+      walletSpendLine.textContent = "— USDT";
+      balUsdt.textContent = "— USDT";
+      if (balMeta) balMeta.textContent = "доступно";
+      payBtn.disabled = true;
+      setStatus(raw ? "Не удалось распознать сумму из QR." : "Не найден payload QR. Отсканируй код заново.", "warn");
+      return;
+    }
+
+    rubSumEl.textContent = fmtRub(data.rub).replace(" ₽","") + " ₽";
+    rubLine.textContent = fmtRub(data.rub);
+
+    setStatus("Загрузка…", "warn");
+
+    try{
+      const [rateAsk, balanceInfo] = await Promise.all([
+        fetchUsdtRateRub(),
+        fetchWalletUsdt(tok)
+      ]);
+
+      const balanceUsdtNum = Number(balanceInfo && balanceInfo.usdt || 0) || 0;
+      const cashbackUsdtNum = Number(balanceInfo && balanceInfo.cashbackUsdt || 0) || 0;
+      const qrSpendableUsdtNum = Number(balanceInfo && balanceInfo.qrSpendableUsdt || (balanceUsdtNum + cashbackUsdtNum)) || 0;
+
+      rateLine.textContent = (rateAsk > 0 ? rateAsk.toFixed(2) + " ₽" : "—");
+      balUsdt.textContent = fmtUsdt(qrSpendableUsdtNum);
+      if (balMeta) {
+        if (cashbackUsdtNum > 0 && balanceUsdtNum > 0) {
+          balMeta.textContent = "доп. остаток " + fmtUsdt(cashbackUsdtNum) + " • основной " + fmtUsdt(balanceUsdtNum);
+        } else if (cashbackUsdtNum > 0) {
+          balMeta.textContent = "весь доступный остаток сейчас в доп. остатке";
+        } else {
+          balMeta.textContent = "доступно для QR из основного кошелька";
+        }
+      }
+
+      let needUsdt = 0;
+      if (rateAsk > 0) needUsdt = data.rub / rateAsk;
+
+      const cashbackSpendUsdt = Math.min(cashbackUsdtNum, Math.max(0, needUsdt));
+      const walletSpendUsdt = Math.max(0, needUsdt - cashbackSpendUsdt);
+
+      usdtSpend.textContent = fmtUsdt(needUsdt);
+      rubLineRight.textContent = fmtRub(data.rub);
+      cashbackSpendLine.textContent = fmtUsdt(cashbackSpendUsdt);
+      walletSpendLine.textContent = fmtUsdt(walletSpendUsdt);
+
+      if (!(needUsdt > 0) || !(rateAsk > 0)){
+        payBtn.disabled = true;
+        setStatus("Нет курса — попробуй ещё раз.", "warn");
+        return;
+      }
+
+      if (qrSpendableUsdtNum + 1e-12 < needUsdt){
+        payBtn.disabled = true;
+        setStatus("Недостаточно средств для QR.", "bad");
+        return;
+      }
+
+      payBtn.disabled = false;
+      setStatus("Проверь сумму и нажми «Оплатить».", "ok");
+
+      payBtn.onclick = async () => {
+        setLoading(payBtn, true);
+        try{
+          // 1) create BUY offer (method=QR) for exchanger flow
+          const created = await apiPost("/api/public/qr_buy_create", {
+            amountRub: data.rub,
+            qrRaw: String(raw || "").slice(0, 5000),
+            merchant: String(merchant || ""),
+            rate: Number(rateAsk || 0),
+            usdtAmount: Number(needUsdt || 0),
+          }, tok);
+
+          // 2) audit log
+          await apiPost("/api/public/log_attempt", {
+            kind: "QR_BUY_CREATED",
+            dealType: "BUY",
+            status: "NEW",
+            id: created && created.id ? created.id : null,
+            data: {
+              rub: data.rub,
+              merchant,
+              rapiraAsk: rateAsk,
+              usdtSpend: needUsdt,
+              qrRaw: String(raw || "").slice(0, 1200)
+            }
+          }, tok);
+
+          const createdId = created && created.id ? String(created.id) : "";
+          try {
+            sessionStorage.setItem(QR_WAIT_ID_KEY, createdId);
+            sessionStorage.setItem(QR_WAIT_RUB_KEY, String(data.rub || 0));
+            sessionStorage.setItem(QR_WAIT_PAYLOAD_KEY, String(raw || ""));
+          } catch(_){ }
+          showWaitScreen(true);
+          renderWaitState({ id: createdId, status: "NEW" }, data.rub);
+          await pollQrStatus(createdId, tok, data.rub);
+        }catch(e){
+          setStatus("Ошибка: " + (e && e.message ? e.message : String(e)), "bad");
+        }finally{
+          setLoading(payBtn, false);
+        }
+      };
+
+    }catch(e){
+      payBtn.disabled = true;
+      setStatus("Ошибка загрузки.", "bad");
+    }
+  })();
+</script>
+</body>
+</html>

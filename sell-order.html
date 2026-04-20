@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Crossflag Exchange · Продать</title>
+
+  <style>
+    :root{
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+      --card: rgba(15, 26, 48, 0.52);
+      --border: rgba(255,255,255,.12);
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+      --btn:#2d5bff;
+      --btn2:#1f3fb3;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      color:var(--text);
+      background:#071022;
+      overflow-y:auto;
+      overflow-x:hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+    }
+
+    .overlay{
+      position:fixed;
+      inset:0;
+      z-index:-1;
+      background:
+        radial-gradient(900px 600px at 50% 20%, rgba(60,120,255,.18), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(7,16,34,.82), rgba(7,16,34,.92));
+      pointer-events:none;
+    }
+
+    .page{
+      min-height:100svh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:
+        calc(16px + env(safe-area-inset-top))
+        16px
+        calc(22px + env(safe-area-inset-bottom))
+        16px;
+      box-sizing:border-box;
+    }
+
+    .wrap{ width:100%; max-width:720px; }
+
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 14px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+    }
+
+    .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:12px;
+    }
+
+    .title{
+      font-weight:1000;
+      font-size:16px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    @media(max-width:640px){
+      .grid{ grid-template-columns:1fr; }
+    }
+
+    .box{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+    }
+    .label{ font-weight:950; font-size:12px; color:var(--muted); margin-bottom:6px; }
+    .value{ font-weight:1000; font-size:18px; word-break:break-word; }
+
+    .section{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      margin-bottom:12px;
+    }
+    .sectionTitle{
+      font-weight:1000;
+      margin-bottom:10px;
+    }
+
+    .twoCols{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    @media(max-width:640px){ .twoCols{ grid-template-columns:1fr; } }
+
+    .amountInput{
+      width:100%;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      color:var(--text);
+      padding:12px 12px;
+      outline:none;
+      font-weight:950;
+      box-sizing:border-box;
+    }
+
+    .status{
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+      font-weight:900;
+      font-size:13px;
+      white-space:pre-line;
+    }
+    .status.ok{ background: rgba(34,197,94,.10); }
+    .status.bad{ background: rgba(239,68,68,.10); }
+    .status.warn{ background: rgba(245,158,11,.10); }
+
+    .actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      margin-top:10px;
+      flex-wrap:wrap;
+    }
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:12px 16px;
+      font-weight:1000;
+      cursor:pointer;
+    }
+    .btn.cancel{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+    }
+    .btn.next{
+      background: linear-gradient(180deg, #2d5bff, #1f3fb3);
+      color:#fff;
+      min-width:180px;
+    }
+
+    /* payRow (как у тебя) */
+    .payRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.14);
+      cursor:pointer;
+      user-select:none;
+      margin-bottom:10px;
+    }
+    .payRow:last-child{ margin-bottom:0; }
+    .payLeft{ min-width:0; }
+    .payName{ font-weight:1000; }
+    .payHint{ font-size:12px; color:var(--muted); margin-top:3px; }
+  </style>
+</head>
+
+<body>
+<div class="overlay"></div>
+
+<div class="page">
+  <div class="wrap">
+    <div class="card">
+      <div class="top">
+        <div class="title">Crossflag Exchange · Продать</div>
+      </div>
+
+      <div class="grid">
+        <div class="box"><div class="label">ID объявления</div><div class="value" id="orderId">—</div></div>
+        <div class="box"><div class="label">Курс</div><div class="value" id="rate">—</div></div>
+        <div class="box"><div class="label">Мин. чек</div><div class="value" id="minCheck">—</div></div>
+        <div class="box"><div class="label">Подсказка</div><div class="value" id="hint">—</div></div>
+      </div>
+
+      <div class="section">
+        <div class="sectionTitle">Сумма</div>
+
+        <div class="twoCols">
+          <div>
+            <div class="label">Отдаёте (USDT)</div>
+            <input class="amountInput" id="amountUsdt" inputmode="decimal" placeholder="Например: 10" />
+          </div>
+          <div>
+            <div class="label">Получаете (RUB)</div>
+            <input class="amountInput" id="amountRub" inputmode="decimal" placeholder="Например: 800" />
+          </div>
+        </div>
+
+        <div style="margin-top:8px; font-size:12px; color:var(--muted); font-weight:850;">
+          Минимум: <span id="minHint">—</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="sectionTitle">Способ оплаты</div>
+
+        <label class="payRow">
+          <div class="payLeft">
+            <div class="payName">Crossflag Exchange</div>
+            <div class="payHint">Автоматизированная сделка внутри обменника</div>
+          </div>
+          <input type="radio" name="pay" value="CROSSFLAG" checked />
+        </label>
+
+        <label class="payRow">
+          <div class="payLeft">
+            <div class="payName">HTX</div>
+            <div class="payHint">Перевод через HTX UID</div>
+          </div>
+          <input type="radio" name="pay" value="HTX" />
+        </label>
+      </div>
+
+      <div class="status warn" id="orderStatus">Готово к продолжению…</div>
+
+      <div class="actions">
+        <button class="btn cancel" onclick="location.href='./sell.html'">Отменить</button>
+        <button class="btn next" id="nextBtn">Продолжить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const p = new URLSearchParams(location.search);
+
+  // ВАЖНО: id объявления будет уходить дальше как offerId (для sell-requisites)
+  const id = (p.get("id") || p.get("offerId") || "").trim();
+  const rate = Number(p.get("rate"));
+  const minCheckRub = Number(p.get("minCheckRub") || p.get("min") || 0);
+
+  const orderIdEl = document.getElementById("orderId");
+  const rateEl = document.getElementById("rate");
+  const minEl = document.getElementById("minCheck");
+  const minHintEl = document.getElementById("minHint");
+  const hintEl = document.getElementById("hint");
+
+  const amountRubEl = document.getElementById("amountRub");
+  const amountUsdtEl = document.getElementById("amountUsdt");
+
+  orderIdEl.textContent = id || "—";
+  rateEl.textContent = Number.isFinite(rate) ? rate : "—";
+  minEl.textContent = Number.isFinite(minCheckRub) && minCheckRub > 0 ? (minCheckRub + " ₽") : "—";
+  minHintEl.textContent = Number.isFinite(minCheckRub) && minCheckRub > 0 ? (minCheckRub + " ₽") : "—";
+  hintEl.textContent = "Отдаёте USDT → получаете RUB";
+
+  function getPay(){
+    return document.querySelector('input[name="pay"]:checked').value;
+  }
+
+  function setStatus(text, kind){
+    const el = document.getElementById("orderStatus");
+    el.textContent = text;
+    el.className = "status " + (kind || "warn");
+  }
+
+  function parseNum(s){
+    return Number(String(s || "").replace(/\s+/g,"").replace(",","."));
+  }
+  function fmt(n, d=6){
+    if (!Number.isFinite(n)) return "";
+    return n.toLocaleString("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: d });
+  }
+
+  let lock = false;
+
+  function recalcFromRub(){
+    if (lock) return;
+    lock = true;
+    const rub = parseNum(amountRubEl.value);
+    if (Number.isFinite(rub) && rub > 0 && Number.isFinite(rate) && rate > 0){
+      const usdt = rub / rate;
+      amountUsdtEl.value = fmt(usdt, 6);
+    } else {
+      amountUsdtEl.value = "";
+    }
+    lock = false;
+  }
+
+  function recalcFromUsdt(){
+    if (lock) return;
+    lock = true;
+    const usdt = parseNum(amountUsdtEl.value);
+    if (Number.isFinite(usdt) && usdt > 0 && Number.isFinite(rate) && rate > 0){
+      const rub = usdt * rate;
+      amountRubEl.value = fmt(rub, 2);
+    } else {
+      amountRubEl.value = "";
+    }
+    lock = false;
+  }
+
+  amountRubEl.addEventListener("input", recalcFromRub);
+  amountUsdtEl.addEventListener("input", recalcFromUsdt);
+
+  if (Number.isFinite(minCheckRub) && minCheckRub > 0){
+    amountRubEl.value = String(minCheckRub);
+    recalcFromRub();
+  }
+
+  document.getElementById("nextBtn").onclick = () => {
+    const rub = parseNum(amountRubEl.value);
+
+    if (!id){
+      setStatus("Нет id объявления", "bad");
+      return;
+    }
+    if (!Number.isFinite(rub) || rub <= 0){
+      setStatus("Введите сумму RUB или USDT", "bad");
+      return;
+    }
+    if (Number.isFinite(minCheckRub) && minCheckRub > 0 && rub < minCheckRub){
+      setStatus("Сумма меньше минимального чека", "bad");
+      return;
+    }
+    if (!Number.isFinite(rate) || rate <= 0){
+      setStatus("Нет курса", "bad");
+      return;
+    }
+
+    const pay = getPay();
+
+    if (pay === "CROSSFLAG"){
+      // ВАЖНО: дальше передаём offerId (или id) так, чтобы sell-requisites не ругался
+      const qs = new URLSearchParams({
+        offerId: id,
+        id: id,
+        amountRub: String(rub),
+        rate: String(rate),
+        minCheckRub: String(minCheckRub || "")
+      });
+      location.href = "./sell-requisites.html?" + qs.toString();
+      return;
+    }
+
+    if (pay === "HTX"){
+      const qs = new URLSearchParams({
+        id,
+        amountRub: String(rub),
+        rate: String(rate),
+        minCheckRub: String(minCheckRub || "")
+      });
+      location.href = "./sell-htx.html?" + qs.toString();
+      return;
+    }
+
+    setStatus("Неизвестный способ оплаты", "bad");
+  };
+</script>
+</body>
+</html>

@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Crossflag Exchange · Статус заявки</title>
+
+  <style>
+    :root{
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+      --bg:#071022;
+      --card: rgba(15, 26, 48, 0.52);
+      --border: rgba(255,255,255,.12);
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+      --btn:#2d5bff;
+      --btn2:#1f3fb3;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:#071022;
+      color:var(--text);
+      overflow:hidden;
+    }
+
+    .overlay{
+      position:fixed; inset:0; z-index:-1;
+      background:
+        radial-gradient(1100px 700px at 50% -220px, rgba(45,91,255,.22), rgba(0,0,0,0) 65%),
+        linear-gradient(180deg, rgba(7,16,34,.84), rgba(7,16,34,.94));
+      pointer-events:none;
+    }
+
+    .wrap{
+      max-width:980px;
+      margin:0 auto;
+      padding: calc(16px + env(safe-area-inset-top)) 16px calc(22px + env(safe-area-inset-bottom)) 16px;
+      box-sizing:border-box;
+      min-height:100svh;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
+
+    .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .title{ font-weight:1000; font-size:16px; }
+
+    .btnTop{
+      border:0;
+      border-radius:16px;
+      padding:12px 16px;
+      background:linear-gradient(180deg, var(--btn), var(--btn2));
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow: 0 14px 40px rgba(0,0,0,.35);
+      white-space:nowrap;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:22px;
+      box-shadow:0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      overflow:hidden;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      padding:16px;
+    }
+    @media(max-width:780px){
+      .grid{ grid-template-columns:1fr; }
+    }
+
+    .cell{
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 18px;
+      padding: 14px;
+      min-width:0;
+    }
+    .label{ color:var(--muted); font-size:12px; font-weight:950; margin-bottom:6px; }
+    .value{
+      font-weight:1000;
+      font-size:14px;
+      overflow-wrap:anywhere;
+      word-break:break-word;
+    }
+    .mono{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      color:#cfe0ff;
+    }
+
+    .statusWrap{
+      padding:16px;
+      border-top:1px solid rgba(255,255,255,.06);
+    }
+    .panel{
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,.10);
+      background:
+        radial-gradient(900px 220px at 20% 0%, rgba(45,91,255,.18), transparent 60%),
+        radial-gradient(900px 220px at 80% 0%, rgba(34,197,94,.14), transparent 60%),
+        rgba(255,255,255,.03);
+      padding:16px;
+      overflow:hidden;
+      position:relative;
+    }
+
+    .statusRow{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    .statusTitle{ font-weight:1000; font-size:18px; margin:0 0 6px; }
+    .statusSub{ margin:0; color:var(--muted); font-size:13px; line-height:1.35; }
+
+    .badge{
+      padding:10px 12px;
+      border-radius:999px;
+      font-weight:1000;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      white-space:nowrap;
+    }
+    .dot{
+      width:8px; height:8px; border-radius:999px;
+      background:var(--warn);
+      box-shadow:0 0 0 3px rgba(245,158,11,.18);
+    }
+    .badge.ok .dot{ background:var(--ok); box-shadow:0 0 0 3px rgba(34,197,94,.16); }
+    .badge.bad .dot{ background:var(--bad); box-shadow:0 0 0 3px rgba(239,68,68,.16); }
+
+    .sending{
+      margin-top:14px;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      padding:14px;
+      display:none;
+    }
+    .sending.show{ display:block; }
+    .bar{
+      height:10px;
+      border-radius:999px;
+      background: rgba(255,255,255,.08);
+      overflow:hidden;
+      margin-top:10px;
+    }
+    .bar > i{
+      display:block;
+      height:100%;
+      width:45%;
+      background: rgba(45,91,255,.55);
+      border-radius:999px;
+      animation: slide 1.25s ease-in-out infinite;
+    }
+    @keyframes slide{
+      0%{ transform:translateX(-120%); }
+      50%{ transform:translateX(90%); }
+      100%{ transform:translateX(220%); }
+    }
+
+    .hashBox{
+      margin-top:14px;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      padding:14px;
+      display:none;
+    }
+    .hashBox.show{ display:block; }
+    .hashRow{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+    .hash{
+      flex:1 1 420px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      font-size:14px;
+      font-weight:1000;
+      overflow-wrap:anywhere;
+      word-break:break-word;
+    }
+    .copyBtn{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-weight: 1000;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+
+    .homeBtn{
+      margin-top:12px;
+      width:100%;
+      border:0;
+      border-radius:16px;
+      padding:14px 16px;
+      background:linear-gradient(180deg, var(--btn), var(--btn2));
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow: 0 14px 40px rgba(0,0,0,.35);
+      display:none;
+    }
+    .homeBtn.show{ display:block; }
+    .marketBtn{
+      margin-top:10px;
+      width:100%;
+      border:1px solid rgba(45,91,255,.45);
+      border-radius:16px;
+      padding:14px 16px;
+      background:
+        radial-gradient(420px 120px at 50% 0%, rgba(45,91,255,.22), transparent 70%),
+        rgba(45,91,255,.12);
+      color:#e9f0ff;
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow: 0 14px 40px rgba(0,0,0,.28);
+      display:none;
+    }
+    .marketBtn.show{ display:block; }
+    .marketBtn:active{ transform:translateY(1px); }
+
+    .hint{
+      padding: 14px 16px 16px;
+      border-top:1px solid rgba(255,255,255,.06);
+      color: rgba(233,240,255,.75);
+      font-size:12px;
+      font-weight:850;
+      line-height:1.45;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="overlay"></div>
+
+  <div class="wrap">
+    <div class="top">
+      <div class="title">Crossflag Exchange · Статус заявки</div>
+      <button class="btnTop" id="refreshBtn" type="button">Обновить</button>
+    </div>
+
+    <div class="card">
+      <div class="grid">
+        <div class="cell">
+          <div class="label">ID заявки</div>
+          <div class="value mono" id="oid">—</div>
+        </div>
+        <div class="cell">
+          <div class="label">Reserve ID</div>
+          <div class="value mono" id="rid">—</div>
+        </div>
+      </div>
+
+      <div class="statusWrap">
+        <div class="panel">
+
+          <div class="statusRow">
+            <div style="min-width:240px;">
+              <div class="statusTitle" id="statusTitle">Обновляю статус…</div>
+              <p class="statusSub" id="statusSub">Пожалуйста, подожди. Статус обновляется автоматически.</p>
+            </div>
+
+            <div class="badge" id="badge">
+              <span class="dot"></span>
+              <span id="badgeText">В процессе</span>
+            </div>
+          </div>
+
+          <div class="sending" id="sendingBox">
+            <div style="font-weight:1000;">Отправляем USDT на ваш кошелёк<span id="dots">...</span></div>
+            <div style="color:var(--muted); font-size:12px; margin-top:6px;">
+              Это может занять несколько минут. Не закрывай мини-приложение.
+            </div>
+            <div class="bar"><i></i></div>
+          </div>
+
+          <div class="hashBox" id="hashBox">
+            <div style="font-weight:1000;">USDT успешно отправлен ✅</div>
+            <div style="color:var(--muted); font-size:12px; margin-top:6px;">
+              Хэш транзакции:
+            </div>
+            <div class="hashRow">
+              <div class="hash mono" id="txHash">—</div>
+              <button class="copyBtn" id="copyHashBtn" type="button">Копировать</button>
+            </div>
+          </div>
+
+          <button class="marketBtn" id="marketBtn" type="button">В СТАКАН ЗАЯВОК</button>
+          <button class="homeBtn" id="homeBtn" type="button">На главную страницу</button>
+
+        </div>
+      </div>
+
+      <div class="hint" id="hint">
+        Страница обновляет статус автоматически. Если администратор поменяет статус — он появится тут.
+      </div>
+    </div>
+  </div>
+
+<script>
+  const WORKER_BASE = "https://api.crossflag.org";
+
+  const p = new URLSearchParams(location.search);
+  const id = (p.get("id") || "").trim();
+  const reserveId =
+    (p.get("reserveId") || "").trim() ||
+    (p.get("reservedId") || "").trim() ||
+    (p.get("reserveid") || "").trim();
+
+  const oidEl = document.getElementById("oid");
+  const ridEl = document.getElementById("rid");
+
+  const statusTitle = document.getElementById("statusTitle");
+  const statusSub = document.getElementById("statusSub");
+  const hintEl = document.getElementById("hint");
+
+  const badge = document.getElementById("badge");
+  const badgeText = document.getElementById("badgeText");
+
+  const sendingBox = document.getElementById("sendingBox");
+  const hashBox = document.getElementById("hashBox");
+  const txHashEl = document.getElementById("txHash");
+  const copyHashBtn = document.getElementById("copyHashBtn");
+
+  const homeBtn = document.getElementById("homeBtn");
+  const marketBtn = document.getElementById("marketBtn");
+
+  oidEl.textContent = id || "—";
+  ridEl.textContent = reserveId || "—";
+
+  function setBadge(kind, text){
+    badge.classList.remove("ok","bad");
+    if (kind) badge.classList.add(kind);
+    badgeText.textContent = text || "В процессе";
+  }
+
+  function showSending(show){ sendingBox.classList.toggle("show", !!show); }
+  function showHash(show){ hashBox.classList.toggle("show", !!show); }
+  function showHome(show){ homeBtn.classList.toggle("show", !!show); }
+  function showMarket(show){ marketBtn.classList.toggle("show", !!show); }
+
+  function statusRu(st){
+    st = String(st||"").toUpperCase();
+    if (st === "NEW") return "Новая";
+    if (st === "ON_PAY") return "На оплате";
+    if (st === "PAID") return "Оплачено";
+    if (st === "ON_CHECK") return "На проверке";
+    if (st === "SUCCESS") return "Успешно";
+    if (st === "FAILED") return "Неуспешно";
+    return st || "—";
+  }
+
+  // ===== deal storage (account.html uses these keys) =====
+  function _lsGet(key, fallback){
+    try{
+      const s = localStorage.getItem(key);
+      const a = s ? JSON.parse(s) : fallback;
+      return a && Array.isArray(a) ? a : fallback;
+    }catch{ return fallback; }
+  }
+  function _lsSet(key, arr, max){
+    try{ localStorage.setItem(key, JSON.stringify((arr||[]).slice(0, max||50))); }catch{}
+  }
+  function upsertActiveBuy(rec){
+    const a = _lsGet('cf_active_deals', []);
+    const k = String(rec.id||'');
+    const idx = a.findIndex(x => x && x.type==='BUY' && String(x.id||'')===k);
+    const next = { type:'BUY', ts: Date.now(), ...rec };
+    if (idx>=0) a[idx] = { ...a[idx], ...next, ts: Date.now() };
+    else a.unshift(next);
+    _lsSet('cf_active_deals', a, 50);
+  }
+  function removeActiveBuy(id){
+    const a = _lsGet('cf_active_deals', []);
+    const k = String(id||'');
+    _lsSet('cf_active_deals', a.filter(x => !(x && x.type==='BUY' && String(x.id||'')===k)), 50);
+  }
+  function addHistory(rec){
+    const h = _lsGet('cf_deals_history', []);
+    h.unshift({ ts: Date.now(), ...rec });
+    _lsSet('cf_deals_history', h, 200);
+  }
+
+  async function loadInfo(){
+    if (!id || !reserveId){
+      statusTitle.textContent = "Ошибка: нет id или reserveId";
+      statusSub.textContent = "Вернись назад и открой страницу из заявки.";
+      setBadge("bad", "Ошибка");
+      showSending(false);
+      showHash(false);
+      showHome(true);
+      hintEl.textContent = "Нажми «На главную страницу».";
+      return;
+    }
+
+    try{
+      const res = await fetch(
+        WORKER_BASE + "/api/public/order_info?id=" + encodeURIComponent(id) +
+        "&reserveId=" + encodeURIComponent(reserveId),
+        { cache: "no-store" }
+      );
+
+      const txt = await res.text();
+      let j;
+      try { j = JSON.parse(txt); } catch { throw new Error("Ответ не JSON: " + txt.slice(0, 200)); }
+      if (!res.ok || !j.ok) throw new Error(j.error || ("HTTP " + res.status));      const st = String(j.status || "NEW").toUpperCase();
+      const txHash = (j.txHash && String(j.txHash).trim()) ? String(j.txHash).trim() : "";
+
+      // ✅ обновляем активную сделку для account.html
+      const checkUrl = "./check.html?id=" + encodeURIComponent(id) + "&reserveId=" + encodeURIComponent(reserveId);
+      upsertActiveBuy({ id, reserveId, status: st, txHash: txHash || null, url: checkUrl });
+
+      // ✅ терминальные статусы BUY (чтобы сделки уходили из "Активных")
+function isBuyTerminalStatus(st, txHash){
+  st = String(st||"").toUpperCase();
+
+  const ok = new Set(["SUCCESS","DONE","COMPLETED","BYBIT_DONE"]);
+  const bad = new Set(["FAILED","CANCELED","CANCELLED","ERROR","BYBIT_CANCELED"]);
+
+  if (bad.has(st)) return true;
+  if (ok.has(st)) return true;
+
+  // на всякий случай: если хэш уже установлен — считаем завершённой
+  if (txHash && String(txHash).trim()) return true;
+
+  return false;
+}
+
+// ✅ если сделка завершилась — переносим в историю и убираем из активных
+if (isBuyTerminalStatus(st, txHash)) {
+  removeActiveBuy(id);
+  addHistory({ type: "BUY", id, reserveId, status: st, txHash: txHash || "", url: checkUrl });
+}
+
+showSending(false);
+      showHash(false);
+      showHome(false);
+      showMarket(false);
+
+      if (st === "NEW"){
+        statusTitle.textContent = "Заявка создана";
+        statusSub.textContent = "Ожидаем дальнейшие действия.";
+        setBadge(null, statusRu(st));
+        hintEl.textContent = "Статус обновляется автоматически.";
+      } else if (st === "ON_PAY"){
+        statusTitle.textContent = "Ожидаем оплату";
+        statusSub.textContent = "Реквизиты выданы. Переведи точную сумму и нажми «Я оплатил».";
+        setBadge(null, statusRu(st));
+        hintEl.textContent = "После оплаты статус изменится автоматически.";
+      } else if (st === "PAID"){
+        statusTitle.textContent = "Оплата отмечена";
+        statusSub.textContent = "Ожидай проверки / загрузки подтверждений.";
+        setBadge(null, statusRu(st));
+        hintEl.textContent = "После проверки статус изменится автоматически.";
+        showMarket(true);
+      } else if (st === "ON_CHECK"){
+        statusTitle.textContent = "Проверяем подтверждения";
+        statusSub.textContent = "Администратор проверяет чек/видео. Обычно это занимает несколько минут.";
+        setBadge(null, statusRu(st));
+        hintEl.textContent = "Не закрывай мини-приложение — статус обновится сам.";
+        showMarket(true);
+      } else if (st === "FAILED"){
+        statusTitle.textContent = "Платёж не подтверждён";
+        statusSub.textContent = "Если это ошибка — свяжись с поддержкой.";
+        setBadge("bad", statusRu(st));
+        hintEl.textContent = "Можно вернуться на главную.";
+        showHome(true);
+      } else if (st === "SUCCESS"){
+        setBadge("ok", statusRu(st));
+
+        if (!txHash){
+          statusTitle.textContent = "Заявка подтверждена ✅";
+          statusSub.textContent = "Мы начали отправку USDT на ваш кошелёк.";
+          showSending(true);
+          hintEl.textContent = "Как только администратор добавит хэш — он появится тут.";
+        } else {
+          statusTitle.textContent = "USDT отправлен ✅";
+          statusSub.textContent = "Тезер успешно отправлен на ваш кошелёк.";
+          txHashEl.textContent = txHash;
+          showHash(true);
+          hintEl.textContent = "Хэш можно скопировать и проверить в обозревателе сети.";
+        }
+
+        showHome(true);
+      } else {
+        statusTitle.textContent = "Статус: " + statusRu(st);
+        statusSub.textContent = "Ожидай обновления статуса.";
+        setBadge(null, "В процессе");
+        hintEl.textContent = "Статус обновляется автоматически.";
+      }
+
+    } catch(e){
+      const msg = (e && (e.message || String(e))) ? (e.message || String(e)) : "Ошибка";
+      const low = String(msg).toLowerCase();
+
+      // ✅ если резерва уже нет (закрыта/истекла) — убираем из "Активных" и пишем в историю
+      if (low.includes("reserve not found") || low.includes("reserve") && low.includes("not found")){
+        try{
+          const checkUrl = "./check.html?id=" + encodeURIComponent(id) + "&reserveId=" + encodeURIComponent(reserveId);
+          removeActiveBuy(id);
+          addHistory({ type: "BUY", id, reserveId, status: "CANCELED", txHash: "", url: checkUrl });
+        }catch(_){}
+        statusTitle.textContent = "Заявка закрыта";
+        statusSub.textContent = "Резерв не найден — скорее всего заявка была отменена или истекла.";
+        setBadge("bad", "Закрыта");
+        showSending(false);
+        showHash(false);
+        showHome(true);
+        hintEl.textContent = "Заявка убрана из «Активных» в аккаунте.";
+        return;
+      }
+
+      statusTitle.textContent = "Ошибка обновления";
+      statusSub.textContent = msg;
+      setBadge("bad", "Ошибка");
+      showSending(false);
+      showHash(false);
+      showHome(true);
+      hintEl.textContent = "Если ошибка повторяется — попробуй позже.";
+    }
+  }
+
+  document.getElementById("refreshBtn").onclick = loadInfo;
+
+  copyHashBtn.onclick = async () => {
+    const v = txHashEl.textContent || "";
+    if (!v || v === "—") return;
+    try{
+      await navigator.clipboard.writeText(v);
+      copyHashBtn.textContent = "Скопировано";
+      setTimeout(() => copyHashBtn.textContent = "Копировать", 900);
+    }catch{
+      const ta = document.createElement("textarea");
+      ta.value = v;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+      copyHashBtn.textContent = "Скопировано";
+      setTimeout(() => copyHashBtn.textContent = "Копировать", 900);
+    }
+  };
+
+  homeBtn.onclick = () => {
+    location.href = "./index.html";
+  };
+  marketBtn.onclick = () => {
+    location.href = "./trade.html";
+  };
+
+  loadInfo();
+  setInterval(loadInfo, 3000);
+</script>
+<script src="./resume-helper.js"></script>
+<script>(function(){
+  if (!window.CrossflagResume) return;
+  function save(){
+    if (id && reserveId) window.CrossflagResume.upsertBuy({ id, reserveId, url: location.pathname + location.search + location.hash });
+  }
+  save();
+  window.addEventListener("pagehide", save);
+  document.addEventListener("visibilitychange", ()=>{ if (document.visibilityState === "hidden") save(); });
+})();</script>
+</body>
+</html>
+

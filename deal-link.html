@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Crossflag Admin · Ссылка на сделку</title>
+
+  <style>
+    :root{
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+      --card: rgba(15, 26, 48, 0.52);
+      --border: rgba(255,255,255,.12);
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+      --btn:#2d5bff;
+      --btn2:#1f3fb3;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+    html,body{height:100%}
+    body{
+      margin:0;
+      color:var(--text);
+      background:#071022;
+      overflow-y:auto;
+      overflow-x:hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+    }
+    .overlay{
+      position:fixed; inset:0; z-index:-1;
+      background:
+        radial-gradient(900px 600px at 50% 20%, rgba(60,120,255,.18), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(7,16,34,.82), rgba(7,16,34,.92));
+      pointer-events:none;
+    }
+    .page{
+      min-height:100svh;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      padding: calc(16px + env(safe-area-inset-top)) 16px calc(22px + env(safe-area-inset-bottom)) 16px;
+      box-sizing:border-box;
+    }
+    .wrap{ width:100%; max-width:980px; }
+
+    .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .title{ font-weight:1000; font-size:16px; }
+    .sub{ color:var(--muted); font-size:12px; margin-top:4px; }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 14px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+    }
+
+    .bar{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+      padding:12px; border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.16);
+      margin-bottom:12px;
+    }
+    input{
+      width:260px;
+      max-width:100%;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      font-weight:900;
+      outline:none;
+      box-sizing:border-box;
+    }
+    input::placeholder{ color: rgba(159,176,212,.65); font-weight:850; }
+
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:12px 16px;
+      font-weight:1000;
+      cursor:pointer;
+      color:#fff;
+      background: linear-gradient(180deg, var(--btn), var(--btn2));
+    }
+    .btn.ghost{
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.14);
+    }
+
+    .status{
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+      font-weight:900;
+      font-size:13px;
+      margin-top:12px;
+      white-space:pre-wrap;
+    }
+    .status.ok{ background: rgba(34,197,94,.10); }
+    .status.bad{ background: rgba(239,68,68,.10); }
+    .status.warn{ background: rgba(245,158,11,.10); }
+
+    .list{ display:grid; gap:10px; margin-top:12px; }
+    .item{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+    }
+    .meta{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+      margin-bottom:10px;
+    }
+    .pill{
+      font-size:12px;
+      font-weight:950;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      white-space:nowrap;
+      color: var(--text);
+    }
+    .pill.ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.10); }
+    .pill.warn{ border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.10); }
+    .pill.bad{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.10); }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    @media(max-width:760px){ .grid{ grid-template-columns:1fr; } }
+
+    .k{ color:var(--muted); font-size:12px; font-weight:900; margin-bottom:6px; }
+    .v{ font-weight:950; word-break:break-word; }
+
+    .smallInput{
+      width:100%;
+      box-sizing:border-box;
+    }
+    .actions{
+      display:flex; gap:10px; flex-wrap:wrap;
+      margin-top:10px;
+      justify-content:flex-end;
+    }
+  </style>
+</head>
+
+<body>
+<div class="overlay"></div>
+
+<div class="page">
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div class="title">Crossflag Admin · Ссылка на сделку</div>
+        <div class="sub">Токен берём из localStorage.admin_token (как в админке). WORKER_BASE — из admin → сюда.</div>
+      </div>
+      <div class="row">
+        <button class="btn ghost" id="backBtn" type="button">← Назад в админку</button>
+        <button class="btn ghost" id="reloadBtn" type="button">Обновить</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="bar">
+        <input id="apiInput" placeholder="WORKER_BASE" />
+        <input id="tokenInput" placeholder="ADMIN_TOKEN" />
+        <button class="btn" id="loadBtn" type="button">Загрузить заявки</button>
+        <button class="btn ghost" id="saveAllBtn" type="button">Сохранить все ссылки</button>
+      </div>
+
+      <div class="status warn" id="statusBox">Готово к работе…</div>
+      <div class="list" id="list"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const apiInput = document.getElementById("apiInput");
+  const tokenInput = document.getElementById("tokenInput");
+  const loadBtn = document.getElementById("loadBtn");
+  const saveAllBtn = document.getElementById("saveAllBtn");
+  const statusBox = document.getElementById("statusBox");
+  const listEl = document.getElementById("list");
+
+  const p = new URLSearchParams(location.search);
+
+  function setStatus(text, kind){
+    statusBox.textContent = text;
+    statusBox.className = "status " + (kind || "warn");
+  }
+  function normBase(s){ return String(s || "").trim().replace(/\/+$/, ""); }
+
+  function getToken(){ return localStorage.getItem("admin_token") || ""; }
+  function getWorkerBase(){
+    const fromQ = normBase(p.get("wb") || "");
+    if (fromQ) return fromQ;
+    const fromLS = normBase(localStorage.getItem("worker_base") || "");
+    return fromLS;
+  }
+
+  // ✅ Автоподстановка
+  apiInput.value = getWorkerBase();
+  tokenInput.value = getToken();
+
+  // Если хочешь — можешь заблокировать ввод токена:
+  // tokenInput.disabled = true;
+
+  document.getElementById("backBtn").onclick = () => {
+    const ret = sessionStorage.getItem("deal_link_return");
+    if (ret) location.href = ret;
+    else location.href = "./admin.html";
+  };
+  document.getElementById("reloadBtn").onclick = () => loadBtn.click();
+
+  function pillClass(status){
+    const s = String(status || "").toUpperCase();
+    if (s.includes("WAITING")) return "pill warn";
+    if (s === "ON_CHECK" || s === "PAID") return "pill warn";
+    if (s === "DONE" || s === "SUCCESS") return "pill ok";
+    if (s === "FAILED" || s === "CANCEL") return "pill bad";
+    return "pill";
+  }
+
+  function escapeHtml(s){
+    return String(s || "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  function isUrl(s){
+    try{ new URL(String(s || "")); return true; }catch{ return false; }
+  }
+
+  async function apiJson(path, { method="GET", headers={}, body } = {}){
+    const API = normBase(apiInput.value);
+    const token = String(tokenInput.value || "").trim();
+    if (!API) throw new Error("Нет WORKER_BASE");
+    if (!token) throw new Error("Нет ADMIN_TOKEN (сохрани в админке)");
+
+    const res = await fetch(API + path, {
+      method,
+      headers: {
+        "Accept":"application/json",
+        ...(method !== "GET" ? {"Content-Type":"application/json"} : {}),
+        "X-Admin-Token": token,
+        ...headers
+      },
+      body
+    });
+
+    const text = await res.text();
+    let j;
+    try { j = JSON.parse(text); } catch { throw new Error("Ответ не JSON: " + text.slice(0,200)); }
+    if (!res.ok || !j.ok) throw new Error(j.error || ("HTTP " + res.status));
+    return j;
+  }
+
+  function buildItem(o){
+    const id = o.id;
+    const st = String(o.status || "NEW").toUpperCase();
+    const tx = (o.txHash || "").trim();
+    const wallet = o.wallet ? (o.wallet.type + ": " + o.wallet.value) : "";
+
+    const hint = isUrl(tx) ? "Ссылка распознана ✅" : "Вставь URL сделки (https://...)";
+
+    const el = document.createElement("div");
+    el.className = "item";
+    el.innerHTML = `
+      <div class="meta">
+        <div class="row">
+          <span class="pill">${escapeHtml(id)}</span>
+          <span class="${pillClass(st)}">${escapeHtml(st)}</span>
+        </div>
+        <div class="row">
+          <span class="pill">${escapeHtml((o.amountRub ?? "") + " RUB")}</span>
+          <span class="pill">${escapeHtml(String(o.rate ?? ""))}</span>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <div class="k">Кошелёк</div>
+          <div class="v">${escapeHtml(wallet || "—")}</div>
+        </div>
+        <div>
+          <div class="k">Ссылка на сделку (сохраняем в txHash)</div>
+          <input class="smallInput" data-id="${escapeHtml(id)}" value="${escapeHtml(tx)}" placeholder="https://..." />
+          <div class="sub" style="margin-top:6px">${escapeHtml(hint)}</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn ghost" data-act="htx" data-id="${escapeHtml(id)}" type="button">Статус: HTX_WAITING</button>
+        <button class="btn ghost" data-act="bybit" data-id="${escapeHtml(id)}" type="button">Статус: BYBIT_WAITING</button>
+        <button class="btn" data-act="saveOne" data-id="${escapeHtml(id)}" type="button">Сохранить</button>
+      </div>
+    `;
+    return el;
+  }
+
+  let cachedOffers = [];
+
+  async function loadOffers(){
+    setStatus("Загружаю заявки…", "warn");
+    listEl.innerHTML = "";
+    const j = await apiJson("/api/admin/offers", { method:"GET" });
+    cachedOffers = j.offers || [];
+
+    cachedOffers.sort((a,b)=>{
+      const sa = String(a.status||"").toUpperCase();
+      const sb = String(b.status||"").toUpperCase();
+      const pr = (s)=>{
+        if (s.includes("WAITING")) return 0;
+        if (s === "ON_PAY") return 1;
+        if (s === "PAID") return 2;
+        if (s === "ON_CHECK") return 3;
+        return 9;
+      };
+      return pr(sa) - pr(sb);
+    });
+
+    if (!cachedOffers.length){
+      setStatus("Список пуст.", "warn");
+      return;
+    }
+
+    for (const o of cachedOffers){
+      listEl.appendChild(buildItem(o));
+    }
+
+    setStatus("Готово. Вставляй ссылки и сохраняй.", "ok");
+  }
+
+  loadBtn.onclick = async () => {
+    try { await loadOffers(); }
+    catch(e){ setStatus("Ошибка: " + (e.message || String(e)), "bad"); }
+  };
+
+  saveAllBtn.onclick = async () => {
+    try{
+      const inputs = Array.from(document.querySelectorAll('input[data-id]'));
+      if (!inputs.length) { setStatus("Нечего сохранять — сначала “Загрузить заявки”.", "warn"); return; }
+
+      setStatus("Сохраняю все ссылки…", "warn");
+      let okCount = 0;
+
+      for (const inp of inputs){
+        const id = inp.getAttribute("data-id");
+        const val = String(inp.value || "").trim();
+        await apiJson("/api/admin/offers/" + encodeURIComponent(id), {
+          method:"PATCH",
+          body: JSON.stringify({ txHash: val })
+        });
+        okCount++;
+      }
+
+      setStatus("Сохранено: " + okCount, "ok");
+      await loadOffers();
+    }catch(e){
+      setStatus("Ошибка сохранения: " + (e.message || String(e)), "bad");
+    }
+  };
+
+  listEl.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+
+    const act = btn.getAttribute("data-act");
+    const id = btn.getAttribute("data-id");
+
+    try{
+      if (act === "saveOne"){
+        const inp = listEl.querySelector('input[data-id="'+ CSS.escape(id) +'"]');
+        const val = String(inp?.value || "").trim();
+        setStatus("Сохраняю для " + id + "…", "warn");
+        await apiJson("/api/admin/offers/" + encodeURIComponent(id), {
+          method:"PATCH",
+          body: JSON.stringify({ txHash: val })
+        });
+        setStatus("Сохранено для " + id, "ok");
+        await loadOffers();
+        return;
+      }
+
+      if (act === "htx"){
+        setStatus("Ставлю HTX_WAITING для " + id + "…", "warn");
+        await apiJson("/api/admin/offers/" + encodeURIComponent(id), {
+          method:"PATCH",
+          body: JSON.stringify({ status: "HTX_WAITING" })
+        });
+        setStatus("Статус обновлён: HTX_WAITING (" + id + ")", "ok");
+        await loadOffers();
+        return;
+      }
+
+      if (act === "bybit"){
+        setStatus("Ставлю BYBIT_WAITING для " + id + "…", "warn");
+        await apiJson("/api/admin/offers/" + encodeURIComponent(id), {
+          method:"PATCH",
+          body: JSON.stringify({ status: "BYBIT_WAITING" })
+        });
+        setStatus("Статус обновлён: BYBIT_WAITING (" + id + ")", "ok");
+        await loadOffers();
+        return;
+      }
+
+    }catch(err){
+      setStatus("Ошибка: " + (err.message || String(err)), "bad");
+    }
+  });
+
+  // ✅ Автозагрузка, если всё уже есть
+  (async () => {
+    try{
+      if (normBase(apiInput.value) && String(tokenInput.value||"").trim()){
+        await loadOffers();
+      } else {
+        setStatus(
+          "Нет WORKER_BASE или токена.\n" +
+          "1) Открой admin.html, сохрани токен.\n" +
+          "2) Открой deal-link из админки кнопкой.",
+          "warn"
+        );
+      }
+    }catch(e){
+      setStatus("Ошибка авто-загрузки: " + (e.message || String(e)), "bad");
+    }
+  })();
+</script>
+</body>
+</html>

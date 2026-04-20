@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Crossflag Exchange · Оплата</title>
+
+  <style>
+    :root{
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+
+      --card: rgba(15, 26, 48, 0.52);
+      --border: rgba(255,255,255,.12);
+
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+
+      --btn:#2d5bff;
+      --btn2:#1f3fb3;
+
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+
+    html,body{ height:100%; }
+
+    body{
+      margin:0;
+      color:var(--text);
+      background:#071022;
+
+      overflow-y:auto;
+      overflow-x:hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+    }
+
+    .overlay{
+      position:fixed;
+      inset:0;
+      z-index:-1;
+      background:
+        radial-gradient(900px 600px at 50% 20%, rgba(60,120,255,.18), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(7,16,34,.82), rgba(7,16,34,.92));
+      pointer-events:none;
+    }
+
+    .page{
+      min-height:100vh;
+      min-height:100dvh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:
+        calc(16px + env(safe-area-inset-top))
+        16px
+        calc(22px + env(safe-area-inset-bottom))
+        16px;
+      box-sizing:border-box;
+
+      width:100%;
+    }
+
+    .wrap{ width:100%; max-width:980px; }
+
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 14px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:12px;
+    }
+
+    .title{
+      font-weight:1000;
+      font-size:16px;
+    }
+
+    .btnTop{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:1000;
+      padding:10px 14px;
+      border-radius:14px;
+      cursor:pointer;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    @media(max-width:860px){
+      .grid{ grid-template-columns:1fr; }
+    }
+
+    .box{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      min-width:0;
+    }
+    .label{ font-weight:950; font-size:12px; color:var(--muted); margin-bottom:6px; }
+    .value{ font-weight:1000; font-size:18px; word-break:break-word; overflow-wrap:anywhere; }
+
+    .statusWrap{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      margin-bottom:12px;
+    }
+    .statusHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .statusTitle{ font-weight:1000; }
+    .pill{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      padding:8px 12px;
+      border-radius:999px;
+      font-weight:950;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .statusLine{
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+      font-weight:900;
+      font-size:13px;
+    }
+    .statusLine.ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.10); }
+    .statusLine.bad{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.10); }
+    .statusLine.warn{ border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.10); }
+
+    .payTitle{
+      font-weight:1000;
+      margin:12px 0 10px;
+    }
+
+    .row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      margin-bottom:10px;
+      min-width:0;
+    }
+
+    .rowLeft{ min-width:0; }
+    .rowLabel{ font-weight:950; font-size:12px; color:var(--muted); margin-bottom:6px; }
+    .rowValue{
+      font-weight:1000;
+      font-size:16px;
+      word-break:break-word;
+      overflow-wrap:anywhere;
+      min-width:0;
+    }
+
+    .copyBtn{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-weight: 900;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .copyBtn:hover{ background: rgba(255,255,255,.09); }
+
+    .actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:12px 16px;
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow: 0 10px 26px rgba(0,0,0,.30);
+    }
+    .btn.cancel{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      min-width:170px;
+    }
+    .btn.primary{
+      background: linear-gradient(180deg, var(--btn), var(--btn2));
+      color:#fff;
+      min-width:170px;
+    }
+    .btn:disabled{ opacity:.7; cursor:not-allowed; }
+  </style>
+</head>
+
+<body>
+  <div class="overlay"></div>
+
+  <div class="page">
+    <div class="wrap">
+      <div class="card">
+
+        <div class="top">
+          <div class="title">Crossflag Exchange · Оплата</div>
+          <button class="btnTop" type="button" onclick="history.back()">Назад</button>
+        </div>
+
+        <div class="grid">
+          <div class="box">
+            <div class="label">Ордер</div>
+            <div class="value" id="orderId">—</div>
+          </div>
+          <div class="box">
+            <div class="label">Сумма к оплате (RUB)</div>
+            <div class="value" id="amountRub">—</div>
+          </div>
+          <div class="box">
+            <div class="label">Курс (RUB/USDT)</div>
+            <div class="value" id="rate">—</div>
+          </div>
+          <div class="box">
+            <div class="label">Получите (USDT)</div>
+            <div class="value" id="usdt">—</div>
+          </div>
+        </div>
+
+        <div class="statusWrap">
+          <div class="statusHead">
+            <div class="statusTitle">Статус</div>
+            <div class="pill" id="ttlPill">Осталось: —</div>
+          </div>
+          <div class="statusLine warn" id="statusLine">Загрузка…</div>
+        </div>
+
+        <div class="payTitle">Реквизиты для оплаты</div>
+
+        <div class="row">
+          <div class="rowLeft">
+            <div class="rowLabel">Банк</div>
+            <div class="rowValue" id="payBank">—</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="rowLeft" style="flex:1; min-width:0;">
+            <div class="rowLabel">Реквизиты (СБП/карта)</div>
+            <div class="rowValue" id="payReq">—</div>
+          </div>
+          <button class="copyBtn" id="copyBtn" type="button">Копировать</button>
+        </div>
+
+        <div class="actions">
+          <button class="btn cancel" id="cancelBtn" type="button">Отменить ордер</button>
+          <button class="btn primary" id="paidBtn" type="button">Я оплатил</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+<script>
+  function __q(name){
+    try { return new URLSearchParams(location.search).get(name) || ""; }
+    catch { return ""; }
+  }
+
+  const WORKER_BASE = String(
+    __q("wb") ||
+    __q("api") ||
+    localStorage.getItem("worker_base") ||
+    localStorage.getItem("WORKER_BASE") ||
+    "https://api.crossflag.org"
+  ).replace(/\/+$/, "");
+
+  const USER_TOKEN = String(
+    localStorage.getItem("CF_USER_TOKEN") ||
+    localStorage.getItem("user_token") ||
+    localStorage.getItem("crossflag_user_token") ||
+    localStorage.getItem("USER_TOKEN") ||
+    localStorage.getItem("userToken") ||
+    localStorage.getItem("cf_user_token") ||
+    ""
+  ).trim();
+
+  const AUTH_HEADERS = USER_TOKEN
+    ? { "Authorization": "Bearer " + USER_TOKEN, "X-User-Token": USER_TOKEN }
+    : {};
+
+  function q(name){
+    try { return new URLSearchParams(location.search).get(name) || ""; }
+    catch { return ""; }
+  }
+
+  const id = String(q("id") || q("offerId") || q("orderId") || "").trim();
+
+  let reserveId = String(
+    q("reserveId") || q("reservedId") || q("reserveid") || q("rid") || ""
+  ).trim();
+
+  if (!reserveId){
+    try{
+      reserveId =
+        String(sessionStorage.getItem("cf_reserve_buy_" + id) || "").trim() ||
+        String(localStorage.getItem("cf_reserve_buy_" + id) || "").trim() ||
+        String(sessionStorage.getItem("reserveId") || "").trim() ||
+        String(sessionStorage.getItem("reservedId") || "").trim() ||
+        String(localStorage.getItem("reserveId") || "").trim() ||
+        String(localStorage.getItem("reservedId") || "").trim() ||
+        "";
+    }catch{}
+  }
+
+  let amountRub = Number(q("amountRub") || q("amount") || 0);
+  let rate = Number(q("rate") || 0);
+  const method = String(q("method") || "").toUpperCase();
+
+  try{ if (id) sessionStorage.setItem("last_id", id); }catch{}
+  try{ if (reserveId && id) sessionStorage.setItem("cf_reserve_buy_" + id, reserveId); }catch{}
+  try{ if (reserveId && id) localStorage.setItem("cf_reserve_buy_" + id, reserveId); }catch{}
+  try{ if (reserveId) sessionStorage.setItem("reserveId", reserveId); }catch{}
+  try{ if (reserveId) sessionStorage.setItem("reservedId", reserveId); }catch{}
+  try{ if (Number.isFinite(amountRub) && amountRub > 0) sessionStorage.setItem("amountRub", String(amountRub)); }catch{}
+  try{ if (Number.isFinite(rate) && rate > 0) sessionStorage.setItem("rate", String(rate)); }catch{}
+  try{ if (method) sessionStorage.setItem("method", method); }catch{}
+
+  const orderIdEl = document.getElementById("orderId");
+  const amountRubEl = document.getElementById("amountRub");
+  const rateEl = document.getElementById("rate");
+  const usdtEl = document.getElementById("usdt");
+
+  const statusLine = document.getElementById("statusLine");
+  const ttlPill = document.getElementById("ttlPill");
+
+  const payBankEl = document.getElementById("payBank");
+  const payReqEl = document.getElementById("payReq");
+  const copyBtn = document.getElementById("copyBtn");
+
+  const cancelBtn = document.getElementById("cancelBtn");
+  const paidBtn = document.getElementById("paidBtn");
+
+  let keepAliveTimer = null;
+  let ttlTimer = null;
+  let lastExpiresAt = 0;
+  let _clockOffset = 0;
+
+  function fmtRub(n){
+    const v = Number(n);
+    if (!Number.isFinite(v)) return "—";
+    return v.toLocaleString("ru-RU") + " ₽";
+  }
+
+  function fmtRate(n){
+    const v = Number(n);
+    if (!Number.isFinite(v)) return "—";
+    return v.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
+  }
+
+  function fmtUsdt(n){
+    const v = Number(n);
+    if (!Number.isFinite(v)) return "—";
+    return v.toLocaleString("ru-RU", { maximumFractionDigits: 6 }) + " USDT";
+  }
+
+  function setStatus(text, kind){
+    statusLine.textContent = text;
+    statusLine.classList.remove("ok","bad","warn");
+    statusLine.classList.add(kind || "warn");
+  }
+
+  function serverNow(){
+    return Date.now() - _clockOffset;
+  }
+
+  function syncClock(serverTime, httpRes){
+    try{
+      const st = Number(serverTime || 0);
+      if (Number.isFinite(st) && st > 0){
+        _clockOffset = Date.now() - st;
+        return;
+      }
+    }catch(_){}
+
+    try{
+      const sd = httpRes && httpRes.headers ? httpRes.headers.get("Date") : "";
+      if (!sd) return;
+      const st = new Date(sd).getTime();
+      if (!Number.isFinite(st)) return;
+      _clockOffset = Date.now() - st;
+    }catch(_){}
+  }
+
+  function normExpiry(v){
+    if (!v) return 0;
+
+    let n = Number(v);
+    if (!Number.isFinite(n)){
+      n = new Date(v).getTime();
+      if (!Number.isFinite(n)) return 0;
+    }
+
+    if (n > 0 && n < 1e12) n *= 1000;
+    return n;
+  }
+
+  function setTtl(expiresAt){
+    const ms = normExpiry(expiresAt) - serverNow();
+
+    if (!Number.isFinite(ms) || ms <= 0){
+      ttlPill.textContent = "Осталось: 00:00";
+      return;
+    }
+
+    const s = Math.floor(ms / 1000);
+    const mm = String(Math.floor(s / 60)).padStart(2,"0");
+    const ss = String(s % 60).padStart(2,"0");
+    ttlPill.textContent = "Осталось: " + mm + ":" + ss;
+  }
+
+  function stopTimers(){
+    if (ttlTimer){
+      clearInterval(ttlTimer);
+      ttlTimer = null;
+    }
+    if (keepAliveTimer){
+      clearInterval(keepAliveTimer);
+      keepAliveTimer = null;
+    }
+  }
+
+  orderIdEl.textContent = id || "—";
+  amountRubEl.textContent = fmtRub(amountRub);
+  rateEl.textContent = fmtRate(rate);
+  usdtEl.textContent =
+    (Number.isFinite(amountRub) && Number.isFinite(rate) && rate > 0)
+      ? fmtUsdt(amountRub / rate)
+      : "—";
+
+  async function cancelToBook(){
+    try{
+      if (id && reserveId){
+        await fetch(WORKER_BASE + "/api/public/cancel_reserve", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json", ...AUTH_HEADERS },
+          body: JSON.stringify({ id, reserveId })
+        });
+      }
+    }catch(_){}
+
+    try{
+      if (id){
+        sessionStorage.removeItem("cf_reserve_buy_" + id);
+        localStorage.removeItem("cf_reserve_buy_" + id);
+      }
+    }catch(_){}
+
+    location.href = "./buy.html";
+  }
+
+  cancelBtn.onclick = cancelToBook;
+
+  paidBtn.onclick = async () => {
+    try{
+      if (!id || !reserveId){
+        setStatus("Ошибка: Missing id or reserveId", "bad");
+        return;
+      }
+
+      paidBtn.disabled = true;
+      paidBtn.textContent = "Отмечаю…";
+      setStatus("Отмечаю оплату…", "warn");
+
+      const res = await fetch(WORKER_BASE + "/api/public/mark_paid", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", ...AUTH_HEADERS },
+        body: JSON.stringify({ id, reserveId })
+      });
+
+      const txt = await res.text();
+      let j;
+      try { j = JSON.parse(txt); } catch { throw new Error("Ответ не JSON: " + txt.slice(0,200)); }
+      if (!res.ok || !j.ok) throw new Error(j.error || ("HTTP " + res.status));
+
+      const qs = new URLSearchParams({
+        id,
+        reserveId,
+        amountRub: String(amountRub || ""),
+        rate: String(rate || ""),
+        method: String(method || "")
+      });
+
+      location.href = "./buy-paid.html?" + qs.toString();
+
+    } catch(e){
+      setStatus("Ошибка: " + (e.message || String(e)), "bad");
+      paidBtn.disabled = false;
+      paidBtn.textContent = "Я оплатил";
+    }
+  };
+
+  copyBtn.onclick = async () => {
+    const v = (payReqEl.textContent || "").trim();
+    if (!v || v === "—") return;
+
+    try{
+      await navigator.clipboard.writeText(v);
+      copyBtn.textContent = "Скопировано";
+      setTimeout(() => copyBtn.textContent = "Копировать", 900);
+    }catch{
+      const ta = document.createElement("textarea");
+      ta.value = v;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+      copyBtn.textContent = "Скопировано";
+      setTimeout(() => copyBtn.textContent = "Копировать", 900);
+    }
+  };
+
+  async function loadRequisitesAndKeepAlive(){
+    if (!id || !reserveId){
+      setStatus("Ошибка: Missing id or reserveId", "bad");
+      return;
+    }
+
+    try{
+      setStatus("Загружаю реквизиты…", "warn");
+
+      const res = await fetch(WORKER_BASE + "/api/public/reserve_offer", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", ...AUTH_HEADERS },
+        body: JSON.stringify({
+          id,
+          reserveId,
+          notifyOpen: true
+        })
+      });
+
+      const txt = await res.text();
+      let j;
+      try { j = JSON.parse(txt); } catch { throw new Error("Ответ не JSON: " + txt.slice(0,200)); }
+
+      if (!res.ok && j && j.error === "Offer is reserved" && j.reserveId && String(j.reserveId) === String(reserveId)){
+        syncClock(j.serverTime, res);
+        lastExpiresAt = normExpiry(j.expiresAt || 0);
+        if (lastExpiresAt && serverNow() >= lastExpiresAt){
+          stopTimers();
+          setStatus("Время бронирования истекло. Вернись в стакан и выбери новый ордер.", "bad");
+          ttlPill.textContent = "Истекло";
+          return;
+        }
+      } else if (!res.ok || !j.ok) {
+        throw new Error(j.error || ("HTTP " + res.status));
+      } else {
+        syncClock(j.serverTime, res);
+
+        if (j.reserveId){
+          reserveId = String(j.reserveId).trim();
+          try{ if (id) sessionStorage.setItem("cf_reserve_buy_" + id, reserveId); }catch(_){}
+          try{ if (id) localStorage.setItem("cf_reserve_buy_" + id, reserveId); }catch(_){}
+          try{ sessionStorage.setItem("reserveId", reserveId); }catch(_){}
+          try{ sessionStorage.setItem("reservedId", reserveId); }catch(_){}
+        }
+
+        const offer = j.offer || {};
+
+        payBankEl.textContent = offer.payBank || "—";
+        payReqEl.textContent = offer.payRequisite || "—";
+
+        if (!(Number.isFinite(amountRub) && amountRub > 0)){
+          const v = Number(offer.amountRub || 0);
+          if (Number.isFinite(v) && v > 0) amountRub = v;
+        }
+
+        if (!(Number.isFinite(rate) && rate > 0)){
+          const v = Number(offer.rate || 0);
+          if (Number.isFinite(v) && v > 0) rate = v;
+        }
+
+        amountRubEl.textContent = fmtRub(amountRub);
+        rateEl.textContent = fmtRate(rate);
+        usdtEl.textContent =
+          (Number.isFinite(amountRub) && Number.isFinite(rate) && rate > 0)
+            ? fmtUsdt(amountRub / rate)
+            : "—";
+
+        lastExpiresAt = normExpiry(j.expiresAt || j.offer?.expiresAt || 0);
+
+        if (lastExpiresAt && serverNow() >= lastExpiresAt){
+          stopTimers();
+          setStatus("Время бронирования истекло. Вернись в стакан и выбери новый ордер.", "bad");
+          ttlPill.textContent = "Истекло";
+          return;
+        }
+
+        setStatus("Реквизиты выданы. Переведи точную сумму и нажми «Я оплатил».", "ok");
+        setTtl(lastExpiresAt);
+      }
+
+      if (ttlTimer) clearInterval(ttlTimer);
+      ttlTimer = setInterval(() => {
+        if (!lastExpiresAt) return;
+
+        setTtl(lastExpiresAt);
+
+        if (serverNow() >= lastExpiresAt){
+          stopTimers();
+          setStatus("Время бронирования истекло. Вернись в стакан и выбери новый ордер.", "bad");
+          ttlPill.textContent = "Истекло";
+        }
+      }, 1000);
+
+      if (keepAliveTimer) clearInterval(keepAliveTimer);
+      keepAliveTimer = setInterval(async () => {
+        try{
+          const ka = await fetch(WORKER_BASE + "/api/public/reserve_offer", {
+            method:"POST",
+            headers:{ "Content-Type":"application/json", ...AUTH_HEADERS },
+            body: JSON.stringify({
+              id,
+              reserveId
+            })
+          });
+
+          const t = await ka.text();
+          let jj;
+          try { jj = JSON.parse(t); } catch { return; }
+
+          if (ka.ok && jj && jj.ok){
+            syncClock(jj.serverTime, ka);
+
+            if (jj.reserveId){
+              reserveId = String(jj.reserveId).trim();
+              try{ if (id) sessionStorage.setItem("cf_reserve_buy_" + id, reserveId); }catch(_){}
+              try{ if (id) localStorage.setItem("cf_reserve_buy_" + id, reserveId); }catch(_){}
+            }
+
+            if (jj.expiresAt || jj.offer?.expiresAt){
+              lastExpiresAt = normExpiry(jj.expiresAt || jj.offer?.expiresAt);
+            }
+          }
+        }catch(_){}
+      }, 20000);
+
+    } catch(e){
+      stopTimers();
+      setStatus("Ошибка: " + (e.message || String(e)), "bad");
+    }
+  }
+
+  (function persistActiveBuy(){
+    if (!id || !reserveId) return;
+    try{
+      const KEY = "cf_active_deals";
+      const deals = JSON.parse(localStorage.getItem(KEY) || "[]");
+      const url = location.pathname + location.search;
+      const next = (Array.isArray(deals) ? deals : []).filter(d => !(d && d.type === "BUY" && String(d.id || "") === String(id)));
+      next.unshift({
+        type: "BUY",
+        id: String(id),
+        reserveId: String(reserveId),
+        url,
+        ts: Date.now()
+      });
+      localStorage.setItem(KEY, JSON.stringify(next.slice(0, 50)));
+    }catch(_){}
+  })();
+
+  loadRequisitesAndKeepAlive();
+</script>
+</body>
+</html>

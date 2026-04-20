@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Crossflag Exchange · Выбор оплаты</title>
+
+  <style>
+    :root{
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+
+      --card: rgba(15, 26, 48, 0.52);
+      --border: rgba(255,255,255,.12);
+
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+
+      --btn:#2d5bff;
+      --btn2:#1f3fb3;
+
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      color:var(--text);
+      background:#071022;
+      overflow-y:auto;
+      overflow-x:hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+    }
+
+    .overlay{
+      position:fixed;
+      inset:0;
+      z-index:-2;
+      background:
+        radial-gradient(1100px 700px at 50% -220px, rgba(45,91,255,.22), rgba(0,0,0,0) 65%),
+        radial-gradient(900px 600px at 85% 85%, rgba(245,158,11,.10), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(7,16,34,.84), rgba(7,16,34,.94));
+      pointer-events:none;
+    }
+
+    .page{
+      min-height:100svh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:
+        calc(16px + env(safe-area-inset-top))
+        16px
+        calc(22px + env(safe-area-inset-bottom))
+        16px;
+      box-sizing:border-box;
+    }
+
+    .wrap{ width:100%; max-width:720px; }
+
+    .card{
+      position:relative;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 14px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      overflow:hidden;
+    }
+
+    .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:12px;
+    }
+    .title{
+      font-weight:1000;
+      font-size:16px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    @media(max-width:640px){
+      .grid{ grid-template-columns:1fr; }
+    }
+
+    .box{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+    }
+    .label{ font-weight:950; font-size:12px; color:var(--muted); margin-bottom:6px; }
+    .value{ font-weight:1000; font-size:18px; word-break:break-word; }
+
+    .section{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      margin-bottom:12px;
+    }
+
+    .sectionTitle{
+      font-weight:1000;
+      margin-bottom:10px;
+    }
+
+    /* payRow (как в sell-order) */
+    .payRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.14);
+      margin-bottom:10px;
+      cursor:pointer;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .payRow:last-child{ margin-bottom:0; }
+    .payLeft{ display:flex; flex-direction:column; min-width:0; }
+    .payName{ font-weight:1000; line-height:1.15; }
+    .payHint{ font-size:12px; color:var(--muted); margin-top:3px; line-height:1.25; }
+    .payRow input[type="radio"]{ width:18px; height:18px; accent-color: var(--btn); }
+
+    .status{
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+      font-weight:900;
+      font-size:13px;
+      white-space:pre-line;
+    }
+    .status.ok{ background: rgba(34,197,94,.10); }
+    .status.bad{ background: rgba(239,68,68,.10); }
+    .status.warn{ background: rgba(245,158,11,.10); }
+
+    .actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      margin-top:10px;
+      flex-wrap:wrap;
+    }
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:12px 16px;
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow: 0 10px 26px rgba(0,0,0,.30);
+    }
+    .btn.cancel{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+    }
+    .btn.next{
+      background: linear-gradient(180deg, var(--btn), var(--btn2));
+      color:#fff;
+      min-width:180px;
+    }
+    .btn:disabled{ opacity:.7; cursor:not-allowed; box-shadow:none; }
+  </style>
+</head>
+
+<body>
+<div class="overlay"></div>
+
+<div class="page">
+  <div class="wrap">
+    <div class="card">
+      <div class="top">
+        <div class="title">Crossflag Exchange · Купить</div>
+      </div>
+
+      <div class="grid">
+        <div class="box"><div class="label">ID заявки</div><div class="value" id="orderId">—</div></div>
+        <div class="box"><div class="label">Сумма (RUB)</div><div class="value" id="amountRub">—</div></div>
+        <div class="box"><div class="label">Курс</div><div class="value" id="rate">—</div></div>
+        <div class="box"><div class="label">Получите</div><div class="value" id="usdt">—</div></div>
+      </div>
+
+      <div class="section">
+        <div class="sectionTitle">Способ оплаты</div>
+
+        <label class="payRow">
+          <div class="payLeft">
+            <div class="payName">Crossflag Exchange</div>
+            <div class="payHint">Оплата на наши реквизиты (СБП/карта)</div>
+          </div>
+          <input type="radio" name="pay" value="CROSSFLAG" checked />
+        </label>
+
+        <label class="payRow" style="opacity:0.35; pointer-events:none; position:relative;">
+          <div class="payLeft">
+            <div class="payName">HTX</div>
+            <div class="payHint">В разработке</div>
+          </div>
+          <input type="radio" name="pay" value="HTX" disabled />
+        </label>
+
+        <label class="payRow" style="opacity:0.35; pointer-events:none; position:relative;">
+          <div class="payLeft">
+            <div class="payName">Bybit</div>
+            <div class="payHint">В разработке</div>
+          </div>
+          <input type="radio" name="pay" value="BYBIT" disabled />
+        </label>
+      </div>
+
+      <div class="status warn" id="orderStatus">Загрузка…</div>
+
+      <div class="actions">
+        <button class="btn cancel" onclick="location.href='./buy.html'">Отменить</button>
+        <button class="btn next" id="nextBtn">Продолжить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const WORKER_BASE = "https://api.crossflag.org";
+  const USER_TOKEN =
+    localStorage.getItem("CF_USER_TOKEN") ||
+    localStorage.getItem("user_token") ||
+    localStorage.getItem("cf_user_token") || "";
+
+  const AUTH_HEADERS = USER_TOKEN ? { "Authorization": "Bearer " + USER_TOKEN } : {};
+  const p = new URLSearchParams(location.search);
+
+    const id = String(p.get("id") || "").trim();
+
+  let currentReserveId = String(
+    p.get("reserveId") ||
+    p.get("reserveid") ||
+    p.get("reservedId") ||
+    p.get("rid") ||
+    ""
+  ).trim();
+
+  const amountRub = Number(p.get("amountRub"));
+  const rate = Number(p.get("rate"));
+
+  try{
+    if (!currentReserveId && id){
+      currentReserveId =
+        String(localStorage.getItem("cf_reserve_buy_" + id) || "").trim() ||
+        String(localStorage.getItem("cf_reserve_" + id) || "").trim();
+    }
+  }catch(_){}
+
+  document.getElementById("orderId").textContent = id || "—";
+  document.getElementById("amountRub").textContent = (Number.isFinite(amountRub) ? amountRub : "—") + " ₽";
+  document.getElementById("rate").textContent = Number.isFinite(rate) ? rate : "—";
+  document.getElementById("usdt").textContent =
+    (Number.isFinite(amountRub) && Number.isFinite(rate) && rate > 0)
+      ? (amountRub / rate).toFixed(6) + " USDT"
+      : "—";
+
+  const statusEl = document.getElementById("orderStatus");
+  const nextBtn = document.getElementById("nextBtn");
+
+  function getPay(){
+    return document.querySelector('input[name="pay"]:checked').value;
+  }
+
+  function setStatus(text, kind){
+    statusEl.textContent = text;
+    statusEl.className = "status " + (kind || "warn");
+  }
+
+    async function reserve() {
+    const res = await fetch(WORKER_BASE + "/api/public/reserve_offer", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json", ...AUTH_HEADERS },
+      body: JSON.stringify({
+        id,
+        reserveId: currentReserveId,
+        notifyOpen: true
+      })
+    });
+
+    const text = await res.text();
+    let j;
+    try { j = JSON.parse(text); } catch {
+      throw new Error("Ответ не JSON: " + text.slice(0,200));
+    }
+
+    if (!res.ok && j && j.error === "Offer is reserved" && j.reserveId) {
+      currentReserveId = String(j.reserveId || "").trim();
+      try{
+        if (id && currentReserveId){
+          localStorage.setItem("cf_reserve_buy_" + String(id), currentReserveId);
+        }
+      }catch(_){}
+      return {
+        reserveId: currentReserveId,
+        expiresAt: j.expiresAt || 0
+      };
+    }
+
+    if (!res.ok || !j.ok) {
+      throw new Error((j && j.error) || ("HTTP " + res.status));
+    }
+
+    currentReserveId = String(j.reserveId || currentReserveId || "").trim();
+
+    try{
+      if (id && currentReserveId){
+        localStorage.setItem("cf_reserve_buy_" + String(id), currentReserveId);
+      }
+    }catch(_){}
+
+    return j;
+  }
+
+  async function chooseRoute(reserveId, route) {
+    const res = await fetch(WORKER_BASE + "/api/public/choose_route", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json", ...AUTH_HEADERS },
+      body: JSON.stringify({ id, reserveId, route })
+    });
+    const j = await res.json();
+    if (!res.ok || !j.ok) throw new Error(j.error || ("HTTP " + res.status));
+    return j;
+  }
+
+  nextBtn.onclick = async () => {
+    try{
+      if (!id) { setStatus("Ошибка: нет id", "bad"); return; }
+
+      nextBtn.disabled = true;
+      setStatus("Подготовка…", "warn");
+
+      const pay = getPay();
+
+      // ✅ CROSSFLAG: бронируем сразу и ведём на оплату.
+      // Раньше был отдельный шаг wallet.html (ввод кошелька) — теперь покупка
+      // начисляется на внутренний баланс, поэтому кошелёк не нужен.
+      if (pay === "CROSSFLAG"){
+        const j = await reserve();
+        location.href = "./crossflag-buy-order.html" +
+          "?id=" + encodeURIComponent(id) +
+          "&reserveId=" + encodeURIComponent(j.reserveId) +
+          "&amountRub=" + encodeURIComponent(String(amountRub)) +
+          "&rate=" + encodeURIComponent(String(rate));
+        return;
+      }
+
+      // ✅ HTX / BYBIT: резервируем тут как было
+      const j = await reserve();
+
+      if (pay === "HTX" || pay === "BYBIT"){
+        await chooseRoute(j.reserveId, pay);
+        const page = (pay === "HTX") ? "htx-waiting.html" : "bybit-waiting.html";
+        location.href = "./" + page +
+          "?id=" + encodeURIComponent(id) +
+          "&reserveId=" + encodeURIComponent(j.reserveId);
+        return;
+      }
+
+      setStatus("Неизвестный способ оплаты", "bad");
+      nextBtn.disabled = false;
+
+    }catch(e){
+      setStatus("Ошибка: " + (e.message || String(e)), "bad");
+      nextBtn.disabled = false;
+    }
+  };
+
+  /* ===== SAVE LAST PAGE (24h) — без вложенных <script> ===== */
+  (function(){
+    const KEY = "cf_last_page_v1";
+    const TTL = 24 * 60 * 60 * 1000; // 24h
+
+    const DENY_SAVE = new Set([
+      "/",
+      "/index.html",
+      "/auth.html",
+      "/login.html",
+      "/register.html",
+    ]);
+
+    const path = location.pathname || "/";
+    const saveUrl = path + (location.search || "") + (location.hash || "");
+
+    function isDenied(p){
+      const onlyPath = (p || "").split("?")[0].split("#")[0];
+      return DENY_SAVE.has(onlyPath);
+    }
+
+    function save(){
+      try{
+        if (isDenied(path)) return;
+        localStorage.setItem(KEY, JSON.stringify({ url: saveUrl, ts: Date.now() }));
+      }catch{}
+    }
+
+    save();
+    window.addEventListener("pagehide", save);
+    window.addEventListener("beforeunload", save);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") save();
+    });
+    window.addEventListener("hashchange", save);
+
+    // TTL чистка (опционально)
+    try{
+      const raw = localStorage.getItem(KEY);
+      if (raw){
+        const d = JSON.parse(raw);
+        if (d && d.ts && (Date.now() - Number(d.ts)) > TTL) localStorage.removeItem(KEY);
+      }
+    }catch{}
+  })();
+</script>
+
+</body>
+</html>

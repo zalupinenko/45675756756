@@ -1,0 +1,895 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>P2P · Продать</title>
+  <style>
+    :root{
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+
+      --card: rgba(15, 26, 48, 0.52);
+      --row:  rgba(12, 22, 42, 0.40);
+      --border: rgba(255,255,255,.12);
+
+      --sell:#ef4444; /* кнопка "Продать" */
+      --chip: rgba(255,255,255,.08);
+
+      --bad:#ffb4b4;
+      --ok:#c7ffd7;
+
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      color:var(--text);
+      overflow-x:hidden;
+      background:#071022;
+    }
+
+    .bg{ position:fixed; inset:0; z-index:-3; overflow:hidden; background:#071022; }
+    .bg video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform:scale(1.02); }
+
+    .overlay{
+      position:fixed; inset:0; z-index:-2;
+      background:
+        radial-gradient(900px 600px at 50% 20%, rgba(60,120,255,.18), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(7,16,34,.82), rgba(7,16,34,.90));
+      pointer-events:none;
+    }
+
+    .page{
+      min-height:100svh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:
+        calc(16px + env(safe-area-inset-top))
+        16px
+        calc(22px + env(safe-area-inset-bottom))
+        16px;
+      box-sizing:border-box;
+    }
+
+    .wrap{ width:100%; max-width:820px; }
+
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      /* важно: выпадашка сортировки как у выбора банка должна быть видна
+         (иначе обрезается из-за overflow:hidden) */
+      overflow:visible;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:14px 14px 10px;
+      position:relative;
+      z-index: 80; /* чтобы выпадающий список был поверх таблицы */
+      min-width:0;
+    }
+
+    .back{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:950;
+      padding:10px 12px;
+      border-radius:999px;
+      cursor:pointer;
+      text-decoration:none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      white-space:nowrap;
+    }
+
+    .sortWrap{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex:1;
+      justify-content:flex-end;
+      min-width:0; /* важно, чтобы не выпирало вправо */
+      padding-right:16px; /* визуально чуть левее, чтобы не упиралось в край */
+    }
+    .sortLabel{
+      font-size:12px;
+      font-weight:950;
+      color: rgba(233,240,255,.75);
+      white-space:nowrap;
+    }
+    .sortSelect{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:950;
+      padding:10px 40px; /* симметрия под стрелку */
+      border-radius:12px;
+      outline:none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+
+      /* центр текста */
+      text-align: center;
+      text-align-last: center;
+      -moz-text-align-last: center;
+
+      /* нативный popup в тёмной теме */
+      color-scheme: dark;
+
+      /* живость */
+      transition: border-color .16s ease, box-shadow .16s ease, transform .08s ease;
+    }
+    .sortSelect:hover{
+      border-color: rgba(239,68,68,.45);
+      box-shadow: 0 0 0 3px rgba(239,68,68,.14);
+    }
+    .sortSelect:focus{
+      border-color: rgba(239,68,68,.60);
+      box-shadow: 0 0 0 3px rgba(239,68,68,.18);
+    }
+    .sortSelect:active{ transform: scale(.99); }
+    .sortSelect option{
+      background: rgba(7,16,34,.96);
+      color: #e9f0ff;
+      text-align: center;
+    }
+
+    .resumeBox{ margin:0 14px 12px; display:none; }
+    .resumeCard{
+      display:flex; align-items:center; justify-content:space-between; gap:14px;
+      padding:14px; border-radius:18px;
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(239,68,68,.08));
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow: 0 10px 26px rgba(0,0,0,.18);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    }
+    .resumeMain{ min-width:0; flex:1 1 auto; }
+    .resumeTitle{ font-size:14px; line-height:1.25; font-weight:1000; color:#fff; margin-bottom:4px; }
+    .resumeText{ font-size:12px; line-height:1.45; font-weight:900; color:rgba(233,240,255,.72); }
+    .resumeActions{ display:flex; align-items:center; gap:10px; flex:0 0 auto; }
+    .resumeGo, .resumeClose{
+      border:1px solid rgba(255,255,255,.14); color:#fff; cursor:pointer;
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      display:inline-flex; align-items:center; justify-content:center;
+    }
+    .resumeGo{ border:none; border-radius:14px; padding:12px 18px; font-weight:1000; background:linear-gradient(180deg,#ff6b6b,#ef4444); box-shadow:0 10px 24px rgba(239,68,68,.22); white-space:nowrap; }
+    .resumeClose{ width:42px; height:42px; border-radius:14px; background:rgba(255,255,255,.06); font-size:20px; flex:0 0 42px; }
+    @media (max-width: 560px){
+      .resumeBox{ margin:0 12px 12px; }
+      .resumeCard{ align-items:stretch; gap:12px; padding:14px; }
+      .resumeActions{ width:100%; }
+      .resumeGo{ flex:1 1 auto; min-height:42px; padding:12px 14px; }
+    }
+
+    /* ===== Custom Sort Dropdown (same as bank selector) ===== */
+    .sortNative{ display:none !important; }
+
+    /* важно: min-width:0 чтобы компонент мог ужиматься в карточке */
+    .sortSel{ position:relative; width:260px; max-width:100%; min-width:0; z-index: 90; }
+    
+        /* ✅ Sort dropdown — same style as bank selector */
+        .sortField{
+          display:flex;
+          align-items:center;
+          gap:10px;
+          width:100%;
+          padding:10px 12px;
+          border-radius:14px;
+          border:1px solid rgba(255,255,255,.12);
+          background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.18));
+          box-shadow:
+            inset 0 1px 0 rgba(255,255,255,.06),
+            0 10px 22px rgba(0,0,0,.18);
+          transition: border-color .15s ease, box-shadow .15s ease;
+          cursor:pointer;
+          user-select:none;
+        }
+        .sortField:focus-within{
+          border-color: rgba(45,91,255,.55);
+          box-shadow:
+            inset 0 1px 0 rgba(255,255,255,.08),
+            0 0 0 3px rgba(45,91,255,.18),
+            0 12px 24px rgba(0,0,0,.22);
+        }
+        .sortField:focus{ outline:none; }
+    
+        .sortInput{
+          flex:1;
+          width:100%;
+          min-width:0;
+          border:0 !important;
+          outline:0 !important;
+          background: transparent !important;
+          color: var(--text) !important;
+          font-weight:950;
+          font-size:14px;
+          padding:0 !important;
+          box-shadow:none !important;
+          -webkit-appearance:none;
+          appearance:none;
+          cursor:pointer;
+        }
+    
+        .sortChevron{
+          width:18px;
+          height:18px;
+          flex:0 0 auto;
+          opacity:.75;
+          transform: translateY(1px);
+          pointer-events:none;
+          transition: transform .15s ease;
+        }
+        .sortSel.open .sortChevron{ transform: translateY(1px) rotate(180deg); }
+    
+        .sortDd{
+          position:absolute;
+          left:0; right:0;
+          top: calc(100% + 6px);
+          z-index: 50;
+          border-radius: 16px;
+          border:1px solid rgba(255,255,255,.12);
+          background: rgba(8, 15, 30, .94);
+          box-shadow: 0 14px 40px rgba(0,0,0,.55);
+          max-height: 280px;
+          overflow:auto;
+          display:none;
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+        }
+        .sortSel.open .sortDd{ display:block; }
+    
+        .sortOpt{
+          padding: 10px 12px;
+          cursor:pointer;
+          border-bottom:1px solid rgba(255,255,255,.08);
+          font-weight:900;
+          font-size:13px;
+          color: rgba(233,240,255,.92);
+          background: transparent;
+        }
+        .sortOpt:last-child{ border-bottom:0; }
+        .sortOpt:hover{ background: rgba(37,99,235,.22); }
+        .sortOpt.active{ background: rgba(37,99,235,.32); }
+
+    .status{
+      padding: 0 14px 12px;
+      font-size:13px;
+      font-weight:850;
+      color: rgba(233,240,255,.78);
+    }
+    .status.bad{ color: var(--bad); font-weight:950; }
+    .status.ok{ color: var(--ok); font-weight:950; }
+
+    .tableWrap{ padding: 0 14px 14px; }
+
+    .thead{
+      display:grid;
+      grid-template-columns: 1.1fr 0.8fr 0.9fr 0.8fr;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      color: rgba(233,240,255,.75);
+      font-size:12px;
+      font-weight:950;
+      letter-spacing:.2px;
+      margin-bottom:10px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .list{ display:flex; flex-direction:column; gap:10px; }
+
+    .item{
+      background: var(--row);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:14px;
+      padding:12px;
+      display:grid;
+      grid-template-columns: 1.1fr 0.8fr 0.9fr 0.8fr;
+      gap:10px;
+      align-items:center;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .big{ font-weight:1000; font-size:16px; letter-spacing:.2px; }
+    .muted{ font-size:12px; color: rgba(233,240,255,.70); font-weight:850; margin-top:2px; }
+
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:6px 10px;
+      border-radius:999px;
+      background: var(--chip);
+      border:1px solid rgba(255,255,255,.12);
+      font-weight:950;
+      font-size:12px;
+      white-space:nowrap;
+      width:max-content;
+    }
+
+    .sellBtn{
+      border:0;
+      border-radius:12px;
+      padding:12px 12px;
+      font-weight:1000;
+      font-size:14px;
+      color:#fff;
+      cursor:pointer;
+      background: var(--sell);
+      width:100%;
+      box-shadow: 0 10px 26px rgba(0,0,0,.30);
+    }
+
+    .empty{
+      background: rgba(255,255,255,.04);
+      border:1px dashed rgba(255,255,255,.16);
+      border-radius:14px;
+      padding:16px 12px;
+      text-align:center;
+      color: rgba(233,240,255,.75);
+      font-weight:900;
+    }
+
+    .playOverlay{
+      position:fixed;
+      left:50%;
+      bottom: calc(18px + env(safe-area-inset-bottom));
+      transform:translateX(-50%);
+      z-index: 20;
+      display:none;
+    }
+    .playBtn{
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(15,26,48,.55);
+      color:#fff;
+      font-weight:1000;
+      padding:10px 14px;
+      border-radius:999px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 14px 40px rgba(0,0,0,.40);
+      cursor:pointer;
+    }
+
+    @media (max-width: 740px){
+      .wrap{ max-width:560px; }
+      .thead{ display:none; }
+      .item{ grid-template-columns: 1fr; gap:8px; }
+      .sellBtn{ padding:14px 12px; font-size:16px; border-radius:14px; }
+      .big{ font-size:18px; }
+      .sortLabel{ display:none; }
+    }
+
+    /* Телефон / Telegram WebApp: сортировку переносим ниже кнопки «Назад» и делаем в ширину */
+    @media (max-width: 520px){
+      .topbar{ flex-wrap:wrap; justify-content:flex-start; }
+      .sortWrap{ width:100%; flex:0 0 100%; justify-content:flex-start; padding-right:12px; padding-left:12px; }
+      .sortSel{ width:100%; }
+    }
+
+    /* ===== AUTH MODAL (не ломает дизайн) ===== */
+.authModalOverlay{
+  position:fixed; inset:0;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+  padding:16px;
+}
+.authModalOverlay.show{ display:flex; }
+
+.authModal{
+  width:100%;
+  max-width:420px;
+  border-radius:20px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(15,26,48,.92);
+  box-shadow: 0 18px 50px rgba(0,0,0,.55);
+  padding:14px;
+}
+.authModalTitle{ font-weight:1000; font-size:15px; margin-bottom:6px; }
+.authModalText{ color: rgba(233,240,255,.80); font-weight:850; font-size:13px; line-height:1.35; }
+.authModalActions{
+  display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;
+  margin-top:12px;
+}
+.authBtn{
+  border:0;
+  border-radius:14px;
+  padding:12px 14px;
+  font-weight:1000;
+  cursor:pointer;
+}
+.authBtn.primary{
+  background: linear-gradient(180deg, #2d5bff, #1f3fb3);
+  color:#fff;
+}
+.authBtn.ghost{
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color:#fff;
+}
+
+    
+  
+/* === Telegram mobile sort width fix === */
+@media (max-width: 520px){
+  .sortSel{
+    width:100% !important;
+    max-width:100% !important;
+  }
+  .sortField{
+    width:100% !important;
+    box-sizing:border-box;
+  }
+  .sortWrap{
+    padding-left:12px !important;
+    padding-right:12px !important;
+    box-sizing:border-box;
+  }
+}
+
+</style>
+</head>
+<body>
+  <div class="bg">
+    <video id="bgVideo" autoplay muted loop playsinline preload="auto" poster="./sell-bg.jpg">
+      <source src="./sell-bg.mp4" type="video/mp4">
+    </video>
+  </div>
+  <div class="overlay"></div>
+
+  <div class="authModalOverlay" id="authModal">
+  <div class="authModal">
+    <div class="authModalTitle">Нужна регистрация</div>
+    <div class="authModalText" id="authModalText">
+      Чтобы купить/продать, нужно зарегистрироваться в аккаунте.
+    </div>
+    <div class="authModalActions">
+      <button class="authBtn ghost" id="authCancel" type="button">Отмена</button>
+      <button class="authBtn primary" id="authGo" type="button">Перейти в аккаунт</button>
+    </div>
+  </div>
+</div>
+
+
+  <div class="playOverlay" id="playOverlay">
+    <button class="playBtn" id="playBtn" type="button">▶ Включить фон</button>
+  </div>
+
+  <div class="page">
+    <div class="wrap">
+      <div class="card">
+        <div class="topbar">
+          <a class="back" href="./trade.html" id="backToTrade">← Назад</a>
+
+          <div class="sortWrap">
+            <div class="sortLabel">Сортировка</div>
+
+            <div class="sortSel">
+              <div class="sortField" id="sortField" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false">
+                <input id="sortInput" class="sortInput" readonly />
+                <svg class="sortChevron" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M7 10l5 5 5-5" stroke="rgba(233,240,255,.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="sortDd" id="sortDD" role="listbox">
+                <div class="sortOpt" data-value="best" role="option">Самый выгодный курс</div>
+                <div class="sortOpt" data-value="fast" role="option">Самое быстрое</div>
+                <div class="sortOpt" data-value="min" role="option">Минимальный чек</div>
+              </div>
+            </div>
+
+            <select class="sortSelect sortNative" id="sort" aria-hidden="true" tabindex="-1">
+              <option value="best">Самый выгодный курс</option>
+              <option value="fast">Самое быстрое</option>
+              <option value="min">Минимальный чек</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="status" id="status">Загружаю заявки…</div>
+
+        <div class="tableWrap">
+          <div class="thead">
+            <div>Сумма</div>
+            <div>Метод</div>
+            <div>Курс</div>
+            <div>Действие</div>
+          </div>
+
+          <div class="list" id="list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script src="./resume-helper.js"></script>
+<script>
+ const WORKER_BASE = "https://api.crossflag.org";
+
+
+  
+
+  const USER_TOKEN = localStorage.getItem("CF_USER_TOKEN") || localStorage.getItem("user_token") || localStorage.getItem("cf_user_token") || "";
+  const AUTH_HEADERS = USER_TOKEN ? { "Authorization": "Bearer " + USER_TOKEN } : {};
+// ===== AUTH helpers =====
+  const USER_TOKEN_KEY = "user_token";
+
+  function getUserToken(){
+    try { return (localStorage.getItem(USER_TOKEN_KEY) || "").trim(); } catch { return ""; }
+  }
+  function setUserToken(t){
+    try { localStorage.setItem(USER_TOKEN_KEY, String(t||"")); } catch {}
+  }
+
+  async function authMe(){
+    const tok = getUserToken();
+    if (!tok) return null;
+    try{
+      const res = await fetch(WORKER_BASE + "/api/public/auth/me", {
+        method: "GET",
+        headers:{ "X-User-Token": tok, ...AUTH_HEADERS }
+      });
+      const j = await res.json().catch(()=>null);
+      if (!res.ok || !j || !j.ok) return null;
+      return j.user || null;
+    }catch{
+      return null;
+    }
+  }
+
+  function goAuth(returnUrl){
+    const back = returnUrl || (location.pathname + location.search);
+    try { sessionStorage.setItem("auth_return", back); } catch {}
+    location.href = "./auth.html?return=" + encodeURIComponent(back);
+  }
+
+  async function ensureAuth(){
+    const u = await authMe();
+    if (u) return u;
+    goAuth();
+    return null;
+  }
+
+
+  const statusEl = document.getElementById("status");
+  const listEl = document.getElementById("list");
+  const sortEl = document.getElementById("sort");
+
+  // ===== Custom Sort UI (matches bank dropdown style) =====
+  const sortSel = document.querySelector(".sortSel");
+  const sortField = document.getElementById("sortField");
+  const sortInput = document.getElementById("sortInput");
+  const sortDD = document.getElementById("sortDD");
+
+  function syncSortUI(){
+    if (!sortEl || !sortInput) return;
+    const opt = sortEl.options[sortEl.selectedIndex];
+    sortInput.value = opt ? opt.textContent.trim() : "";
+    if (sortDD){
+      [...sortDD.querySelectorAll(".sortOpt")].forEach(el=>{
+        el.classList.toggle("active", el.getAttribute("data-value") === sortEl.value);
+      });
+    }
+  }
+
+  function openSortDD(){
+    if (!sortSel) return;
+    sortSel.classList.add("open");
+    if (sortField) sortField.setAttribute("aria-expanded","true");
+    syncSortUI();
+  }
+  function closeSortDD(){
+    if (!sortSel) return;
+    sortSel.classList.remove("open");
+    if (sortField) sortField.setAttribute("aria-expanded","false");
+  }
+  function toggleSortDD(){
+    if (!sortSel) return;
+    sortSel.classList.contains("open") ? closeSortDD() : openSortDD();
+  }
+
+  // restore last selection
+  try{
+    const saved = localStorage.getItem("cf_sell_sort");
+    if (saved && sortEl && (saved === "best" || saved === "fast" || saved === "min")){
+      sortEl.value = saved;
+    }
+  }catch(_){}
+
+  // init
+  syncSortUI();
+
+  if (sortField){
+    sortField.addEventListener("click", (e)=>{ e.preventDefault(); toggleSortDD(); });
+    sortField.addEventListener("keydown", (e)=>{
+      if (e.key === "Enter" || e.key === " "){ e.preventDefault(); toggleSortDD(); }
+      if (e.key === "Escape"){ e.preventDefault(); closeSortDD(); }
+    });
+  }
+
+  if (sortDD){
+    sortDD.addEventListener("click", (e)=>{
+      const el = e.target.closest(".sortOpt");
+      if (!el) return;
+      const v = el.getAttribute("data-value");
+      if (!v) return;
+      sortEl.value = v;
+      try{ localStorage.setItem("cf_sell_sort", v); }catch(_){}
+      syncSortUI();
+      closeSortDD();
+      sortEl.onchange && sortEl.onchange();
+    });
+  }
+
+  document.addEventListener("click", (e)=>{
+    if (!sortSel) return;
+    if (!sortSel.contains(e.target)) closeSortDD();
+  });
+
+  document.addEventListener("keydown", (e)=>{
+    if (e.key === "Escape") closeSortDD();
+  });
+
+
+  let lastOffers = [];
+
+  // ===== AUTH HELPERS =====
+function getUserToken(){
+  return (
+    localStorage.getItem("CF_USER_TOKEN") ||
+    localStorage.getItem("X_AUTH_TOKEN") ||
+    localStorage.getItem("AUTH_TOKEN") ||
+    localStorage.getItem("userToken") ||
+    ""
+  ).trim();
+}
+function isAuthed(){ return !!getUserToken(); }
+
+const authModal = document.getElementById("authModal");
+const authModalText = document.getElementById("authModalText");
+const authCancel = document.getElementById("authCancel");
+const authGo = document.getElementById("authGo");
+
+let _authNextUrl = "";
+
+function openAuthModal(nextUrl){
+  _authNextUrl = nextUrl || "";
+  authModalText.textContent = "Чтобы купить/продать, нужно зарегистрироваться в аккаунте.";
+  authModal.classList.add("show");
+}
+function closeAuthModal(){
+  authModal.classList.remove("show");
+}
+authCancel.onclick = closeAuthModal;
+authModal.onclick = (e)=>{ if(e.target === authModal) closeAuthModal(); };
+
+authGo.onclick = ()=>{
+  // куда вернуться после успешной регистрации
+  const next = encodeURIComponent(_authNextUrl || location.href);
+  location.href = "./account.html?next=" + next;
+};
+
+
+  function setStatus(text, kind){
+    statusEl.textContent = text;
+    statusEl.classList.remove("bad","ok");
+    if (kind) statusEl.classList.add(kind);
+  }
+
+  // ===== fetch helper with timeout (чтобы не висеть на "Загружаю…") =====
+  async function fetchJson(url, opts={}, timeoutMs=8000){
+    const ctrl = new AbortController();
+    const t = setTimeout(()=>ctrl.abort(), timeoutMs);
+    try{
+      const res = await fetch(url, { ...opts, signal: ctrl.signal });
+      const text = await res.text().catch(()=> "");
+      let j = null;
+      try{ j = text ? JSON.parse(text) : null; }catch{ j = null; }
+      return { res, json: j, text };
+    }finally{
+      clearTimeout(t);
+    }
+  }
+
+
+  function fmtRate(n){
+    const num = Number(n);
+    if (!Number.isFinite(num)) return "—";
+    return num.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
+  }
+
+  function fmtRub(n){
+    const num = Number(n);
+    if (!Number.isFinite(num)) return "—";
+    return num.toLocaleString("ru-RU") + " ₽";
+  }
+
+  function methodLabel(m){
+    return (String(m||"").toUpperCase() === "SBP") ? "СБП" : "Карта";
+  }
+
+  async function goSellOrder(o){
+  (function(){
+    const backToTrade = document.getElementById("backToTrade");
+    if (!backToTrade) return;
+    const sp = new URLSearchParams(location.search);
+    const wb = sp.get("wb");
+    const qs = new URLSearchParams();
+    if (wb) qs.set("wb", wb);
+    backToTrade.href = `./trade.html${qs.toString() ? `?${qs.toString()}` : ""}`;
+  })();
+
+  const qs = new URLSearchParams({
+    offerId: o.id || "",
+    rate: String(o.rate),
+    method: String(o.method || "SBP"),
+    minCheckRub: String(o.minCheckRub || 0),
+    avgTimeMin: String(o.avgTimeMin || 0),
+  });
+
+  const target = "./sell-order.html?" + qs.toString();
+
+  // ✅ Блок без регистрации
+  if (!isAuthed()){
+    openAuthModal(target);
+    return;
+  }
+
+  location.href = target;
+}
+
+
+  function applySort(offers){
+    const mode = sortEl.value;
+    const arr = [...(offers || [])];
+
+    if (mode === "fast"){
+      arr.sort((a,b) => Number(a.avgTimeMin||999999) - Number(b.avgTimeMin||999999));
+    } else if (mode === "min"){
+      arr.sort((a,b) => Number(a.minCheckRub||0) - Number(b.minCheckRub||0));
+    } else {
+      // best (самый выгодный курс для продавца — выше курс)
+      arr.sort((a,b) => Number(b.rate||0) - Number(a.rate||0));
+    }
+    return arr;
+  }
+
+  function renderOffers(offers){
+    listEl.innerHTML = "";
+
+    if (!offers || !offers.length){
+      const div = document.createElement("div");
+      div.className = "empty";
+      div.textContent = "Нет активных заявок";
+      listEl.appendChild(div);
+      return;
+    }
+
+    for (const o of offers){
+      const item = document.createElement("div");
+      item.className = "item";
+
+      item.innerHTML = `
+        <div>
+          <div class="big">Любая сумма</div>
+          <div class="muted">Мин. чек: <b>${fmtRub(o.minCheckRub)}</b> · Время: <b>${Number(o.avgTimeMin||0)} мин</b></div>
+        </div>
+
+        <div>
+          <span class="chip">${methodLabel(o.method)}</span>
+        </div>
+
+        <div>
+          <div class="big">${fmtRate(o.rate)}</div>
+          <div class="muted">RUB/USDT</div>
+        </div>
+
+        <div>
+          <button class="sellBtn" type="button">Продать</button>
+        </div>
+      `;
+
+      item.querySelector("button").onclick = () => goSellOrder(o);
+      listEl.appendChild(item);
+    }
+  }
+
+  async function loadOffers(){
+    try{
+      setStatus("Загружаю заявки…");
+      const { res, json } = await fetchJson(WORKER_BASE + "/api/public/sell_offers", { method:"GET", cache:"no-store" }, 8000);
+      if (!res.ok || !json || !json.ok) throw new Error(json?.error || ("HTTP " + res.status));
+
+      lastOffers = json.offers || [];
+      renderOffers(applySort(lastOffers));
+      setStatus("Обновлено", "ok");
+    }catch(e){
+      setStatus("Ошибка: " + e.message, "bad");
+    }
+  }
+
+  sortEl.onchange = () => renderOffers(applySort(lastOffers));
+
+  loadOffers();
+  setInterval(loadOffers, 10000);
+
+  // видео
+  const video = document.getElementById("bgVideo");
+  const playOverlay = document.getElementById("playOverlay");
+  const playBtn = document.getElementById("playBtn");
+  function isMobile(){ return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent); }
+  async function tryAutoplay(){
+    try{ await video.play(); playOverlay.style.display="none"; }
+    catch(e){ if (isMobile()) playOverlay.style.display="block"; }
+  }
+  playBtn.onclick = async () => { try{ await video.play(); playOverlay.style.display="none"; } catch(e){} };
+  setTimeout(tryAutoplay, 250);
+
+  // ===== resume active SELL / SELL draft =====
+  (async function(){
+    const box = document.getElementById("resumeBox");
+    const go = document.getElementById("resumeGo");
+    const close = document.getElementById("resumeClose");
+    if (!box || !go || !close) return;
+
+    function normUrl(url){
+      try{
+        const u = new URL(url, location.origin);
+        return (u.pathname || "") + (u.search || "") + (u.hash || "");
+      }catch(_){ return String(url || ""); }
+    }
+
+    function readSellDraftResume(){
+      try{
+        const raw = sessionStorage.getItem("cf_last_sell_resume_draft") || localStorage.getItem("cf_last_sell_resume_draft") || "";
+        if (!raw) return null;
+        const rec = JSON.parse(raw);
+        if (!rec || !rec.url || !rec.ts) return null;
+        if ((Date.now() - Number(rec.ts || 0)) > 24 * 60 * 60 * 1000) return null;
+        return rec;
+      }catch(_){ return null; }
+    }
+
+    function pickLatest(list){
+      return (list || []).filter(Boolean).sort((a,b)=>Number(b.ts||0)-Number(a.ts||0))[0] || null;
+    }
+
+    let activeRec = null;
+    if (window.CrossflagResume) {
+      activeRec = await window.CrossflagResume.findLatestActive("SELL");
+      if ((!activeRec || !activeRec.url)) {
+        try{ sessionStorage.removeItem("cf_last_sell_resume"); }catch(_){ }
+      }
+    }
+    const draftRec = readSellDraftResume();
+    const rec = pickLatest([activeRec, draftRec]);
+    if (!rec || !rec.url) return;
+    if (normUrl(rec.url) === normUrl(location.pathname + location.search + location.hash)) return;
+
+    box.style.display = "block";
+    go.onclick = () => { if (window.CrossflagResume && window.CrossflagResume.open) return window.CrossflagResume.open(rec); location.href = rec.url; };
+    close.onclick = () => { box.style.display = "none"; };
+  })();
+</script>
+</body>
+</html>

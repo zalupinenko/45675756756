@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Логи сделок SELL — Crossflag</title>
+  <style>
+    :root{
+      --bg:#0b1220; --card:#0f1a30; --border:#223255;
+      --text:#e9f0ff; --muted:#9fb0d4;
+      --btn:#2563eb; --warn:#f59e0b; --danger:#ef4444; --ok:#22c55e;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+    body{ margin:0; background:var(--bg); color:var(--text); }
+    .wrap{ max-width:1400px; margin:0 auto; padding:18px; }
+    .top{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+    .title{ font-weight:950; font-size:16px; }
+    .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:14px; box-shadow:0 18px 50px rgba(0,0,0,.35); }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    label{ display:block; font-size:12px; color:var(--muted); margin:0 0 6px; font-weight:800; }
+    input{
+      width:100%; box-sizing:border-box; padding:10px 12px;
+      border-radius:12px; border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.03); color:var(--text); font-weight:850; outline:none;
+    }
+    .btn{
+      border:0; border-radius:12px; padding:10px 14px; cursor:pointer;
+      color:#fff; font-weight:950; background:var(--btn);
+    }
+    .btn.warn{ background:var(--warn); color:#111827; }
+    .btn.danger{ background:var(--danger); }
+    .btn.ok{ background:var(--ok); color:#052e16; }
+    .btn.gray{ background:rgba(255,255,255,.10); }
+    .status{ margin-top:10px; font-size:12px; color:var(--muted); white-space:pre-wrap; }
+    .status.ok{ color:#9dffb8; font-weight:900; }
+    .status.bad{ color:#ffb4b4; font-weight:900; }
+
+    .tableWrap{ overflow:auto; border-radius:14px; }
+    table{ width:100%; border-collapse:separate; border-spacing:0; margin-top:10px; font-size:13px; min-width: 1300px; }
+    th, td{ padding:10px 10px; border-bottom:1px solid rgba(255,255,255,.06); text-align:left; vertical-align:top; }
+    th{ color:var(--muted); font-weight:950; }
+    td{ max-width: 420px; }
+
+    .tag{ display:inline-block; padding:4px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.03); font-weight:900; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12px; color:#cfe0ff; }
+    .small{ font-size:12px; color:var(--muted); }
+
+    details{ border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:8px 10px; background:rgba(255,255,255,.03); }
+    summary{ cursor:pointer; font-weight:950; color:#dbe7ff; }
+    .logLine{ padding:6px 0; border-bottom:1px solid rgba(255,255,255,.06); }
+    .logLine:last-child{ border-bottom:0; }
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div class="title">Логи сделок SELL</div>
+        <div class="small">Worker: <span id="w"></span></div>
+      </div>
+      <div class="row">
+        <button class="btn gray" id="backBtn" type="button">← Назад в админку</button>
+        <button class="btn" id="reloadBtn" type="button">Обновить</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="align-items:end;">
+        <div style="flex:1; min-width:260px;">
+          <label>Поиск (dealId / offerId)</label>
+          <input id="q" placeholder="например: sd_..." />
+        </div>
+        <div style="min-width:220px;">
+          <label>Admin token (если не в Telegram)</label>
+          <input id="token" placeholder="X-Admin-Token" />
+        </div>
+        <button class="btn" id="saveToken" type="button">Сохранить токен</button>
+      </div>
+
+      <div class="status" id="st">—</div>
+
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="min-width:180px;">dealId</th>
+              <th style="min-width:150px;">offerId</th>
+              <th style="min-width:120px;">Сумма</th>
+              <th style="min-width:100px;">Курс</th>
+              <th style="min-width:140px;">Статус</th>
+              <th style="min-width:320px;">Реквизиты</th>
+              <th style="min-width:240px;">Поступления</th>
+              <th style="min-width:360px;">Действия / Лог</th>
+            </tr>
+          </thead>
+          <tbody id="tb"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const WORKER_BASE = "https://api.crossflag.org";
+
+
+  document.getElementById("w").textContent = WORKER_BASE;
+
+  const tb = document.getElementById("tb");
+  const st = document.getElementById("st");
+  const q = document.getElementById("q");
+  const tokenInput = document.getElementById("token");
+
+  function getToken(){ return localStorage.getItem("admin_token") || ""; }
+  function setToken(t){ localStorage.setItem("admin_token", t); }
+  tokenInput.value = getToken();
+
+  function getInitData(){
+    try{
+      const tg = window.Telegram && window.Telegram.WebApp;
+      const s = (tg && typeof tg.initData === "string") ? tg.initData : "";
+      return s || "";
+    }catch{ return ""; }
+  }
+
+  document.getElementById("saveToken").onclick = () => {
+    setToken(tokenInput.value.trim());
+    st.textContent = "Токен сохранён.";
+    st.className = "status ok";
+  };
+
+  document.getElementById("backBtn").onclick = () => {
+    try{
+      const ret = sessionStorage.getItem("deals_log_return") || sessionStorage.getItem("deal_link_return") || "./admin.html";
+      location.href = ret;
+    }catch{
+      location.href = "./admin.html";
+    }
+  };
+
+  async function api(path, opts = {}) {
+    const headers = Object.assign({}, opts.headers || {});
+    const initData = getInitData();
+    if (initData) headers["X-Tg-Init-Data"] = initData;
+
+    const t = getToken();
+    if (t) headers["X-Admin-Token"] = t;
+
+    if (!headers["Content-Type"] && opts.method && opts.method !== "GET") headers["Content-Type"] = "application/json";
+
+    const res = await fetch(WORKER_BASE + path, { ...opts, headers });
+    const text = await res.text();
+    let j;
+    try { j = JSON.parse(text); } catch { throw new Error("Ответ не JSON: " + text.slice(0, 200)); }
+    if (!res.ok || !j.ok) throw new Error(j.error || ("HTTP " + res.status));
+    return j;
+  }
+
+  function fmtRub(n){ return Number(n).toLocaleString("ru-RU") + " ₽"; }
+  function safe(s){ return (s || "").toString().replace(/[<>&]/g, c=>({ "<":"&lt;", ">":"&gt;", "&":"&amp;" }[c])); }
+
+  function statusRu(s){
+    const x = String(s||"").toUpperCase();
+    const m = { WAIT_CRYPTO:"Ждём крипту", CRYPTO_RECEIVED:"Крипта получена", CRYPTO_FAILED:"Крипта не поступила", COMPLETED:"Завершено" };
+    return m[x] || x || "—";
+  }
+
+  function tsToRu(ts){
+    try{ return new Date(Number(ts)).toLocaleString("ru-RU"); }catch{ return ""; }
+  }
+
+  function renderLog(deal){
+    const log = Array.isArray(deal.log) ? deal.log : [];
+    if (!log.length) return "<div class='small'>—</div>";
+    let html = "";
+    for (const e of log.slice(0, 40)){
+      html += `<div class="logLine">
+        <div class="small">${safe(tsToRu(e.ts))}</div>
+        <div><span class="tag">${safe(e.type||"")}</span> <span class="small">${safe(e.msg||"")}</span></div>
+        ${e.amountRub ? `<div class="small">amount: <b>${safe(String(e.amountRub))}</b></div>` : ""}
+        ${e.status ? `<div class="small">status: <b>${safe(String(e.status))}</b></div>` : ""}
+      </div>`;
+    }
+    return html;
+  }
+
+  async function setDealStatus(dealId, status){
+    await api("/api/admin/sell_deals/" + encodeURIComponent(dealId), {
+      method:"PATCH",
+      body: JSON.stringify({ status })
+    });
+  }
+
+  async function load(){
+    try{
+      st.textContent = "Загружаю…";
+      st.className = "status";
+      const j = await api("/api/admin/sell_deals", { method:"GET" });
+
+      const query = (q.value || "").trim().toLowerCase();
+      const deals = (j.deals || []).filter(d => {
+        if (!query) return true;
+        return String(d.dealId||"").toLowerCase().includes(query) || String(d.offerId||"").toLowerCase().includes(query);
+      });
+
+      tb.innerHTML = "";
+
+      for (const d of deals){
+        const tr = document.createElement("tr");
+
+        const pay = d.pay || {};
+        const reqHtml = `
+          <div class="small"><b>${safe(pay.method||"")}</b></div>
+          <div class="mono">${safe(pay.number||"")}</div>
+          <div class="small">${safe(pay.bank||"")}</div>
+          <div class="small">${safe(pay.fio||"")}</div>
+          ${d.txHash ? `<div class="small">TX: <span class="mono">${safe(d.txHash)}</span></div>` : `<div class="small">TX: —</div>`}
+          <div class="small">История реквизитов: <b>${safe(String((d.requisitesHistory||[]).length))}</b></div>
+        `;
+
+        const paidHtml = `
+          <div class="small">Получено: <b>${fmtRub(d.paidTotal || 0)}</b></div>
+          <div class="small">Осталось: <b>${fmtRub(d.remaining || 0)}</b></div>
+          <div class="small">Частей: <b>${safe(String((d.parts||[]).length))}</b></div>
+        `;
+
+        tr.innerHTML = `
+          <td><span class="mono">${safe(d.dealId)}</span></td>
+          <td><span class="mono">${safe(d.offerId)}</span></td>
+          <td>${fmtRub(d.amountRub || 0)}</td>
+          <td><b>${Number(d.rate || 0).toLocaleString("ru-RU")}</b></td>
+          <td><span class="tag">${safe(statusRu(d.status))}</span></td>
+          <td>${reqHtml}</td>
+          <td>${paidHtml}</td>
+          <td></td>
+        `;
+
+        const td = tr.querySelector("td:last-child");
+
+        const okBtn = document.createElement("button");
+        okBtn.className = "btn ok";
+        okBtn.textContent = "Крипта получена";
+        okBtn.onclick = async () => { await setDealStatus(d.dealId, "CRYPTO_RECEIVED"); await load(); };
+        td.appendChild(okBtn);
+
+        const failBtn = document.createElement("button");
+        failBtn.className = "btn danger";
+        failBtn.textContent = "Не получена";
+        failBtn.style.marginLeft = "8px";
+        failBtn.onclick = async () => { await setDealStatus(d.dealId, "CRYPTO_FAILED"); await load(); };
+        td.appendChild(failBtn);
+
+        const doneBtn = document.createElement("button");
+        doneBtn.className = "btn warn";
+        doneBtn.textContent = "Завершить";
+        doneBtn.style.marginLeft = "8px";
+        doneBtn.onclick = async () => { await setDealStatus(d.dealId, "COMPLETED"); await load(); };
+        td.appendChild(doneBtn);
+
+        const det = document.createElement("details");
+        det.style.marginTop = "8px";
+        det.innerHTML = `<summary>Лог сделки</summary><div style="margin-top:8px;">${renderLog(d)}</div>`;
+        td.appendChild(det);
+
+        tb.appendChild(tr);
+      }
+
+      st.textContent = "Готово. Сделок: " + deals.length;
+      st.className = "status ok";
+    }catch(e){
+      st.textContent = "Ошибка: " + (e.message || String(e));
+      st.className = "status bad";
+    }
+  }
+
+  document.getElementById("reloadBtn").onclick = load;
+  q.addEventListener("input", () => load());
+
+  // init
+  load();
+  setInterval(load, 4000);
+</script>
+</body>
+</html>

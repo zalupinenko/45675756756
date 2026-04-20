@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Crossflag · Админка · Активные запросы</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:#0f1a30;
+      --border:#223255;
+      --text:#e9f0ff;
+      --muted:#a9b6d6;
+      --accent:#5eead4;
+      --warn:#fbbf24;
+      --bad:#fb7185;
+      --ok:#34d399;
+      --shadow: 0 12px 30px rgba(0,0,0,.35);
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:
+        radial-gradient(1200px 700px at 15% 0%, rgba(45,91,255,.18), transparent 60%),
+        radial-gradient(900px 650px at 80% 90%, rgba(52,211,153,.12), transparent 65%),
+        #071022;
+      color:var(--text);
+      min-height:100vh;
+    }
+    .wrap{ max-width:800px; margin:0 auto; padding:18px 14px 30px; }
+    .top{
+      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+    .title{ font-weight:1000; font-size:20px; }
+    .hint{ color:var(--muted); font-weight:850; font-size:12px; margin-top:4px; }
+    .bar{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+    }
+    .btnGhost{
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:14px; padding:10px 14px;
+      background: rgba(255,255,255,.06);
+      color:#fff; font-weight:1000; cursor:pointer;
+      text-decoration:none; display:inline-flex; align-items:center;
+    }
+    .countBadge{
+      display:inline-flex; align-items:center; justify-content:center;
+      min-width:28px; height:28px; padding:0 8px;
+      border-radius:999px; font-weight:1000; font-size:14px;
+      background: rgba(52,211,153,.15); border: 1px solid rgba(52,211,153,.30);
+      color: var(--ok);
+    }
+
+    .reqList{ display:flex; flex-direction:column; gap:12px; }
+    .reqItem{
+      background: rgba(15,26,48,.72);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    .reqTop{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .reqRange{ font-weight:1000; font-size:17px; }
+    .chip{
+      display:inline-flex; align-items:center; padding:5px 10px;
+      border-radius:999px; font-weight:1000; font-size:11px;
+      border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06);
+    }
+    .chip.ok{ border-color: rgba(52,211,153,.35); color: var(--ok); background: rgba(52,211,153,.08); }
+    .chip.warn{ border-color: rgba(251,191,36,.35); color: var(--warn); background: rgba(251,191,36,.08); }
+
+    .reqMeta{
+      margin-top:10px; display:flex; flex-wrap:wrap; gap:6px 18px;
+    }
+    .reqMeta .hint{ font-size:13px; }
+    .reqMeta .hint b{ color: var(--text); }
+
+    .progressBar{
+      margin-top:10px; height:6px; border-radius:3px;
+      background: rgba(255,255,255,.08); overflow:hidden;
+    }
+    .progressFill{
+      height:100%; border-radius:3px;
+      background: linear-gradient(90deg, var(--ok), #16a34a);
+      transition: width .3s ease;
+    }
+
+    .status{
+      margin-top:12px; color: var(--muted); font-weight:900; font-size:13px;
+    }
+    .status.ok{ color: var(--ok); }
+    .status.bad{ color: var(--bad); }
+
+    .empty{
+      text-align:center; padding:30px 16px;
+      color: var(--muted); font-weight:850; font-size:14px;
+      background: rgba(15,26,48,.72);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 18px;
+    }
+
+    /* Traffic control */
+    .trafficCard{
+      background: rgba(15,26,48,.72);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 16px;
+      display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    }
+    .trafficLabel{ font-weight:1000; font-size:14px; }
+    .trafficHint{ font-size:12px; color:var(--muted); margin-top:2px; font-weight:850; }
+    .trafficBtns{ display:flex; gap:10px; }
+    .btnOn{
+      border:0; border-radius:12px; padding:11px 20px;
+      background: linear-gradient(180deg, #16a34a, #15803d);
+      color:#fff; font-weight:1000; cursor:pointer;
+      box-shadow: 0 6px 18px rgba(22,163,74,.3);
+      transition: opacity .15s;
+    }
+    .btnOff{
+      border:0; border-radius:12px; padding:11px 20px;
+      background: linear-gradient(180deg, #dc2626, #b91c1c);
+      color:#fff; font-weight:1000; cursor:pointer;
+      box-shadow: 0 6px 18px rgba(220,38,38,.3);
+      transition: opacity .15s;
+    }
+    .btnOn:disabled,.btnOff:disabled{ opacity:.5; cursor:not-allowed; }
+    .trafficStatus{
+      font-size:12px; font-weight:900; margin-top:6px;
+      min-height:16px;
+    }
+    .trafficStatus.ok{ color: var(--ok); }
+    .trafficStatus.bad{ color: var(--bad); }
+
+    .liveIndicator{
+      display:inline-flex; align-items:center; gap:6px;
+      font-size:12px; font-weight:850; color: var(--ok);
+    }
+    .liveIndicator::before{
+      content:""; width:8px; height:8px; border-radius:50%;
+      background: var(--ok);
+      animation: pulse 1.5s ease infinite;
+    }
+    @keyframes pulse{
+      0%,100%{ opacity:1; }
+      50%{ opacity:.3; }
+    }
+
+    /* Timer */
+    .timerChip{
+      display:inline-flex; align-items:center; gap:5px;
+      padding:4px 10px; border-radius:999px;
+      font-weight:1000; font-size:11px;
+    }
+    .timerChip.normal{
+      border:1px solid rgba(251,191,36,.30); color:var(--warn); background:rgba(251,191,36,.08);
+    }
+    .timerChip.danger{
+      border:1px solid rgba(251,113,133,.35); color:var(--bad); background:rgba(251,113,133,.10);
+      animation: pulse 1s ease infinite;
+    }
+    .timerChip.expired{
+      border:1px solid rgba(251,113,133,.4); color:var(--bad); background:rgba(251,113,133,.15);
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="title">Активные запросы</div>
+      <div class="hint">Запросы сумм от пользователей в реальном времени</div>
+    </div>
+    <div class="bar">
+      <a class="btnGhost" href="./admin.html">← Назад</a>
+      <span class="countBadge" id="countBadge">0</span>
+      <span class="liveIndicator" id="liveIndicator">Live</span>
+    </div>
+  </div>
+
+  <!-- Traffic control -->
+  <div class="trafficCard">
+    <div>
+      <div class="trafficLabel">🔁 Трафик выплат</div>
+      <div class="trafficHint">Отправляет /buyamount_on или /buyamount_off во все подключённые чаты</div>
+      <div class="trafficStatus" id="trafficStatus"></div>
+    </div>
+    <div class="trafficBtns">
+      <button class="btnOn" id="btnTrafficOn">✅ Включить</button>
+      <button class="btnOff" id="btnTrafficOff">🔴 Выключить</button>
+    </div>
+  </div>
+
+  <div class="reqList" id="reqList">
+    <div class="empty">Загрузка...</div>
+  </div>
+
+  <div class="status" id="statusBox">—</div>
+</div>
+
+<script>
+const WORKER_BASE = (localStorage.getItem("worker_base") || "https://api.crossflag.org").replace(/\/+$/, "");
+
+function getToken(){ return localStorage.getItem("admin_token") || ""; }
+
+async function api(path, opts = {}){
+  const tok = getToken();
+  const headers = Object.assign({ "Content-Type":"application/json" }, (opts.headers || {}));
+  if (tok) headers["X-Admin-Token"] = tok;
+  const res = await fetch(WORKER_BASE + path, { ...opts, headers, cache: "no-store" });
+  const txt = await res.text();
+  let j;
+  try{ j = JSON.parse(txt); }catch{ throw new Error("Ответ не JSON"); }
+  if (!res.ok || !j.ok) throw new Error(j.error || ("HTTP " + res.status));
+  return j;
+}
+
+function fmtRub(n){
+  const x = Number(n || 0);
+  if (!Number.isFinite(x)) return "—";
+  return x.toLocaleString("ru-RU") + " ₽";
+}
+
+function fmtTime(ts){
+  try{
+    const d = new Date(Number(ts));
+    if (isNaN(d.getTime())) return "—";
+    const dd = String(d.getDate()).padStart(2,"0");
+    const mm = String(d.getMonth()+1).padStart(2,"0");
+    const hh = String(d.getHours()).padStart(2,"0");
+    const mi = String(d.getMinutes()).padStart(2,"0");
+    return `${dd}.${mm}, ${hh}:${mi}`;
+  }catch{ return "—"; }
+}
+
+function timeSince(ts){
+  const diff = Math.max(0, Date.now() - Number(ts || 0));
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return "только что";
+  if (min < 60) return min + " мин назад";
+  const h = Math.floor(min / 60);
+  if (h < 24) return h + " ч назад";
+  return Math.floor(h / 24) + " дн назад";
+}
+
+const reqListEl = document.getElementById("reqList");
+const countBadge = document.getElementById("countBadge");
+const statusBox = document.getElementById("statusBox");
+
+const REQUEST_TTL_MS = 7 * 60 * 1000; // 7 минут на взятие
+
+function getRequestTimer(createdAt){
+  const elapsed = Date.now() - Number(createdAt || 0);
+  const msLeft = Math.max(0, REQUEST_TTL_MS - elapsed);
+  const totalSec = Math.ceil(msLeft / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  const danger = msLeft < 2 * 60 * 1000;
+  const expired = msLeft <= 0;
+  if (expired) return { text: "🗑️ Удалена", cls: "expired" };
+  if (danger) return { text: `🔴 ${m}:${String(s).padStart(2,"0")}`, cls: "danger" };
+  return { text: `⏱ ${m}:${String(s).padStart(2,"0")}`, cls: "normal" };
+}
+
+function setStatus(msg, cls){
+  statusBox.className = "status" + (cls ? (" " + cls) : "");
+  statusBox.textContent = msg || "—";
+}
+
+async function load(){
+  try{
+    const j = await api("/api/admin/buy_amount_requests", { method:"GET" });
+    const items = Array.isArray(j.items) ? j.items : [];
+
+    // Only show PENDING (active) requests
+    const active = items.filter(x => {
+      const st = String(x.status || "").toUpperCase();
+      return st === "PENDING";
+    });
+
+    active.sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+
+    countBadge.textContent = String(active.length);
+    reqListEl.innerHTML = "";
+
+    if (!active.length){
+      reqListEl.innerHTML = '<div class="empty">Нет активных запросов</div>';
+      setStatus("Обновлено: " + fmtTime(Date.now()), "ok");
+      return;
+    }
+
+    for (const r of active){
+      const user = r.user || {};
+      const uname = user.username ? ("@" + String(user.username).replace(/^@/, "")) : "—";
+      const uid = user.id ? String(user.id) : "";
+      const matched = Number(r.matchedOffersCount || 0);
+      const total = Math.max(1, Number(r.count || 1));
+      const remaining = Math.max(0, total - matched);
+      const pct = Math.min(100, Math.round((matched / total) * 100));
+      const offerIds = Array.isArray(r.matchedOfferIds) ? r.matchedOfferIds : [];
+
+      const el = document.createElement("div");
+      el.className = "reqItem";
+
+      const timer = getRequestTimer(r.createdAt);
+
+      el.innerHTML = `
+        <div class="reqTop">
+          <div class="reqRange">${fmtRub(r.minRub)} — ${fmtRub(r.maxRub)}</div>
+          <span class="timerChip ${timer.cls}">${timer.text}</span>
+          <span class="chip ok">${timeSince(r.createdAt)}</span>
+        </div>
+        <div class="reqMeta">
+          <span class="hint">Пользователь: <b>${uname}</b></span>
+          ${uid ? `<span class="hint">TG ID: <b>${uid}</b></span>` : ""}
+          <span class="hint">Ордеров: <b>${matched}/${total}</b></span>
+          <span class="hint">Осталось: <b>${remaining}</b></span>
+          <span class="hint">Курс: <b>${r.approxRate ? (Number(r.approxRate).toFixed(2) + " ₽") : "—"}</b></span>
+          <span class="hint">Создан: <b>${fmtTime(r.createdAt)}</b></span>
+          ${offerIds.length ? `<span class="hint">Найденные: <b>${offerIds.join(", ")}</b></span>` : ""}
+        </div>
+        ${total > 1 ? `
+          <div class="progressBar">
+            <div class="progressFill" style="width:${pct}%"></div>
+          </div>
+        ` : ""}
+      `;
+
+      reqListEl.appendChild(el);
+    }
+
+    setStatus("Обновлено: " + fmtTime(Date.now()), "ok");
+  }catch(e){
+    setStatus("Ошибка: " + (e.message || String(e)), "bad");
+  }
+}
+
+// ── Traffic control ──
+const trafficStatus = document.getElementById("trafficStatus");
+const btnOn = document.getElementById("btnTrafficOn");
+const btnOff = document.getElementById("btnTrafficOff");
+
+async function sendTraffic(action){
+  btnOn.disabled = true; btnOff.disabled = true;
+  trafficStatus.className = "trafficStatus";
+  trafficStatus.textContent = "Отправляю...";
+  try{
+    const j = await api("/api/admin/buyamount_traffic", {
+      method:"POST",
+      body: JSON.stringify({ action })
+    });
+    trafficStatus.className = "trafficStatus ok";
+    trafficStatus.textContent = `✓ ${action === "on" ? "Включено" : "Выключено"} · отправлено в ${j.sent ?? 0} из ${j.total ?? 0} чатов`;
+  }catch(e){
+    trafficStatus.className = "trafficStatus bad";
+    trafficStatus.textContent = "Ошибка: " + (e.message || String(e));
+  }finally{
+    btnOn.disabled = false; btnOff.disabled = false;
+  }
+}
+btnOn.onclick  = () => sendTraffic("on");
+btnOff.onclick = () => sendTraffic("off");
+
+// Initial load
+load();
+
+// Auto-refresh every 5 seconds (для актуальности таймеров)
+setInterval(load, 5000);
+</script>
+</body>
+</html>

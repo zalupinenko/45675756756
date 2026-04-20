@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Crossflag Admin · Все сделки</title>
+
+  <style>
+    :root{
+      --bg:#0b1220; --card:#0f1a30; --border:#223255;
+      --text:#e9f0ff; --muted:#9fb0d4;
+      --ok:#22c55e; --bad:#ef4444; --warn:#f59e0b;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+    body{ margin:0; background:var(--bg); color:var(--text); }
+    .wrap{ max-width:1100px; margin:0 auto; padding:16px; }
+    .top{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    h1{ margin:0; font-size:18px; }
+    .sub{ color:var(--muted); font-size:12px; margin-top:4px; }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .btn{
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:800;
+    }
+    .btn.ok{ border-color: rgba(34,197,94,.35); }
+    .btn.bad{ border-color: rgba(239,68,68,.35); }
+    .card{
+      margin-top:12px;
+      background: var(--card);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px;
+    }
+    .status{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+      color:var(--muted);
+      font-weight:800;
+      white-space:pre-line;
+    }
+    .grid{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    @media(max-width:900px){ .grid{ grid-template-columns:1fr; } }
+
+    .list{ display:grid; gap:10px; }
+    .item{
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px;
+      background: rgba(255,255,255,.03);
+    }
+    .meta{ display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:8px; }
+    .pill{
+      font-size:12px;
+      font-weight:900;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+      color:var(--text);
+      white-space:nowrap;
+    }
+    .pill.ok{ border-color: rgba(34,197,94,.35); }
+    .pill.bad{ border-color: rgba(239,68,68,.35); }
+    .pill.warn{ border-color: rgba(245,158,11,.35); }
+
+    .kv{ display:grid; grid-template-columns: 180px 1fr; gap:8px; }
+    @media(max-width:700px){ .kv{ grid-template-columns:1fr; } }
+    .k{ color:var(--muted); font-size:12px; font-weight:900; }
+    .v{ font-weight:900; word-break:break-word; overflow-wrap:anywhere; }
+
+    .actions{ display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; margin-top:8px; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>Crossflag Admin · Все сделки</h1>
+        <div class="sub">Логи попыток (BUY/SELL) + список SELL сделок для модерации.</div>
+      </div>
+      <div class="row">
+        <button class="btn" id="backBtn" type="button">← Назад</button>
+        <button class="btn" id="reloadBtn" type="button">Обновить</button>
+      </div>
+    </div>
+
+    <div class="status" id="statusBox">Готово…</div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="meta">
+          <div class="pill warn">LOG · BUY + SELL</div>
+          <div class="pill mono" id="logCount">0</div>
+        </div>
+        <div class="list" id="logList"></div>
+      </div>
+
+      <div class="card">
+        <div class="meta">
+          <div class="pill warn">SELL DEALS</div>
+          <div class="pill mono" id="sellCount">0</div>
+        </div>
+        <div class="list" id="sellList"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  function getToken(){ return localStorage.getItem("admin_token") || ""; }
+  function normBase(s){ return String(s||"").trim().replace(/\/+$/,""); }
+  function getWorkerBase(){
+    const fromLS = normBase(localStorage.getItem("worker_base") || "");
+    // если не сохраняли — fallback на тот же что в admin.html
+    return fromLS || "https://api.crossflag.org";
+  }
+
+  const WORKER_BASE = "https://api.crossflag.org";
+  const statusBox = document.getElementById("statusBox");
+  const logList = document.getElementById("logList");
+  const sellList = document.getElementById("sellList");
+  const logCount = document.getElementById("logCount");
+  const sellCount = document.getElementById("sellCount");
+
+  document.getElementById("backBtn").onclick = () => location.href = "./admin.html";
+  document.getElementById("reloadBtn").onclick = () => loadAll();
+
+  function setStatus(t){ statusBox.textContent = t; }
+
+  async function api(path, {method="GET", body=null} = {}){
+    const token = getToken();
+    if (!token) throw new Error("Нет admin_token в localStorage (сохрани токен в admin.html)");
+    const res = await fetch(WORKER_BASE + path, {
+      method,
+      headers: {
+        "Accept":"application/json",
+        "X-Admin-Token": token,
+        ...(method !== "GET" ? {"Content-Type":"application/json"} : {})
+      },
+      body: body ? JSON.stringify(body) : null
+    });
+    const j = await res.json().catch(()=> ({}));
+    if (!res.ok || !j.ok) throw new Error(j.error || ("HTTP " + res.status));
+    return j;
+  }
+
+  function esc(s){
+    return String(s??"").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  function pillClass(st){
+    const s = String(st||"").toUpperCase();
+    if (s === "SUCCESS") return "pill ok";
+    if (s === "FAILED") return "pill bad";
+    if (s.includes("CHECK") || s.includes("WAIT")) return "pill warn";
+    return "pill";
+  }
+
+  function renderLog(items){
+    logList.innerHTML = "";
+    logCount.textContent = String(items.length || 0);
+
+    if (!items.length){
+      logList.innerHTML = '<div class="item">Пусто</div>';
+      return;
+    }
+
+    for (const it of items){
+      const el = document.createElement("div");
+      el.className = "item";
+      el.innerHTML = `
+        <div class="meta">
+          <div class="row">
+            <span class="pill">${esc(it.kind || "EVENT")}</span>
+            <span class="pill mono">${esc(it.ts || "")}</span>
+          </div>
+          <span class="${pillClass(it.status)}">${esc(it.status || "—")}</span>
+        </div>
+
+        <div class="kv">
+          <div class="k">dealType</div><div class="v">${esc(it.dealType || "—")}</div>
+          <div class="k">id</div><div class="v mono">${esc(it.id || it.offerId || it.dealId || "—")}</div>
+          <div class="k">tg</div><div class="v">${esc(it.tgUser || it.tg || "—")}</div>
+          <div class="k">data</div><div class="v">${esc(JSON.stringify(it.data || {}, null, 0))}</div>
+        </div>
+      `;
+      logList.appendChild(el);
+    }
+  }
+
+  function renderSellDeals(items){
+    sellList.innerHTML = "";
+    sellCount.textContent = String(items.length || 0);
+
+    if (!items.length){
+      sellList.innerHTML = '<div class="item">Пусто</div>';
+      return;
+    }
+
+    for (const d of items){
+      const st = String(d.status || "").toUpperCase();
+      const el = document.createElement("div");
+      el.className = "item";
+      el.innerHTML = `
+        <div class="meta">
+          <div class="row">
+            <span class="pill mono">${esc(d.dealId)}</span>
+            <span class="${pillClass(st)}">${esc(st || "—")}</span>
+          </div>
+          <span class="pill">${esc(d.offerId || "—")}</span>
+        </div>
+
+        <div class="kv">
+          <div class="k">amountRub</div><div class="v">${esc(String(d.amountRub || ""))}</div>
+          <div class="k">rate</div><div class="v">${esc(String(d.rate || ""))}</div>
+          <div class="k">pay</div><div class="v">${esc((d.pay?.method||"") + " · " + (d.pay?.bank||"") + " · " + (d.pay?.number||"") + " · " + (d.pay?.fio||""))}</div>
+          <div class="k">cryptoDest</div><div class="v">${esc((d.cryptoDest?.type||"") + ": " + (d.cryptoDest?.value||""))}</div>
+          <div class="k">txHash</div><div class="v mono">${esc(d.txHash || "—")}</div>
+          <div class="k">tg</div><div class="v">${esc(d.tgUser || d.tg || "—")}</div>
+        </div>
+
+        <div class="actions">
+          ${st === "ON_CHECK" ? `
+            <button class="btn ok" data-act="ok" data-id="${esc(d.dealId)}" type="button">Успешно</button>
+            <button class="btn bad" data-act="bad" data-id="${esc(d.dealId)}" type="button">Неуспешно</button>
+          ` : ``}
+        </div>
+      `;
+      sellList.appendChild(el);
+    }
+  }
+
+  sellList.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    const act = btn.getAttribute("data-act");
+    const id = btn.getAttribute("data-id");
+    try{
+      setStatus("Обновляю статус " + id + "…");
+      await api("/api/admin/sell_deals/" + encodeURIComponent(id), {
+        method:"PATCH",
+        body: { status: act === "ok" ? "SUCCESS" : "FAILED" }
+      });
+      await loadAll();
+      setStatus("Готово.");
+    }catch(err){
+      setStatus("Ошибка: " + (err.message || String(err)));
+    }
+  });
+
+  async function loadAll(){
+    try{
+      setStatus("Загружаю…");
+      const [log, deals] = await Promise.all([
+        api("/api/admin/deal_log", { method:"GET" }),
+        api("/api/admin/sell_deals", { method:"GET" })
+      ]);
+      renderLog(log.items || []);
+      renderSellDeals(deals.deals || []);
+      setStatus("Готово. WORKER_BASE: " + WORKER_BASE);
+    }catch(e){
+      setStatus("Ошибка: " + (e.message || String(e)));
+    }
+  }
+
+  loadAll();
+</script>
+</body>
+</html>

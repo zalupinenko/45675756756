@@ -1,0 +1,1724 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>P2P · Подтверждение оплаты</title>
+
+  <style>
+    :root{
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+
+      --card: rgba(15, 26, 48, 0.52);
+      --border: rgba(255,255,255,.12);
+
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+
+      --btn:#2d5bff;
+      --btn2:#1f3fb3;
+
+      --shadow: 0 18px 50px rgba(0,0,0,.45);
+      --radius: 20px;
+
+      --field-bg: rgba(0,0,0,.22);
+      --field-border: rgba(255,255,255,.14);
+
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+
+    *,*::before,*::after{ box-sizing:border-box; }
+
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      color:var(--text);
+      background:#071022;
+      overflow-y:auto;
+      overflow-x:hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+    }
+
+    .overlay{
+      position:fixed;
+      inset:0;
+      z-index:-2;
+      background:
+        radial-gradient(1100px 700px at 50% -220px, rgba(45,91,255,.22), rgba(0,0,0,0) 65%),
+        radial-gradient(900px 600px at 85% 85%, rgba(245,158,11,.10), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(7,16,34,.84), rgba(7,16,34,.94));
+      pointer-events:none;
+    }
+
+    .wrap{
+      max-width:980px;
+      margin:0 auto;
+      padding: calc(18px + env(safe-area-inset-top)) 16px calc(22px + env(safe-area-inset-bottom)) 16px;
+    }
+
+    .topRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:14px;
+      flex-wrap:wrap;
+    }
+
+    .title{
+      font-weight:1000;
+      font-size:16px;
+      letter-spacing:.2px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .liveDot{
+      width:10px; height:10px;
+      border-radius:999px;
+      background: rgba(34,197,94,.95);
+      box-shadow: 0 0 0 0 rgba(34,197,94,.35);
+      animation: dotPulse 1.25s ease-in-out infinite;
+      flex: 0 0 auto;
+    }
+    @keyframes dotPulse{
+      0%{ box-shadow: 0 0 0 0 rgba(34,197,94,.35); transform: scale(1); }
+      60%{ box-shadow: 0 0 0 12px rgba(34,197,94,0); transform: scale(1.05); }
+      100%{ box-shadow: 0 0 0 0 rgba(34,197,94,0); transform: scale(1); }
+    }
+
+    .card{
+      position:relative;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      overflow:hidden;
+      margin-bottom:14px;
+    }
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:-60px;
+      background:
+        radial-gradient(520px 180px at 35% 20%, rgba(45,91,255,.18), rgba(0,0,0,0) 60%),
+        radial-gradient(520px 180px at 75% 90%, rgba(34,197,94,.10), rgba(0,0,0,0) 60%);
+      filter: blur(18px);
+      pointer-events:none;
+      z-index:0;
+    }
+    .card > *{ position:relative; z-index:1; }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap:10px;
+    }
+    @media(max-width:900px){
+      .grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media(max-width:520px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .cell{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      overflow:hidden;
+    }
+    .label{ color:var(--muted); font-size:12px; font-weight:950; margin-bottom:6px; }
+    .value{ font-weight:1000; font-size:16px; word-break:break-word; overflow-wrap:anywhere; }
+
+    .hint{
+      color: rgba(233,240,255,.78);
+      font-size:12px;
+      font-weight:850;
+      line-height:1.45;
+    }
+
+    label{
+      display:block;
+      margin-bottom:6px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:950;
+    }
+
+    input[type="text"]{
+      width:100%;
+      max-width:100%;
+      border-radius:14px;
+      border:1px solid var(--field-border);
+      background: var(--field-bg);
+      color: var(--text);
+      padding:12px 12px;
+      outline:none;
+      font-weight:900;
+      font-size:14px;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.06),
+        0 8px 18px rgba(0,0,0,.18);
+      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+    input[type="text"]:focus{
+      border-color: rgba(45,91,255,.55);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.08),
+        0 0 0 3px rgba(45,91,255,.18),
+        0 12px 24px rgba(0,0,0,.22);
+      background: rgba(0,0,0,.28);
+    }
+    input::placeholder{
+      color: rgba(159,176,212,.65);
+      font-weight:850;
+    }
+
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active{
+      -webkit-text-fill-color: var(--text) !important;
+      caret-color: var(--text) !important;
+      box-shadow: 0 0 0px 1000px rgba(0,0,0,.22) inset !important;
+      border:1px solid var(--field-border) !important;
+      transition: background-color 9999s ease-in-out 0s;
+    }
+
+    .block{
+      margin-top:12px;
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      overflow:hidden;
+      display:none;
+    }
+    .block.show{ display:block; }
+
+    .hide{ display:none !important; }
+
+    .mono{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      word-break:break-all;
+    }
+
+    .btnRow{
+      margin-top:12px;
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+    }
+
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:12px 18px;
+      background: linear-gradient(180deg, var(--btn), var(--btn2));
+      color: var(--text);
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow: 0 10px 26px rgba(0,0,0,.30);
+      position:relative;
+      min-width: 190px;
+    }
+    .btn:hover{ filter: brightness(1.06); }
+    .btn:disabled{ opacity:.7; cursor:not-allowed; box-shadow:none; }
+
+    .btnGhost{
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:14px;
+      padding:12px 18px;
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow:none;
+      min-width: 190px;
+    }
+    .btnGhost:hover{ background: rgba(255,255,255,.09); }
+
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+    .loading{
+      opacity:.85;
+      pointer-events:none;
+    }
+    .loading::after{
+      content:"";
+      position:absolute;
+      right:14px;
+      top:50%;
+      width:16px;
+      height:16px;
+      margin-top:-8px;
+      border-radius:999px;
+      border:2px solid rgba(255,255,255,.45);
+      border-top-color: transparent;
+      animation: spin .85s linear infinite;
+    }
+
+    .status{
+      display:none;
+      margin-top:12px;
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      font-size:12px;
+      font-weight:900;
+      line-height:1.4;
+      color: rgba(233,240,255,.92);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    .status.show{ display:block; }
+    .status.ok{ border-color: rgba(34,197,94,.40); background: rgba(34,197,94,.10); }
+    .status.bad{ border-color: rgba(239,68,68,.45); background: rgba(239,68,68,.12); }
+    .status.warn{ border-color: rgba(245,158,11,.45); background: rgba(245,158,11,.10); }
+
+    .bankSel{ position:relative; }
+
+    .bankField{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      width:100%;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid var(--field-border);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.18));
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.06),
+        0 10px 22px rgba(0,0,0,.18);
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .bankField:focus-within{
+      border-color: rgba(45,91,255,.55);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.08),
+        0 0 0 3px rgba(45,91,255,.18),
+        0 12px 24px rgba(0,0,0,.22);
+    }
+    .bankInput{
+      flex:1;
+      width:100%;
+      min-width:0;
+      border:0 !important;
+      outline:0 !important;
+      background: transparent !important;
+      color: var(--text) !important;
+      font-weight:950;
+      font-size:14px;
+      padding: 0 !important;
+      box-shadow:none !important;
+      -webkit-appearance:none;
+      appearance:none;
+    }
+    .bankChevron{
+      width:18px;
+      height:18px;
+      flex:0 0 auto;
+      opacity:.75;
+      transform: translateY(1px);
+      pointer-events:none;
+    }
+
+    .bankDd{
+      position:absolute;
+      left:0; right:0;
+      top: calc(100% + 6px);
+      z-index: 50;
+      border-radius: 16px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(8, 15, 30, .94);
+      box-shadow: 0 14px 40px rgba(0,0,0,.55);
+      max-height: 280px;
+      overflow:auto;
+      display:none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .bankItem{
+      padding: 10px 12px;
+      cursor:pointer;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      font-weight:900;
+      font-size:13px;
+      color: rgba(233,240,255,.92);
+    }
+    .bankItem:last-child{ border-bottom:0; }
+    .bankItem:hover{ background: rgba(37,99,235,.22); }
+    .bankItem.active{ background: rgba(37,99,235,.32); }
+
+    .fileField{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      width:100%;
+      padding:10px 10px;
+      border-radius:14px;
+      border:1px solid var(--field-border);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.18));
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.06),
+        0 10px 22px rgba(0,0,0,.18);
+    }
+    .fileField:focus-within{
+      border-color: rgba(45,91,255,.55);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.08),
+        0 0 0 3px rgba(45,91,255,.18),
+        0 12px 24px rgba(0,0,0,.22);
+    }
+    .fileInput{
+      position:absolute;
+      left:-9999px;
+      width:1px; height:1px;
+      opacity:0;
+      pointer-events:none;
+    }
+    .fileBtn{
+      border:0;
+      border-radius:12px;
+      padding:10px 14px;
+      background: rgba(45,91,255,.20);
+      color: var(--text);
+      font-weight:1000;
+      cursor:pointer;
+      white-space:nowrap;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
+    }
+    .fileBtn:hover{ background: rgba(45,91,255,.28); }
+    .fileName{
+      flex:1;
+      min-width:0;
+      color: rgba(233,240,255,.78);
+      font-weight:900;
+      font-size:13px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    @media(max-width:520px){
+      .fileField{ flex-wrap:wrap; }
+      .fileBtn{ width:100%; }
+      .fileName{ width:100%; }
+      .bankField{ padding:10px 10px; }
+    }
+
+    .cf-spacer{height:10px}
+  </style>
+</head>
+
+<body>
+  <div class="overlay"></div>
+
+  <div class="wrap">
+    <div class="topRow">
+      <div class="title"><span class="liveDot"></span> Crossflag Exchange · Подтверждение оплаты</div>
+      <button class="btn" id="backBtn" type="button" style="min-width:150px;">Назад</button>
+    </div>
+
+    <div class="card">
+      <div class="grid">
+        <div class="cell">
+          <div class="label">Ордер</div>
+          <div class="value" id="oid">—</div>
+        </div>
+        <div class="cell">
+          <div class="label">Сумма (RUB)</div>
+          <div class="value" id="amount">—</div>
+        </div>
+        <div class="cell">
+          <div class="label">Курс (RUB/USDT)</div>
+          <div class="value" id="rate">—</div>
+        </div>
+        <div class="cell">
+          <div class="label">Получите (USDT)</div>
+          <div class="value" id="usdt">—</div>
+        </div>
+      </div>
+
+      <div class="block show" style="margin-top:12px;">
+        <!-- bankWrap и blockEmail/Alfa/Sber/Other скрыты — всё идёт через единый блок ниже -->
+        <div style="display:none" id="bankWrap">
+          <input id="bankSelect" class="bankInput" value="" autocomplete="off" />
+          <div id="bankSelectDD"></div>
+        </div>
+        <div class="block" id="blockEmail" style="display:none"><button class="btn" id="btnEmailSent" type="button" style="display:none">hidden</button></div>
+        <div class="block" id="blockAlfa"  style="display:none"><button class="btn" id="btnSendAlfa"  type="button" style="display:none">hidden</button></div>
+        <div class="block" id="blockSber"  style="display:none"><button class="btn" id="btnSendSber"  type="button" style="display:none">hidden</button></div>
+        <div class="block" id="blockOther" style="display:none"><button class="btn" id="btnSendOther" type="button" style="display:none">hidden</button></div>
+
+        <!-- Единый блок: PDF чек + фото на фоне сделки -->
+        <div class="block show" id="blockCheckOnly">
+          <div class="hint" id="checkOnlyHint">
+            Прикрепите <b>PDF чек</b> и <b>фото карты / экрана банка на фоне этой сделки</b> и отправьте на проверку.
+          </div>
+          <div style="margin-top:10px;">
+            <label>PDF чек</label>
+            <div class="fileField">
+              <input id="checkOnlyPdf" class="fileInput" type="file" accept="application/pdf" />
+              <button class="fileBtn" type="button" id="checkOnlyPdfBtn">Выберите файл</button>
+              <div class="fileName" id="checkOnlyPdfName">Файл не выбран</div>
+            </div>
+          </div>
+          <div style="margin-top:10px;">
+            <label id="checkOnlyShotLabel">Фото на фоне сделки</label>
+            <div class="hint" id="checkOnlyShotHint" style="margin:0 0 8px 0;">Сфотографируйте карту или экран банка так, чтобы в кадре была видна данная сделка.</div>
+            <div class="fileField">
+              <input id="checkOnlyShot" class="fileInput" type="file" accept="image/*" />
+              <button class="fileBtn" type="button" id="checkOnlyShotBtn">Выберите фото</button>
+              <div class="fileName" id="checkOnlyShotName">Файл не выбран</div>
+            </div>
+          </div>
+          <div class="btnRow">
+            <button class="btn" id="btnSendCheckOnly" type="button">Отправить на проверку</button>
+          </div>
+        </div>
+
+        <div class="block" id="blockEmail">
+          <div class="hint">
+            <div id="emailTitle">Отправь <b>чек</b> на почту:</div>
+            <div class="mono" style="margin-top:6px;" id="emailAddress">crossflag@postchkr.com</div>
+            <div id="emailInstr" style="margin-top:12px; line-height:1.5;"></div>
+
+          </div>
+          <div class="btnRow">
+            <button class="btn" id="btnEmailSent" type="button">Я отправил чек на почту</button>
+          </div>
+        </div>
+
+        <div class="block" id="blockAlfa">
+          <div class="hint">
+            <b>Альфа-Банк:</b> нужен <b>PDF чек</b> + <b>ссылка “разделение платежа”</b>.
+          </div>
+          <div style="margin-top:10px;">
+            <label>Ссылка “разделение платежа”</label>
+            <input id="alphaLink" type="text" placeholder="вставь ссылку разделения платежа" />
+          </div>
+          <div style="margin-top:10px;">
+            <label>PDF чек</label>
+            <div class="fileField">
+              <input id="alfaPdf" class="fileInput" type="file" accept="application/pdf" />
+              <button class="fileBtn" type="button" id="alfaPdfBtn">Выберите файл</button>
+              <div class="fileName" id="alfaPdfName">Файл не выбран</div>
+            </div>
+          </div>
+          <div class="btnRow">
+            <button class="btn" id="btnSendAlfa" type="button">Отправить на проверку</button>
+          </div>
+        </div>
+
+        <div class="block" id="blockSber">
+          <div class="hint">
+            <b>Сбербанк:</b> нужны <b>PDF чек</b> и <b>PDF выписка</b>.
+          </div>
+          <div style="margin-top:10px;">
+            <label>PDF чек</label>
+            <div class="fileField">
+              <input id="sberPdf1" class="fileInput" type="file" accept="application/pdf" />
+              <button class="fileBtn" type="button" id="sberPdf1Btn">Выберите файл</button>
+              <div class="fileName" id="sberPdf1Name">Файл не выбран</div>
+            </div>
+          </div>
+          <div style="margin-top:10px;">
+            <label>PDF выписка</label>
+            <div class="fileField">
+              <input id="sberPdf2" class="fileInput" type="file" accept="application/pdf" />
+              <button class="fileBtn" type="button" id="sberPdf2Btn">Выберите файл</button>
+              <div class="fileName" id="sberPdf2Name">Файл не выбран</div>
+            </div>
+          </div>
+          <div class="btnRow">
+            <button class="btn" id="btnSendSber" type="button">Отправить на проверку</button>
+          </div>
+        </div>
+
+        <div class="block" id="blockOther">
+          <div class="hint">
+            <b>Другие банки:</b> нужно <b>видео</b> (телефон с банком снимают с другого телефона), где человек:
+            <br>1) открывает AppStore / Google Play / RuStore
+            <br>2) переходит в приложение банка через магазин
+            <br>3) показывает в истории платежей нужный платеж
+            <br>4) открывает и разворачивает чек
+          </div>
+
+          <div style="margin-top:10px;" id="otherPdfWrap" class="hide">
+            <label>PDF чек</label>
+            <div class="fileField">
+              <input id="otherPdf1" class="fileInput" type="file" accept="application/pdf" />
+              <button class="fileBtn" type="button" id="otherPdf1Btn">Выберите файл</button>
+              <div class="fileName" id="otherPdf1Name">Файл не выбран</div>
+            </div>
+          </div>
+
+          <div style="margin-top:10px;">
+            <label>Видео</label>
+            <div class="fileField">
+              <input id="otherVideo" class="fileInput" type="file" accept="video/*" />
+              <button class="fileBtn" type="button" id="otherVideoBtn">Выберите файл</button>
+              <div class="fileName" id="otherVideoName">Файл не выбран</div>
+            </div>
+          </div>
+
+          <div class="btnRow">
+            <button class="btn" id="btnSendOther" type="button">Отправить на проверку</button>
+          </div>
+        </div>
+
+        <div class="status" id="status"></div>
+
+        <div class="btnRow" style="margin-top:14px;">
+          <button class="btnGhost" id="cancelBtn" type="button">Отменить заявку</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes cancelModalIn{
+      from{ opacity:0; transform:translate(-50%,-48%) scale(.95); }
+      to{   opacity:1; transform:translate(-50%,-50%) scale(1); }
+    }
+    .crBtn{
+      display:flex; align-items:center; gap:12px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.05);
+      color:#e9f0ff;
+      border-radius:14px;
+      padding:13px 14px;
+      font-size:14px;
+      font-weight:700;
+      cursor:pointer;
+      text-align:left;
+      width:100%;
+      transition: background .15s, border-color .15s, transform .12s;
+    }
+    .crBtn:hover{ background:rgba(255,255,255,.10); border-color:rgba(255,255,255,.22); transform:translateX(3px); }
+    .crBtn:active{ transform:translateX(1px) scale(.99); }
+    .crBtn .crIcon{ font-size:18px; flex-shrink:0; width:28px; text-align:center; }
+    .crBtn .crText{ flex:1; }
+    .crBtn .crArrow{ opacity:.35; font-size:13px; flex-shrink:0; }
+
+    /* proof upload modal */
+    .proofDropzone{
+      border:2px dashed rgba(255,255,255,.18);
+      border-radius:16px;
+      padding:28px 16px;
+      text-align:center;
+      cursor:pointer;
+      transition: border-color .2s, background .2s;
+      position:relative;
+    }
+    .proofDropzone:hover,.proofDropzone.dragover{
+      border-color:rgba(45,91,255,.5);
+      background:rgba(45,91,255,.06);
+    }
+    .proofDropzone.hasFile{
+      border-color:rgba(34,197,94,.4);
+      background:rgba(34,197,94,.06);
+    }
+    .proofDropzone input[type=file]{
+      position:absolute; inset:0; opacity:0; cursor:pointer;
+    }
+    .proofPreview{
+      max-width:100%; max-height:180px; border-radius:12px; margin-top:10px; display:none;
+    }
+    .proofBtnRow{
+      display:flex; gap:8px; margin-top:14px;
+    }
+    .proofBtnRow button{
+      flex:1; border-radius:14px; padding:13px; font-weight:800; font-size:14px; cursor:pointer; border:0; transition: opacity .15s;
+    }
+    .proofBtnRow button:disabled{ opacity:.5; cursor:not-allowed; }
+    .proofBtnSend{
+      background: linear-gradient(180deg,#2d5bff,#1f3fb3); color:#fff;
+      box-shadow:0 8px 20px rgba(45,91,255,.25);
+    }
+    .proofBtnSkip{
+      background:rgba(255,255,255,.06); color:rgba(233,240,255,.55);
+      border:1px solid rgba(255,255,255,.10) !important;
+    }
+    .proofStatus{
+      margin-top:10px; padding:10px 12px; border-radius:12px; font-size:13px; font-weight:700; display:none;
+    }
+    .proofStatus.show{ display:block; }
+    .proofStatus.ok{ background:rgba(34,197,94,.12); border:1px solid rgba(34,197,94,.3); color:#7dffcf; }
+    .proofStatus.bad{ background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.3); color:#fca5a5; }
+    .proofStatus.warn{ background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.3); color:#fde68a; }
+  </style>
+
+  <!-- Cancel warning toast -->
+  <style>
+    .cancelWarning{
+      position:fixed; bottom:0; left:0; right:0; z-index:10001;
+      display:flex; justify-content:center;
+      pointer-events:none;
+      padding:0 14px calc(14px + env(safe-area-inset-bottom));
+      transform:translateY(120%);
+      transition: transform .35s cubic-bezier(.34,1.4,.64,1), opacity .25s;
+      opacity:0;
+    }
+    .cancelWarning.show{ transform:translateY(0); opacity:1; pointer-events:auto; }
+    .cancelWarningInner{
+      max-width:420px; width:100%;
+      background: linear-gradient(160deg, #1a0a0a 0%, #1c1020 100%);
+      border: 1px solid rgba(239,68,68,.35);
+      border-radius:20px;
+      padding:16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.7), 0 0 0 1px rgba(239,68,68,.12);
+    }
+    .cwHeader{
+      display:flex; align-items:center; gap:10px;
+      margin-bottom:10px;
+    }
+    .cwIcon{ font-size:28px; }
+    .cwTitle{ font-weight:1000; font-size:15px; color:#fca5a5; }
+    .cwText{
+      font-size:12px; font-weight:800; line-height:1.45;
+      color:rgba(252,165,165,.75);
+    }
+    .cwText b{ color:#fca5a5; font-weight:1000; }
+    .cwBar{
+      margin-top:10px;
+      display:flex; gap:10px;
+    }
+    .cwBtn{
+      flex:1; border:0; border-radius:12px; padding:11px;
+      font-weight:1000; font-size:13px; cursor:pointer; color:#fff;
+      transition: transform .08s, filter .15s;
+    }
+    .cwBtn:active{ transform:scale(.97); }
+    .cwBtnCancel{
+      background: linear-gradient(180deg, #dc2626, #b91c1c);
+      box-shadow: 0 8px 20px rgba(185,28,28,.3);
+    }
+    .cwBtnBack{
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      color: rgba(233,240,255,.65);
+    }
+    .cwBtnBack:hover{ background: rgba(255,255,255,.10); color:#fff; }
+  </style>
+
+  <div class="cancelWarning" id="cancelWarning">
+    <div class="cancelWarningInner">
+      <div class="cwHeader">
+        <span class="cwIcon">⚠️</span>
+        <span class="cwTitle">Предупреждение об отмене</span>
+      </div>
+      <div class="cwText">
+        Ордер будет отменён. Обратите внимание:<br><br>
+        <b>🚫 При частых отменах доступ к выплатам временно ограничивается.</b><br><br>
+        Если у вас возникли проблемы с реквизитами или оплатой — лучше обратитесь в поддержку, чем отменять заказ.
+      </div>
+      <div class="cwBar">
+        <button class="cwBtn cwBtnBack" id="cwBtnBack" type="button">Вернуться</button>
+        <button class="cwBtn cwBtnCancel" id="cwBtnProceed" type="button">Всё равно отменить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cancel reason modal -->
+  <div id="cancelModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,.78); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); align-items:center; justify-content:center;">
+    <div style="
+      background: linear-gradient(160deg, #0c1628 0%, #101e36 100%);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 24px;
+      padding: 22px 18px 18px;
+      max-width: 390px;
+      width: 92%;
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      box-shadow: 0 32px 80px rgba(0,0,0,.65), 0 0 0 1px rgba(239,68,68,.08);
+      animation: cancelModalIn .22s cubic-bezier(.34,1.4,.64,1) both;
+    ">
+      <div style="text-align:center; margin-bottom:18px;">
+        <div style="font-size:30px; margin-bottom:8px; line-height:1;">❌</div>
+        <div style="font-weight:900; font-size:17px; color:#e9f0ff; letter-spacing:-.01em;">Причина отмены</div>
+        <div style="font-size:12px; color:rgba(159,176,212,.65); margin-top:4px; font-weight:700;">Выберите причину для отмены ордера</div>
+      </div>
+
+      <div id="cancelReasons" style="display:flex; flex-direction:column; gap:7px;">
+        <button class="cancelReasonBtn crBtn" data-reason="Красные реквизиты">
+          <span class="crIcon">🔴</span><span class="crText">Красные реквизиты</span><span class="crArrow">›</span>
+        </button>
+        <button class="cancelReasonBtn crBtn" data-reason="Недостаточный баланс">
+          <span class="crIcon">💸</span><span class="crText">Недостаточный баланс</span><span class="crArrow">›</span>
+        </button>
+        <button class="cancelReasonBtn crBtn" data-reason="Нет нужного банка">
+          <span class="crIcon">🏦</span><span class="crText">Нет нужного банка</span><span class="crArrow">›</span>
+        </button>
+        <button class="cancelReasonBtn crBtn" data-reason="Неверные реквизиты">
+          <span class="crIcon">⚠️</span><span class="crText">Неверные реквизиты</span><span class="crArrow">›</span>
+        </button>
+        <button class="cancelReasonBtn crBtn" data-reason="2 получателя на одном реквизите">
+          <span class="crIcon">👥</span><span class="crText">2 получателя на одном реквизите</span><span class="crArrow">›</span>
+        </button>
+        <button class="cancelReasonBtn crBtn" data-reason="Не хочу" data-fault="1">
+          <span class="crIcon">🚫</span><span class="crText">Не хочу</span><span class="crArrow">›</span>
+        </button>
+      </div>
+
+      <button id="cancelModalClose" type="button" style="margin-top:12px; width:100%; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.04); color:rgba(233,240,255,.4); border-radius:14px; padding:12px; font-size:14px; font-weight:700; cursor:pointer; transition:background .15s;">Назад</button>
+    </div>
+  </div>
+
+  <!-- Proof upload modal -->
+  <div id="proofModal" style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,.82); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);">
+    <div style="
+      background: linear-gradient(160deg, #0c1628 0%, #101e36 100%);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 24px;
+      padding: 22px 18px 18px;
+      max-width: 400px;
+      width: 92%;
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      box-shadow: 0 32px 80px rgba(0,0,0,.65);
+      animation: cancelModalIn .22s cubic-bezier(.34,1.4,.64,1) both;
+    ">
+      <div style="text-align:center; margin-bottom:16px;">
+        <div style="font-size:28px; margin-bottom:6px; line-height:1;">📸</div>
+        <div style="font-weight:900; font-size:17px; color:#e9f0ff;">Подтверждение причины</div>
+        <div style="font-size:12px; color:rgba(159,176,212,.65); margin-top:4px; font-weight:700;">
+          Приложите скриншот, подтверждающий причину отмены.<br>
+          Это сохранит ваш процент выполнения.
+        </div>
+      </div>
+
+      <div id="proofReasonChip" style="text-align:center; margin-bottom:12px;">
+        <span style="display:inline-block; padding:5px 14px; border-radius:999px; border:1px solid rgba(245,158,11,.3); background:rgba(245,158,11,.08); font-size:12px; font-weight:800; color:#fde68a;" id="proofReasonText">—</span>
+      </div>
+
+      <div class="proofDropzone" id="proofDropzone">
+        <input type="file" accept="image/*" id="proofFileInput" />
+        <div id="proofPlaceholder">
+          <div style="font-size:32px; margin-bottom:6px;">📎</div>
+          <div style="font-weight:800; font-size:14px; color:rgba(233,240,255,.7);">Нажмите или перетащите скриншот</div>
+          <div style="font-size:11px; color:rgba(159,176,212,.5); margin-top:4px;">PNG, JPG до 10 МБ</div>
+        </div>
+        <img class="proofPreview" id="proofPreview" />
+      </div>
+
+      <div class="proofStatus" id="proofStatus"></div>
+
+      <div class="proofBtnRow">
+        <button class="proofBtnSkip" id="proofSkipBtn" type="button">Пропустить</button>
+        <button class="proofBtnSend" id="proofSendBtn" type="button" disabled>Отправить</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const WORKER_BASE = "https://api.crossflag.org";
+
+  const USER_TOKEN = localStorage.getItem("CF_USER_TOKEN") || localStorage.getItem("user_token") || localStorage.getItem("cf_user_token") || "";
+  const AUTH_HEADERS = USER_TOKEN ? { "Authorization": "Bearer " + USER_TOKEN } : {};
+
+  const p = new URLSearchParams(location.search);
+  const id = (p.get("id") || "").trim();
+
+  let reserveId = (
+    (p.get("reserveId") || "").trim() ||
+    (p.get("reserveid") || "").trim() ||
+    (p.get("reservedId") || "").trim() ||
+    (p.get("rid") || "").trim()
+  );
+  try{
+    if (!reserveId && id){
+      reserveId =
+        (localStorage.getItem("cf_reserve_buy_" + String(id)) || "").trim() ||
+        (localStorage.getItem("cf_reserve_" + String(id)) || "").trim();
+    }
+    if (!reserveId && id){
+      const deals = JSON.parse(localStorage.getItem("cf_active_deals") || "[]");
+      const hit = Array.isArray(deals) ? deals.find(d => d && d.type === "BUY" && String(d.id||"") === String(id)) : null;
+      if (hit && hit.reserveId) reserveId = String(hit.reserveId).trim();
+    }
+  }catch(_){ }
+
+  const amountRub = Number(p.get("amountRub"));
+  const rate = Number(p.get("rate"));
+  const method = String(p.get("method") || "");
+
+  // ✅ ДОБАВЛЕНО: режим "только чек" из URL
+  const CHECK_ONLY = (function(){
+    const v = String(p.get("checkOnly") || p.get("check_only") || "").trim().toLowerCase();
+    return (v === "1" || v === "true" || v === "yes" || v === "on");
+  })();
+
+  // ✅ Заявка из чата?
+  const FROM_CHAT = String(p.get("sourceKind") || "").trim() === "BUY_AMOUNT_CHAT_REPLY";
+
+  const oidEl = document.getElementById("oid");
+  const amountEl = document.getElementById("amount");
+  const rateEl = document.getElementById("rate");
+  const usdtEl = document.getElementById("usdt");
+  const statusEl = document.getElementById("status");
+  const bankSelect = document.getElementById("bankSelect");
+  const bankWrap = document.getElementById("bankWrap");
+  const topHintEl = document.getElementById("topHint");
+
+  const blockEmail = document.getElementById("blockEmail");
+  const blockAlfa  = document.getElementById("blockAlfa");
+  const blockSber  = document.getElementById("blockSber");
+  const blockOther = document.getElementById("blockOther");
+  const blockCheckOnly = document.getElementById("blockCheckOnly");
+  const otherPdfWrap = document.getElementById("otherPdfWrap");
+  const emailTitleEl = document.getElementById("emailTitle");
+  const emailAddrEl  = document.getElementById("emailAddress");
+  const emailInstrEl = document.getElementById("emailInstr");
+
+  const EMAIL_ADDR = "crossflag@postchkr.com";
+
+  function emailCfgForBank(){
+    const n = normalizeBankName(bankSelect.value);
+
+    const ul = (lines) => lines.map(x => {
+      if (x === "" || x == null) return `<div class="cf-spacer"></div>`;
+      return `<div>${x}</div>`;
+    }).join("");
+
+    if (n.includes("т-банк") || n.includes("т банк") || n.includes("t-bank") || n.includes("t bank") || n.includes("тинькофф")){
+      return {
+        titleHtml: "Для <b>Т-Банка</b> отправь <b>чек</b> на почту:",
+        instrHtml: ul([
+          "<b>Способы отправки чека через мобильное приложение и веб версию.</b>",
+          "",
+          "<b>Отправка чека через мобильное приложение банка:</b>",
+          "",
+          "<b>iPhone (Моб. приложение)</b>",
+          "1) Квитанция",
+          "2) Нажать 📤",
+          "3) Отправить по почте",
+          "4) Другой e-mail",
+          "",
+          "",
+          "<b>Android (Моб. приложение)</b>",
+          "1) Нажать Поделиться",
+          "2) Отправить по почте",
+          "3) Другой e-mail",
+          "",
+          "",
+          "<b>Отправка чека через веб версию:</b>",
+          "",
+          "1) Зайти в раздел с балансом на карте",
+          "2) Детали счета ➞ Заказать справку",
+          "3) С движением средств",
+          "4) Заказать справку (период 1 месяц)",
+          "5) Отправить на e-mail",
+          "6) Указать почту и отправить",
+        ])
+      };
+    }
+
+    if (n.includes("совком")){
+      return {
+        titleHtml: "Для <b>Совкомбанка</b> отправь <b>чек</b> на почту:",
+        instrHtml: ul([
+          "<b>В данном банке чек отправляется через мобильную версию.</b>",
+          "1) Транзакция",
+          "2) Квитанция",
+          "3) Отправить на почту",
+          "4) Ввести указанный e-mail и отправить",
+        ])
+      };
+    }
+
+    if (n.includes("райфф") || n.includes("raiffe") || n.includes("raif")){
+      return {
+        titleHtml: "Для <b>Райффайзенбанка</b> отправь <b>чек</b> на почту:",
+        instrHtml: ul([
+          "<b>Отправка чека на почту в данном банке поддерживается только в веб версии.</b>",
+          "1) Раздел история",
+          "2) Операции в онлайн-банке",
+          "3) Поделиться (@)",
+          "4) Email получателя",
+          "5) Отправить",
+        ])
+      };
+    }
+
+    if (n.includes("отп")){
+      return {
+        titleHtml: "Для <b>ОТП Банка</b> отправь <b>чек</b> на почту:",
+        instrHtml: ul([
+          "<b>В данном банке чек можно отправить только через веб версию.</b>",
+          "1) Раздел история",
+          "2) Выбрать нужный платеж",
+          "3) Отправить на e-mail",
+        ])
+      };
+    }
+
+    if (n.includes("почта")){
+      return {
+        titleHtml: "Для <b>Почта Банка</b> отправь <b>чек</b> на почту:",
+        instrHtml: ul([
+          "<b>В данном банке чек можно отправить только через веб версию.</b>",
+          "1) История",
+          "2) Выбрать нужный платеж",
+          "3) Чек",
+          "4) Отправить на email",
+          "5) Отправить квитанцию",
+        ])
+      };
+    }
+
+    if (n.includes("уралсиб")){
+      return {
+        titleHtml: "Для <b>Уралсиба</b> отправь <b>чек</b> на почту:",
+        instrHtml: ul([
+          "<b>В данном банке чек отправляется через веб версию.</b>",
+          "1) История",
+          "2) Открыть квитанцию",
+          "3) Нажать на ✉",
+          "4) Отправить на email",
+        ])
+      };
+    }
+
+    if (n.includes("русский стандарт") || (n.includes("стандарт") && n.includes("русский"))){
+      return {
+        titleHtml: "Для <b>Русского стандарта</b> отправь <b>чек</b> на почту:",
+        instrHtml: ul([
+          "<b>В данном банке чек отправляется через веб версию.</b>",
+          "1) История",
+          "2) Выбрать нужный перевод и нажать ⋮",
+          "3) Отправить по почте",
+        ])
+      };
+    }
+
+    if (n.includes("псб")){
+      return {
+        titleHtml: "Для <b>ПСБ Банка</b> отправь <b>чек</b> на почту:",
+        instrHtml: ul([
+          "<b>Способы отправки чека через мобильное приложение и веб версию.</b>",
+          "",
+          "<b>Отправка чека через мобильную версию банка:</b>",
+          "",
+          "<b>iPhone (Моб. приложение)</b>",
+          "1) Выбрать нужный перевод",
+          "2) Заявление на перевод (руб).pdf",
+          "3) Отправить по эл. почте",
+          "",
+          "",
+          "<b>Android (Моб. приложение)</b>",
+          "1) Выбрать нужный перевод",
+          "2) Скачать документы",
+          "3) Отправить на e-mail",
+          "",
+          "",
+          "<b>Отправка чека через веб версию:</b>",
+          "",
+          "1) Зайти в раздел с балансом на карте",
+          "2) О карте",
+          "3) Выписка по счету",
+          "4) Указать e-mail",
+        ])
+      };
+    }
+
+    // ✅ ДОБАВЛЕНО: дефолт для режима "только чек" (если банк не выбран)
+    if (CHECK_ONLY){
+      return {
+        titleHtml: "Отправь <b>чек</b> на почту:",
+        instrHtml: ul([
+          "<b>Отправь PDF чек на e-mail выше.</b>"
+        ])
+      };
+    }
+
+    return { titleHtml: "Отправь <b>чек</b> на почту:", instrHtml: "" };
+  }
+
+  function applyEmailCfg(){
+    if (!emailTitleEl || !emailAddrEl || !emailInstrEl) return;
+    const cfg = emailCfgForBank();
+    emailTitleEl.innerHTML = cfg.titleHtml || "Отправь <b>чек</b> на почту:";
+    emailAddrEl.textContent = EMAIL_ADDR;
+    emailInstrEl.innerHTML = cfg.instrHtml || "";
+  }
+
+  function fmtRub(n){ return Number(n).toLocaleString("ru-RU") + " ₽"; }
+  function fmtRate(n){ return Number(n).toLocaleString("ru-RU"); }
+  function fmtUsdt(n){ return Number(n).toLocaleString("ru-RU", { maximumFractionDigits: 6 }) + " USDT"; }
+
+  function setStatus(text, kind){
+    statusEl.textContent = text;
+    statusEl.className = "status show " + (kind || "warn");
+  }
+
+  function setLoading(btn, on){
+    if (!btn) return;
+    if (on){
+      btn.classList.add("loading");
+      btn.dataset._txt = btn.textContent;
+      btn.textContent = "Отправка…";
+      btn.disabled = true;
+    } else {
+      btn.classList.remove("loading");
+      btn.textContent = btn.dataset._txt || btn.textContent;
+      btn.disabled = false;
+    }
+  }
+
+  function hideAll(){
+    blockEmail.classList.remove("show");
+    blockAlfa.classList.remove("show");
+    blockSber.classList.remove("show");
+    blockOther.classList.remove("show");
+    if (blockCheckOnly) blockCheckOnly.classList.remove("show");
+  }
+
+  function normalizeBankName(s){
+    return (s || "")
+      .toLowerCase()
+      .replace(/ё/g, "е")
+      .replace(/[\u2013\u2014]/g, "-")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function bankMode(){
+    const n = normalizeBankName(bankSelect.value);
+
+    const isTbank =
+      n.includes("т-банк") || n.includes("т банк") || n.includes("t-bank") || n.includes("t bank") ||
+      n.includes("тинькофф");
+
+    const isSovcom = n.includes("совком") || n.includes("sovcom");
+    const isRaif = n.includes("райфф") || n.includes("raiffe") || n.includes("raif");
+    const isOtp = n.includes("отп");
+    const isPochtabank = n.includes("почта");
+    const isUralsib = n.includes("уралсиб");
+    const isRuStd = n.includes("русский стандарт") || (n.includes("стандарт") && n.includes("русский"));
+    const isPsb = n.includes("псб");
+
+    if (isTbank || isSovcom || isRaif || isOtp || isPochtabank || isUralsib || isRuStd || isPsb) return "EMAIL";
+
+    if (n.includes("альфа") || n.includes("alfa") || n.includes("alpha")) return "ALFA";
+    if (n.includes("сбер") || n.includes("sber")) return "SBER";
+
+    return "OTHER";
+  }
+
+  function otherNeedsPdf(){
+    const n = normalizeBankName(bankSelect.value);
+
+    const isVtb = n === "втб" || n.includes("втб");
+    const isGazprom = n.includes("газпром");
+    const isMts = n.includes("мтс");
+    const isOtherBank = n.includes("другой банк") || (n === "другой");
+
+    return !!(isVtb || isGazprom || isMts || isOtherBank);
+  }
+
+  function onBankChange(){
+    // ✅ ДОБАВЛЕНО: если "только чек" — банк не нужен, всегда EMAIL
+    if (CHECK_ONLY){
+      hideAll();
+      if (blockCheckOnly) blockCheckOnly.classList.add("show");
+      setStatus("Прикрепите чек (фото) и отправьте на проверку.", "warn");
+      return;
+    }
+
+    hideAll();
+    const mode = bankMode();
+    if (mode === "EMAIL") { applyEmailCfg(); blockEmail.classList.add("show"); }
+    else if (mode === "ALFA") blockAlfa.classList.add("show");
+    else if (mode === "SBER") blockSber.classList.add("show");
+    else {
+      blockOther.classList.add("show");
+      if (otherPdfWrap){
+        const showPdf = otherNeedsPdf();
+        otherPdfWrap.classList.toggle("hide", !showPdf);
+        if (!showPdf){
+          const f = document.getElementById("otherPdf1");
+          if (f) f.value = "";
+          const nm = document.getElementById("otherPdf1Name");
+          if (nm) nm.textContent = "Файл не выбран";
+        }
+      }
+    }
+    setStatus("Выберите подтверждение и отправьте на проверку.", "warn");
+  }
+
+  function renderHeader(rub, rt, usdt){
+    oidEl.textContent = id || "—";
+    amountEl.textContent = (rub > 0) ? fmtRub(rub) : "—";
+    rateEl.textContent   = (rt > 0)  ? fmtRate(rt) : "—";
+    const usdtVal = usdt > 0 ? usdt : (rub > 0 && rt > 0 ? rub / rt : 0);
+    usdtEl.textContent   = usdtVal > 0 ? fmtUsdt(usdtVal) : "—";
+  }
+
+  function initHeader(){
+    renderHeader(amountRub, rate, 0);
+    // Если параметры не пришли в URL — подгружаем с сервера
+    if (id && (amountRub <= 0 || rate <= 0)) {
+      fetch(WORKER_BASE + "/api/public/offer_info?id=" + encodeURIComponent(id), {
+        headers: AUTH_HEADERS, cache: "no-store"
+      })
+      .then(r => r.json()).catch(() => null)
+      .then(d => {
+        if (!d || !d.ok) return;
+        renderHeader(Number(d.amountRub || 0), Number(d.rate || 0), Number(d.amountUsdt || 0));
+      });
+    }
+  }
+
+  function goBack(){
+    const qs = new URLSearchParams({
+      id,
+      amountRub: String(amountRub),
+      rate: String(rate),
+      method: String(method),
+      reserveId
+    });
+    window.location.href = "./crossflag-buy-order.html?" + qs.toString();
+  }
+  document.getElementById("backBtn").onclick = (e) => { e.preventDefault(); goBack(); };
+
+  async function markPaid(){
+    const res = await fetch(WORKER_BASE + "/api/public/mark_paid", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json", ...AUTH_HEADERS },
+      body: JSON.stringify({ id, reserveId })
+    });
+
+    const txt = await res.text();
+    let j; try{ j = JSON.parse(txt); }catch{ j = null; }
+    if (!res.ok || !j || !j.ok){
+      throw new Error((j && j.error) ? j.error : ("HTTP " + res.status + ": " + txt.slice(0,200)));
+    }
+    return j;
+  }
+
+  // ── Antifrod: returns {photo, video} files (null if not required/missing) ──
+
+  async function submitMultipart({ bankFrom, proofType, alphaLink, pdf1, pdf2, video, photo }){
+    const fd = new FormData();
+    fd.set("id", id);
+    fd.set("reserveId", reserveId);
+
+    // ✅ ДОБАВЛЕНО: в режиме "только чек" банк не отправляем (или ставим заглушку)
+    fd.set("bankFrom", CHECK_ONLY ? "—" : (bankFrom || ""));
+
+    fd.set("proofType", proofType || "OTHER");
+    if (alphaLink) fd.set("alphaLink", alphaLink);
+
+    if (pdf1) fd.set("pdf1", pdf1, pdf1.name || "check.pdf");
+    if (pdf2) fd.set("pdf2", pdf2, pdf2.name || "stmt.pdf");
+    if (video) fd.set("video", video, video.name || "video.mp4");
+    if (photo) fd.set("photo", photo, photo.name || "check.jpg");
+
+    let res;
+    try{
+      res = await fetch(WORKER_BASE + "/api/public/submit_proof", { method:"POST", headers: AUTH_HEADERS, body: fd });
+    }catch(e){
+      throw new Error("Failed to fetch: воркер недоступен/не тот WORKER_BASE/лимит размера файла");
+    }
+
+    const txt = await res.text();
+    let j; try{ j = JSON.parse(txt); }catch{ j = null; }
+
+    if (!res.ok || !j || !j.ok){
+      throw new Error((j && j.error) ? j.error : ("HTTP " + res.status + ": " + txt.slice(0,200)));
+    }
+    return j;
+  }
+
+  function goCheck(){
+    window.location.href = "./check.html?" + new URLSearchParams({ id, reserveId }).toString();
+  }
+
+  const BANKS = ["Сбербанк","ВТБ","Газпромбанк","Альфа-Банк","Т-Банк (Тинькофф)","Совкомбанк","Райффайзенбанк","ОТП Банк","Почта Банк","ПСБ Банк","Уралсиб","Русский стандарт","МТС Банк","Другой банк"];
+
+  function normalizeBankName2(s){
+    return String(s||"").toLowerCase()
+      .replace(/ё/g,"е")
+      .replace(/[^a-zа-я0-9]+/g," ")
+      .replace(/\s+/g," ")
+      .trim();
+  }
+
+  function attachBankDropdown(inputEl, ddEl, list, onPick){
+    let open = false;
+
+    function setActiveByValue() {
+      const v = normalizeBankName2(inputEl.value);
+      const items = Array.from(ddEl.querySelectorAll(".bankItem"));
+      if (!items.length) return;
+
+      let best = -1;
+      for (let i = 0; i < items.length; i++){
+        const t = normalizeBankName2(items[i].textContent || "");
+        if (t === v) { best = i; break; }
+      }
+      items.forEach(x => x.classList.remove("active"));
+      if (best >= 0) items[best].classList.add("active");
+    }
+
+    function render(q, forceAll = false){
+      const nq = normalizeBankName2(q);
+      ddEl.innerHTML = "";
+
+      const items = (forceAll || !nq)
+        ? list.slice(0, 60)
+        : list.filter(b => normalizeBankName2(b).includes(nq)).slice(0, 60);
+
+      for (const b of items){
+        const d = document.createElement("div");
+        d.className = "bankItem";
+        d.textContent = b;
+        d.onclick = () => {
+          inputEl.value = b;
+          ddEl.style.display = "none";
+          open = false;
+          if (typeof onPick === "function") onPick();
+        };
+        ddEl.appendChild(d);
+      }
+
+      ddEl.style.display = items.length ? "block" : "none";
+      open = items.length > 0;
+      setActiveByValue();
+    }
+
+    function openAll(){
+      render("", true);
+    }
+
+    inputEl.addEventListener("focus", () => {
+      try { inputEl.select(); } catch(e) {}
+      openAll();
+    });
+
+    inputEl.addEventListener("click", () => {
+      openAll();
+    });
+
+    inputEl.addEventListener("input", () => {
+      render(inputEl.value, false);
+      if (typeof onPick === "function") onPick();
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest(".bankSel")) {
+        ddEl.style.display = "none";
+        open = false;
+      }
+    });
+
+    inputEl.addEventListener("keydown", (e) => {
+      if (!open) return;
+      const items = Array.from(ddEl.querySelectorAll(".bankItem"));
+      if (!items.length) return;
+
+      let idx = items.findIndex(x => x.classList.contains("active"));
+      if (idx < 0) idx = 0;
+
+      if (e.key === "ArrowDown") { e.preventDefault(); idx = Math.min(items.length - 1, idx + 1); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); idx = Math.max(0, idx - 1); }
+      else if (e.key === "Enter") {
+        e.preventDefault();
+        items[idx].click();
+        return;
+      } else return;
+
+      items.forEach(x => x.classList.remove("active"));
+      items[idx].classList.add("active");
+      items[idx].scrollIntoView({ block:"nearest" });
+    });
+
+    const field = document.getElementById("bankField");
+    if (field){
+      field.addEventListener("mousedown", (e) => {
+        if (e.target === field || e.target.closest(".bankChevron")) {
+          e.preventDefault();
+          inputEl.focus();
+          openAll();
+        }
+      });
+    }
+  }
+
+  function initBanks(){
+    // Банк не запрашиваем — всё идёт через единый блок (PDF + фото)
+  }
+
+  function wireFile(inputId, btnId, nameId){
+    const inp = document.getElementById(inputId);
+    const btn = document.getElementById(btnId);
+    const name = document.getElementById(nameId);
+    if (!inp || !btn || !name) return;
+
+    const upd = () => {
+      const f = inp.files && inp.files[0] ? inp.files[0] : null;
+      name.textContent = f ? f.name : "Файл не выбран";
+    };
+
+    btn.addEventListener("click", () => inp.click());
+    inp.addEventListener("change", upd);
+    upd();
+  }
+
+  const cancelModal = document.getElementById("cancelModal");
+  const cancelModalClose = document.getElementById("cancelModalClose");
+  const proofModal = document.getElementById("proofModal");
+  const proofFileInput = document.getElementById("proofFileInput");
+  const proofPreview = document.getElementById("proofPreview");
+  const proofPlaceholder = document.getElementById("proofPlaceholder");
+  const proofDropzone = document.getElementById("proofDropzone");
+  const proofSendBtn = document.getElementById("proofSendBtn");
+  const proofSkipBtn = document.getElementById("proofSkipBtn");
+  const proofReasonText = document.getElementById("proofReasonText");
+  const proofStatusEl = document.getElementById("proofStatus");
+
+  let _cancelReason = "";
+  let _cancelId = "";
+  let _proofFile = null;
+
+  function removeFromActiveDeals(){
+    try{
+      const KEY = "cf_active_deals";
+      const deals = JSON.parse(localStorage.getItem(KEY) || "[]");
+      const next = (Array.isArray(deals) ? deals : []).filter(d => !(d && d.type === "BUY" && d.id === id));
+      localStorage.setItem(KEY, JSON.stringify(next));
+    }catch(e){}
+  }
+
+  function showProofStatus(text, kind){
+    proofStatusEl.textContent = text;
+    proofStatusEl.className = "proofStatus show " + (kind || "warn");
+  }
+
+  // drag & drop
+  proofDropzone.addEventListener("dragover", e => { e.preventDefault(); proofDropzone.classList.add("dragover"); });
+  proofDropzone.addEventListener("dragleave", () => proofDropzone.classList.remove("dragover"));
+  proofDropzone.addEventListener("drop", e => {
+    e.preventDefault();
+    proofDropzone.classList.remove("dragover");
+    const f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith("image/")) handleProofFile(f);
+  });
+
+  proofFileInput.addEventListener("change", () => {
+    const f = proofFileInput.files[0];
+    if (f) handleProofFile(f);
+  });
+
+  function handleProofFile(f){
+    if (f.size > 10 * 1024 * 1024){ showProofStatus("Файл слишком большой (макс 10 МБ)", "bad"); return; }
+    _proofFile = f;
+    proofPreview.src = URL.createObjectURL(f);
+    proofPreview.style.display = "block";
+    proofPlaceholder.style.display = "none";
+    proofDropzone.classList.add("hasFile");
+    proofSendBtn.disabled = false;
+    proofStatusEl.className = "proofStatus";
+  }
+
+  async function cancelWithReason(reason){
+    cancelModal.style.display = "none";
+    const isFault = (reason === "Не хочу");
+
+    // 1. Отменяем бронь
+    let cancelData = {};
+    try{
+      if (id && reserveId){
+        const res = await fetch(WORKER_BASE + "/api/public/cancel_reserve", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json", ...AUTH_HEADERS },
+          body: JSON.stringify({ id, reserveId, cancelReason: reason, needsProof: !isFault })
+        });
+        const txt = await res.text();
+        try{ cancelData = JSON.parse(txt); }catch(_){}
+      }
+    }catch(e){}
+
+    // 2. Если "не виноват" — показываем модалку загрузки скриншота
+    if (!isFault){
+      _cancelReason = reason;
+      _cancelId = cancelData.cancelId || id || "";
+      _proofFile = null;
+      proofReasonText.textContent = reason;
+      proofPreview.style.display = "none";
+      proofPlaceholder.style.display = "";
+      proofDropzone.classList.remove("hasFile");
+      proofSendBtn.disabled = true;
+      proofFileInput.value = "";
+      proofStatusEl.className = "proofStatus";
+      proofModal.style.display = "block";
+      return;
+    }
+
+    // 3. "Не хочу" — сразу уходим
+    removeFromActiveDeals();
+    window.location.href = "./buy.html";
+  }
+
+  // Отправить скриншот
+  proofSendBtn.onclick = async () => {
+    if (!_proofFile){ showProofStatus("Выберите скриншот", "bad"); return; }
+    proofSendBtn.disabled = true;
+    proofSkipBtn.disabled = true;
+    showProofStatus("Загрузка...", "warn");
+
+    try{
+      const fd = new FormData();
+      fd.append("screenshot", _proofFile);
+      fd.append("cancelId", _cancelId);
+      fd.append("orderId", id || "");
+      fd.append("reserveId", reserveId || "");
+      fd.append("cancelReason", _cancelReason);
+
+      const res = await fetch(WORKER_BASE + "/api/public/cancel_proof", {
+        method: "POST",
+        headers: AUTH_HEADERS,
+        body: fd
+      });
+      const j = await res.json().catch(()=>({}));
+
+      if (res.ok && (j.ok || j.success)){
+        showProofStatus("Скриншот отправлен. Отмена не повлияет на ваш рейтинг.", "ok");
+      } else {
+        showProofStatus("Отправлено (сервер обработает позже).", "ok");
+      }
+    }catch(e){
+      showProofStatus("Отправлено (сервер обработает позже).", "ok");
+    }
+
+    setTimeout(()=>{
+      removeFromActiveDeals();
+      window.location.href = "./buy.html";
+    }, 1500);
+  };
+
+  // Пропустить — отмена засчитается
+  proofSkipBtn.onclick = async () => {
+    proofSkipBtn.disabled = true;
+    proofSendBtn.disabled = true;
+
+    try{
+      await fetch(WORKER_BASE + "/api/public/cancel_skip_proof", {
+        method: "POST",
+        headers: { "Content-Type":"application/json", ...AUTH_HEADERS },
+        body: JSON.stringify({ cancelId: _cancelId, orderId: id, reserveId })
+      });
+    }catch(_){}
+
+    removeFromActiveDeals();
+    window.location.href = "./buy.html";
+  };
+
+  // ── Cancel flow: warning → reason modal → cancel ──
+  const cancelWarningEl = document.getElementById("cancelWarning");
+  const cwBtnBack = document.getElementById("cwBtnBack");
+  const cwBtnProceed = document.getElementById("cwBtnProceed");
+
+  document.getElementById("cancelBtn").onclick = () => {
+    cancelWarningEl.classList.add("show");
+  };
+
+  cwBtnBack.onclick = () => {
+    cancelWarningEl.classList.remove("show");
+  };
+
+  cwBtnProceed.onclick = () => {
+    cancelWarningEl.classList.remove("show");
+    cancelModal.style.display = "flex";
+  };
+
+  cancelModalClose.onclick = () => { cancelModal.style.display = "none"; };
+  document.querySelectorAll(".cancelReasonBtn").forEach(btn => {
+    btn.onclick = () => cancelWithReason(btn.getAttribute("data-reason"));
+  });
+
+  const btnEmailSent = document.getElementById("btnEmailSent");
+  const btnSendAlfa  = document.getElementById("btnSendAlfa");
+  const btnSendSber  = document.getElementById("btnSendSber");
+  const btnSendOther = document.getElementById("btnSendOther");
+  const btnSendCheckOnly = document.getElementById("btnSendCheckOnly");
+
+  // ✅ Режим «Только чек»: отправка PDF чека + скриншота операции
+  if (btnSendCheckOnly){
+    btnSendCheckOnly.onclick = async () => {
+      setLoading(btnSendCheckOnly, true);
+      try{
+        if (!id || !reserveId) throw new Error("Missing id / reserveId");
+        await markPaid();
+
+        const pdf = document.getElementById("checkOnlyPdf").files[0];
+        const shot = document.getElementById("checkOnlyShot").files[0];
+        if (!pdf) throw new Error("Выбери PDF чек");
+        if (!shot) throw new Error("Приложи фото на фоне сделки");
+
+        await submitMultipart({ bankFrom: "—", proofType: "CHECK_ONLY_PDF_SCREENSHOT", alphaLink: "", pdf1: pdf, photo: shot });
+        setStatus("Готово ✅ Отправлено на проверку.", "ok");
+        goCheck();
+      }catch(e){
+        setStatus("Ошибка: " + (e.message || String(e)), "bad");
+      }finally{
+        setLoading(btnSendCheckOnly, false);
+      }
+    };
+  }
+
+  // Скрытые кнопки (банк-специфичные блоки убраны) — handler'ы не нужны
+
+  (function(){
+    initHeader();
+    initBanks();
+
+    wireFile("checkOnlyPdf", "checkOnlyPdfBtn", "checkOnlyPdfName");
+    wireFile("checkOnlyShot", "checkOnlyShotBtn", "checkOnlyShotName");
+
+    if (!id || !reserveId){
+      setStatus("Ошибка: Missing id / reserveId", "bad");
+    }
+  })();
+
+// === HISTORY: записываем покупку в историю (один раз) ===
+(() => {
+  try{
+    const p = new URLSearchParams(location.search);
+    const id = (p.get("id") || "").trim();
+    if (!id) return;
+
+    const amountRub = Number(p.get("amountRub"));
+    const url = location.pathname + location.search;
+
+    const KEY_H = "cf_deals_history";
+    const raw = localStorage.getItem(KEY_H);
+    const arr = raw ? JSON.parse(raw) : [];
+    const history = Array.isArray(arr) ? arr : [];
+
+    // не дублируем по type+id
+    const exists = history.some(x => x && x.type === "BUY" && String(x.id || "") === id);
+    if (exists) return;
+
+    history.unshift({
+      type: "BUY",
+      id,
+      amount: Number.isFinite(amountRub) ? amountRub : null,
+      currency: "RUB",
+      ts: Date.now(),
+      url
+    });
+
+    localStorage.setItem(KEY_H, JSON.stringify(history.slice(0, 200)));
+  }catch(e){}
+})();
+(() => {
+  const p = new URLSearchParams(location.search);
+  const id = (p.get("id") || "").trim();
+
+  let reserveId = (
+    (p.get("reserveId") || "").trim() ||
+    (p.get("reserveid") || "").trim() ||
+    (p.get("reservedId") || "").trim() ||
+    (p.get("rid") || "").trim()
+  );
+  try{
+    if (!reserveId && id){
+      reserveId =
+        (localStorage.getItem("cf_reserve_buy_" + String(id)) || "").trim() ||
+        (localStorage.getItem("cf_reserve_" + String(id)) || "").trim();
+    }
+    if (!reserveId && id){
+      const deals = JSON.parse(localStorage.getItem("cf_active_deals") || "[]");
+      const hit = Array.isArray(deals) ? deals.find(d => d && d.type === "BUY" && String(d.id||"") === String(id)) : null;
+      if (hit && hit.reserveId) reserveId = String(hit.reserveId).trim();
+    }
+  }catch(_){ }
+
+  if (!id || !reserveId) return;
+
+  const KEY = "cf_active_deals";
+  const deals = JSON.parse(localStorage.getItem(KEY) || "[]");
+
+  const url = location.pathname + location.search;
+
+  const next = (Array.isArray(deals) ? deals : []).filter(d => !(d && d.type === "BUY" && d.id === id));
+  next.unshift({
+    type: "BUY",
+    id,
+    reserveId,
+    url,
+    ts: Date.now()
+  });
+
+  localStorage.setItem(KEY, JSON.stringify(next.slice(0, 50)));
+})();
+</script>
+<script src="./resume-helper.js"></script>
+<script>
+(function(){
+  if (!window.CrossflagResume) return;
+
+  function getState(){
+    try{
+      const p = new URLSearchParams(location.search);
+      const id = String(p.get("id") || "").trim();
+      let reserveId = String(
+        p.get("reserveId") ||
+        p.get("reserveid") ||
+        p.get("reservedId") ||
+        p.get("rid") ||
+        ""
+      ).trim();
+
+      if (!reserveId && id){
+        reserveId =
+          String(localStorage.getItem("cf_reserve_buy_" + id) || "").trim() ||
+          String(localStorage.getItem("cf_reserve_" + id) || "").trim();
+      }
+
+      if (!reserveId && id){
+        const deals = JSON.parse(localStorage.getItem("cf_active_deals") || "[]");
+        const hit = Array.isArray(deals)
+          ? deals.find(d => d && String(d.type || "").toUpperCase() === "BUY" && String(d.id || "") === id)
+          : null;
+        if (hit && hit.reserveId) reserveId = String(hit.reserveId).trim();
+      }
+
+      return { id, reserveId };
+    }catch(_){
+      return { id:"", reserveId:"" };
+    }
+  }
+
+  function save(){
+    const { id, reserveId } = getState();
+    if (!id || !reserveId) return;
+    window.CrossflagResume.upsertBuy({
+      id,
+      reserveId,
+      url: location.pathname + location.search + location.hash
+    });
+  }
+
+  save();
+  window.addEventListener("pagehide", save);
+  window.addEventListener("beforeunload", save);
+  document.addEventListener("visibilitychange", function(){
+    if (document.visibilityState === "hidden") save();
+  });
+})();
+</script>
+</body>
+</html>

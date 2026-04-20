@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Crossflag · Вывод</title>
+
+  <style>
+    :root{
+      --bg:#071022;
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+      --muted-2:rgba(233,240,255,.72);
+
+      --card: rgba(15, 26, 48, 0.52);
+      --border: rgba(255,255,255,.12);
+      --border-2: rgba(255,255,255,.10);
+
+      --btn:#2d5bff;
+      --btn2:#1f3fb3;
+
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+
+      --shadow: 0 18px 50px rgba(0,0,0,.45);
+      --radius: 20px;
+
+      --field-bg: rgba(0,0,0,.22);
+      --field-border: rgba(255,255,255,.14);
+
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+
+    *,*::before,*::after{ box-sizing:border-box; }
+    html,body{ height:100%; }
+
+    body{
+      margin:0;
+      color:var(--text);
+      background:#071022;
+      overflow-y:auto;
+      overflow-x:hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+    }
+
+    .overlay{
+      position:fixed;
+      inset:0;
+      z-index:-2;
+      background:
+        radial-gradient(1100px 700px at 50% -220px, rgba(45,91,255,.22), rgba(0,0,0,0) 65%),
+        radial-gradient(900px 600px at 85% 85%, rgba(245,158,11,.10), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(7,16,34,.84), rgba(7,16,34,.94));
+      pointer-events:none;
+    }
+
+    .wrap{
+      max-width:980px;
+      margin:0 auto;
+      padding: calc(18px + env(safe-area-inset-top)) 16px calc(22px + env(safe-area-inset-bottom)) 16px;
+    }
+
+    .topRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:14px;
+      flex-wrap:wrap;
+    }
+
+    .title{
+      font-weight:1000;
+      font-size:16px;
+      letter-spacing:.2px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .liveDot{
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      background: rgba(45,91,255,.95);
+      box-shadow: 0 0 0 0 rgba(45,91,255,.35);
+      animation: dotPulse 1.25s ease-in-out infinite;
+      flex: 0 0 auto;
+    }
+
+    @keyframes dotPulse{
+      0%{ box-shadow: 0 0 0 0 rgba(45,91,255,.35); transform: scale(1); }
+      60%{ box-shadow: 0 0 0 12px rgba(45,91,255,0); transform: scale(1.05); }
+      100%{ box-shadow: 0 0 0 0 rgba(45,91,255,0); transform: scale(1); }
+    }
+
+    .card{
+      position:relative;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      overflow:hidden;
+      margin-bottom:14px;
+    }
+
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:-60px;
+      background:
+        radial-gradient(520px 180px at 35% 20%, rgba(45,91,255,.18), rgba(0,0,0,0) 60%),
+        radial-gradient(520px 180px at 75% 90%, rgba(34,197,94,.10), rgba(0,0,0,0) 60%);
+      filter: blur(18px);
+      pointer-events:none;
+      z-index:0;
+    }
+
+    .card > *{ position:relative; z-index:1; }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:10px;
+    }
+
+    @media(max-width:760px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .cell{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      overflow:hidden;
+    }
+
+    .label{ color:var(--muted); font-size:12px; font-weight:950; margin-bottom:6px; }
+    .value{ font-weight:1000; font-size:16px; word-break:break-word; overflow-wrap:anywhere; }
+
+    .fieldLabel{
+      display:block;
+      margin: 10px 0 6px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:950;
+    }
+
+    input[type="text"], input[type="number"]{
+      width:100%;
+      max-width:100%;
+      border-radius:14px;
+      border:1px solid var(--field-border);
+      background: var(--field-bg);
+      color: var(--text);
+      padding:12px 12px;
+      outline:none;
+      font-weight:900;
+      font-size:14px;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.06),
+        0 8px 18px rgba(0,0,0,.18);
+      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+
+    input[type="text"]:focus, input[type="number"]:focus{
+      border-color: rgba(45,91,255,.55);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.08),
+        0 0 0 3px rgba(45,91,255,.18),
+        0 12px 24px rgba(0,0,0,.22);
+      background: rgba(0,0,0,.28);
+    }
+
+    input::placeholder{
+      color: rgba(159,176,212,.65);
+      font-weight:850;
+    }
+
+    .networkTitle{
+      margin:12px 0 8px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:950;
+    }
+
+    .networkGrid{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:10px;
+    }
+
+    @media(max-width:640px){
+      .networkGrid{ grid-template-columns:1fr; }
+    }
+
+    .networkCard{
+      position:relative;
+      display:flex;
+      align-items:flex-start;
+      gap:12px;
+      width:100%;
+      text-align:left;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      padding:14px 14px 13px;
+      background: rgba(255,255,255,.035);
+      color:var(--text);
+      cursor:pointer;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+      transition: border-color .18s ease, background .18s ease, transform .18s ease, box-shadow .18s ease;
+    }
+
+    .networkCard:hover{
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.05);
+      border-color: rgba(255,255,255,.18);
+    }
+
+    .networkCard.active{
+      border-color: rgba(45,91,255,.6);
+      background: linear-gradient(180deg, rgba(45,91,255,.14), rgba(255,255,255,.04));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 0 0 1px rgba(45,91,255,.16);
+    }
+
+    .radioDot{
+      position:relative;
+      width:18px;
+      height:18px;
+      border-radius:999px;
+      border:1.5px solid rgba(255,255,255,.28);
+      background: rgba(255,255,255,.05);
+      flex:0 0 auto;
+      margin-top:2px;
+    }
+
+    .networkCard.active .radioDot{
+      border-color: rgba(45,91,255,.75);
+      background: rgba(45,91,255,.12);
+    }
+
+    .networkCard.active .radioDot::after{
+      content:"";
+      position:absolute;
+      inset:4px;
+      border-radius:999px;
+      background: #5d84ff;
+      box-shadow: 0 0 10px rgba(93,132,255,.45);
+    }
+
+    .networkBody{ min-width:0; }
+    .networkName{
+      font-size:15px;
+      font-weight:1000;
+      line-height:1.2;
+      margin-bottom:6px;
+    }
+
+    .networkMeta{
+      color:var(--muted-2);
+      font-size:12px;
+      font-weight:850;
+      line-height:1.45;
+    }
+
+    .networkDesc{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.04);
+      color: rgba(233,240,255,.86);
+      font-size:12px;
+      font-weight:850;
+      line-height:1.45;
+    }
+
+    .hint{
+      color: rgba(233,240,255,.78);
+      font-size:12px;
+      font-weight:850;
+      line-height:1.45;
+      margin-top:10px;
+    }
+
+    .btnRow{
+      margin-top:12px;
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+    }
+
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:12px 18px;
+      background: linear-gradient(180deg, var(--btn), var(--btn2));
+      color: var(--text);
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow: 0 10px 26px rgba(0,0,0,.30);
+      position:relative;
+      min-width: 190px;
+    }
+
+    .btn:hover{ filter: brightness(1.06); }
+    .btn:disabled{ opacity:.7; cursor:not-allowed; box-shadow:none; }
+
+    .btnGhost{
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:14px;
+      padding:12px 18px;
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow:none;
+      min-width: 170px;
+    }
+
+    .btnGhost:hover{ background: rgba(255,255,255,.09); }
+
+    .status{
+      display:none;
+      margin-top:12px;
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      font-size:12px;
+      font-weight:900;
+      line-height:1.4;
+      color: rgba(233,240,255,.92);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      white-space:pre-wrap;
+    }
+
+    .status.show{ display:block; }
+    .status.ok{ border-color: rgba(34,197,94,.40); background: rgba(34,197,94,.10); }
+    .status.bad{ border-color: rgba(239,68,68,.45); background: rgba(239,68,68,.12); }
+    .status.warn{ border-color: rgba(245,158,11,.45); background: rgba(245,158,11,.10); }
+
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+
+    .loading{
+      opacity:.85;
+      pointer-events:none;
+    }
+
+    .loading::after{
+      content:"";
+      position:absolute;
+      right:14px;
+      top:50%;
+      width:16px;
+      height:16px;
+      margin-top:-8px;
+      border-radius:999px;
+      border:2px solid rgba(255,255,255,.45);
+      border-top-color: transparent;
+      animation: spin .85s linear infinite;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="overlay"></div>
+
+  <div class="wrap">
+    <div class="topRow">
+      <div class="title"><span class="liveDot"></span> Crossflag Wallet · Вывод USDT</div>
+      <button class="btnGhost" id="backBtn" type="button">Назад</button>
+    </div>
+
+    <div class="card">
+      <div class="grid">
+        <div class="cell">
+          <div class="label">Доступно</div>
+          <div class="value" id="avail">—</div>
+        </div>
+        <div class="cell">
+          <div class="label">Комиссия</div>
+          <div class="value" id="fee">1.50 USDT</div>
+        </div>
+        <div class="cell">
+          <div class="label">К получению</div>
+          <div class="value" id="net">—</div>
+        </div>
+      </div>
+
+      <div class="networkTitle">Сеть вывода</div>
+      <div class="networkGrid" id="networkGrid">
+        <button class="networkCard active" type="button" data-network="TRON">
+          <span class="radioDot"></span>
+          <span class="networkBody">
+            <span class="networkName">TRC20 (Tron)</span>
+            <span class="networkMeta">Комиссия 1.5 USDT<br>Минимальный вывод 1 USDT<br>Поступление ≈ 3 мин</span>
+          </span>
+        </button>
+
+        <button class="networkCard" type="button" data-network="ETHEREUM">
+          <span class="radioDot"></span>
+          <span class="networkBody">
+            <span class="networkName">ERC20 (Ethereum)</span>
+            <span class="networkMeta">Комиссия 2.141098 USDT<br>Минимальный вывод 1 USDT<br>Поступление ≈ 3 мин</span>
+          </span>
+        </button>
+
+        <button class="networkCard" type="button" data-network="SOLANA">
+          <span class="radioDot"></span>
+          <span class="networkBody">
+            <span class="networkName">SOLANA</span>
+            <span class="networkMeta">Комиссия 0.8902 USDT<br>Минимальный вывод 2 USDT<br>Поступление ≈ 3 мин</span>
+          </span>
+        </button>
+
+        <button class="networkCard" type="button" data-network="BSC">
+          <span class="radioDot"></span>
+          <span class="networkBody">
+            <span class="networkName">BEP20 (BNB Smart Chain)</span>
+            <span class="networkMeta">Комиссия 1.5 USDT<br>Минимальный вывод 1 USDT<br>Поступление ≈ 3 мин</span>
+          </span>
+        </button>
+      </div>
+
+      <div class="networkDesc" id="networkDesc">Сеть Tron (TRC20). Низкая комиссия и быстрое зачисление. Минимальная сумма вывода: 1.00 USDT.</div>
+
+      <div style="margin-top:10px;">
+        <label class="fieldLabel" id="addrLabel">Адрес получателя (USDT TRC20)</label>
+        <input id="toAddr" type="text" placeholder="вставь TRC20-адрес" />
+      </div>
+
+      <div style="margin-top:10px;">
+        <label class="fieldLabel">Сумма (USDT)</label>
+        <input id="amt" type="number" inputmode="decimal" placeholder="например 10" />
+      </div>
+
+      <div class="hint">
+        Все выводы подтверждаются вручную администратором.<br>
+        После отправки заявки она появится в админке.
+      </div>
+
+      <div class="status" id="status"></div>
+
+      <div class="btnRow">
+        <button class="btnGhost" id="cancelBtn" type="button">Отмена</button>
+        <button class="btn" id="sendBtn" type="button">Создать заявку</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const WORKER_BASE = "https://api.crossflag.org";
+  const AUTH_URL = "./auth.html";
+  const BACK_URL = "./qr.html";
+  const USER_TOKEN_KEY = "user_token";
+
+  const NETWORKS = {
+    TRON: {
+      api: "TRON",
+      fee: 1.5,
+      min: 1,
+      addrLabel: "Адрес получателя (USDT TRC20)",
+      placeholder: "вставь TRC20-адрес",
+      desc: "Сеть Tron (TRC20). Низкая комиссия и быстрое зачисление. Минимальная сумма вывода: 1.00 USDT."
+    },
+    ETHEREUM: {
+      api: "ETHEREUM",
+      fee: 2.141098,
+      min: 1,
+      addrLabel: "Адрес получателя (USDT ERC20)",
+      placeholder: "вставь ERC20-адрес",
+      desc: "Сеть Ethereum (ERC20). Подходит для кошельков и бирж, которые принимают USDT ERC20. Минимальная сумма вывода: 1.00 USDT."
+    },
+    SOLANA: {
+      api: "SOLANA",
+      fee: 0.8902,
+      min: 2,
+      addrLabel: "Адрес получателя (USDT SOL)",
+      placeholder: "вставь адрес Solana",
+      desc: "Сеть Solana. Самая низкая комиссия и быстрое подтверждение. Минимальная сумма вывода: 2.00 USDT."
+    },
+    BSC: {
+      api: "BSC",
+      fee: 1.5,
+      min: 1,
+      addrLabel: "Адрес получателя (USDT BEP20)",
+      placeholder: "вставь BEP20-адрес",
+      desc: "Сеть BNB Smart Chain (BEP20). Удобный вариант для вывода USDT на кошельки BEP20. Минимальная сумма вывода: 1.00 USDT."
+    }
+  };
+
+  let currentNetwork = "TRON";
+
+  function getUserToken(){
+    try { return (localStorage.getItem(USER_TOKEN_KEY) || "").trim(); } catch { return ""; }
+  }
+
+  function fmtUsdt(x){
+    const n = Number(x);
+    if (!Number.isFinite(n)) return "—";
+    return n.toFixed(2) + " USDT";
+  }
+
+  function parseUsdtStr(s){
+    s = String(s || "").trim().replace(",", ".");
+    const n = Number(s);
+    return Number.isFinite(n) ? n : NaN;
+  }
+
+  async function authMe(){
+    const tok = getUserToken();
+    if (!tok) return null;
+    try{
+      const res = await fetch(WORKER_BASE + "/api/public/auth/me", {
+        method: "GET",
+        headers: { "X-User-Token": tok }
+      });
+      const j = await res.json().catch(()=>null);
+      if (!res.ok || !j || !j.ok) return null;
+      return j.user || null;
+    }catch{
+      return null;
+    }
+  }
+
+  async function fetchBalance(){
+    const tok = getUserToken();
+    if (!tok) return null;
+    try{
+      const res = await fetch(WORKER_BASE + "/api/public/wallet/balance", {
+        method: "GET",
+        headers: { "X-User-Token": tok }
+      });
+      const j = await res.json().catch(()=>null);
+      if (!res.ok || !j || !j.ok) return null;
+      const usdt = parseUsdtStr(j.usdt_trc20);
+      return Number.isFinite(usdt) ? usdt : 0;
+    }catch{
+      return null;
+    }
+  }
+
+  function goAuth(returnUrl){
+    const back = returnUrl || (location.pathname + location.search);
+    try { sessionStorage.setItem("auth_return", back); } catch {}
+    location.href = AUTH_URL + "?return=" + encodeURIComponent(back);
+  }
+
+  const statusEl = document.getElementById("status");
+  const sendBtn = document.getElementById("sendBtn");
+  const availEl = document.getElementById("avail");
+  const feeEl = document.getElementById("fee");
+  const netEl = document.getElementById("net");
+  const amtEl = document.getElementById("amt");
+  const toAddrEl = document.getElementById("toAddr");
+  const addrLabelEl = document.getElementById("addrLabel");
+  const networkDescEl = document.getElementById("networkDesc");
+
+  function setStatus(text, kind){
+    statusEl.textContent = text;
+    statusEl.className = "status show " + (kind || "warn");
+  }
+
+  function setLoading(btn, on){
+    if (!btn) return;
+    if (on){
+      btn.classList.add("loading");
+      btn.dataset._txt = btn.textContent;
+      btn.textContent = "Отправка…";
+      btn.disabled = true;
+    } else {
+      btn.classList.remove("loading");
+      btn.textContent = btn.dataset._txt || btn.textContent;
+      btn.disabled = false;
+    }
+  }
+
+  function updateNet(){
+    const cfg = NETWORKS[currentNetwork];
+    const amt = parseUsdtStr(amtEl.value);
+    if (!Number.isFinite(amt) || amt <= 0){
+      netEl.textContent = "—";
+      return;
+    }
+    const net = Math.max(0, amt - cfg.fee);
+    netEl.textContent = fmtUsdt(net);
+  }
+
+  function renderNetwork(){
+    const cfg = NETWORKS[currentNetwork];
+    feeEl.textContent = fmtUsdt(cfg.fee);
+    addrLabelEl.textContent = cfg.addrLabel;
+    toAddrEl.placeholder = cfg.placeholder;
+    networkDescEl.textContent = cfg.desc;
+    document.querySelectorAll('.networkCard').forEach(card => {
+      card.classList.toggle('active', card.dataset.network === currentNetwork);
+    });
+    updateNet();
+  }
+
+  document.querySelectorAll('.networkCard').forEach(card => {
+    card.addEventListener('click', () => {
+      currentNetwork = card.dataset.network || 'TRON';
+      renderNetwork();
+    });
+  });
+
+  document.getElementById("backBtn").onclick = () => location.href = BACK_URL;
+  document.getElementById("cancelBtn").onclick = () => location.href = BACK_URL;
+  amtEl.addEventListener("input", updateNet);
+  amtEl.addEventListener("change", updateNet);
+
+  sendBtn.onclick = async () => {
+    const u = await authMe();
+    if (!u){
+      goAuth(location.pathname + location.search);
+      return;
+    }
+
+    const cfg = NETWORKS[currentNetwork];
+    const toAddr = (toAddrEl.value || "").trim();
+    const amt = parseUsdtStr(amtEl.value);
+
+    if (!toAddr) { setStatus("Вставь адрес получателя.", "bad"); return; }
+    if (!Number.isFinite(amt) || amt <= 0) { setStatus("Введи корректную сумму.", "bad"); return; }
+    if (amt < cfg.min) { setStatus(`Минимальная сумма вывода для этой сети — ${cfg.min.toFixed(2)} USDT.`, "bad"); return; }
+    if (amt <= cfg.fee) { setStatus(`Сумма должна быть больше комиссии (${cfg.fee.toFixed(2)} USDT).`, "bad"); return; }
+
+    const bal = await fetchBalance();
+    if (bal == null){
+      setStatus("Не удалось получить баланс. Проверь соединение и попробуй ещё раз.", "bad");
+      return;
+    }
+    if (amt > bal + 1e-9){
+      setStatus("Недостаточно средств. Доступно: " + fmtUsdt(bal), "bad");
+      return;
+    }
+
+    setLoading(sendBtn, true);
+    try{
+      const tok = getUserToken();
+      const res = await fetch(WORKER_BASE + "/api/public/withdraw_request", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Token": tok
+        },
+        body: JSON.stringify({
+          amountUsdt: amt,
+          toAddress: toAddr,
+          network: cfg.api
+        })
+      });
+      const j = await res.json().catch(()=>null);
+      if (!res.ok || !j || !j.ok){
+        throw new Error((j && j.error) ? j.error : ("HTTP " + res.status));
+      }
+
+      // ── Anti-fraud: если требуется видео — редирект ──
+      if (j.videoRequired && j.videoDeal) {
+        const qs = new URLSearchParams({
+          wdId: j.id,
+          dealId: j.videoDeal.id || "",
+          dealAmount: String(j.videoDeal.amountRub || ""),
+          dealBank: j.videoDeal.payBank || "",
+        });
+        location.href = "./withdraw-video.html?" + qs.toString();
+        return;
+      }
+
+      setStatus("Заявка создана ✅ Перенаправляем...", "ok");
+      setTimeout(() => { location.href = "./wallet.html"; }, 1500);
+    }catch(e){
+      setStatus("Ошибка: " + (e.message || String(e)), "bad");
+    }finally{
+      setLoading(sendBtn, false);
+    }
+  };
+
+  (async () => {
+    const u = await authMe();
+    if (!u){
+      goAuth(location.pathname + location.search);
+      return;
+    }
+
+    availEl.textContent = "Загрузка…";
+    const bal = await fetchBalance();
+    if (bal == null){
+      availEl.textContent = "—";
+      setStatus("Не удалось загрузить баланс. Обнови страницу.", "warn");
+      renderNetwork();
+      return;
+    }
+    availEl.textContent = fmtUsdt(bal);
+    renderNetwork();
+    setStatus("Заполни реквизиты и создай заявку на вывод.", "warn");
+  })();
+</script>
+</body>
+</html>

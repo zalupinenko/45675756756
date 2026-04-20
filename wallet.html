@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Crossflag · Кошелёк</title>
+  <style>
+    :root{
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+      --card: rgba(15, 26, 48, 0.52);
+      --border: rgba(255,255,255,.12);
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+      --btn:#2d5bff;
+      --btn2:#1f3fb3;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+    *,*::before,*::after{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0; color:var(--text); background:#071022;
+      overflow-x:hidden; overflow-y:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .overlay{
+      position:fixed; inset:0; z-index:-2;
+      background:
+        radial-gradient(1100px 700px at 50% -220px, rgba(45,91,255,.22), rgba(0,0,0,0) 65%),
+        radial-gradient(900px 600px at 85% 85%, rgba(34,197,94,.10), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(7,16,34,.84), rgba(7,16,34,.94));
+      pointer-events:none;
+    }
+    .page{
+      min-height:100svh;
+      display:flex; justify-content:center; align-items:flex-start;
+      padding: calc(16px + env(safe-area-inset-top)) 16px calc(22px + env(safe-area-inset-bottom)) 16px;
+    }
+    .wrap{ width:100%; max-width:980px; }
+    .card{
+      position:relative;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 14px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      overflow:hidden;
+    }
+    .card::before{
+      content:"";
+      position:absolute; inset:-60px; z-index:0;
+      background:
+        radial-gradient(520px 180px at 35% 20%, rgba(45,91,255,.18), rgba(0,0,0,0) 60%),
+        radial-gradient(520px 180px at 75% 90%, rgba(34,197,94,.10), rgba(0,0,0,0) 60%);
+      filter: blur(18px);
+      pointer-events:none;
+    }
+    .card > *{ position:relative; z-index:1; }
+
+    .top{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; flex-wrap:wrap; margin-bottom:12px;
+    }
+    .title{ font-weight:1000; font-size:16px; }
+    .back{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff; font-weight:950;
+      padding:10px 12px; border-radius:999px;
+      cursor:pointer; text-decoration:none; white-space:nowrap;
+    }
+
+    .section{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      margin-bottom:12px;
+      min-width:0;
+    }
+    .sectionTitle{ font-weight:1000; margin-bottom:10px; display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+
+    .row{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    @media(max-width:700px){ .row{ grid-template-columns:1fr; } }
+    .row > div{ min-width:0; }
+
+    select, input{
+      width:100%;
+      max-width:100%;
+      min-width:0;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      color:var(--text);
+      outline:none;
+      font-weight:1000;
+      font-size:15px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      display:block;
+    }
+    input::placeholder{ color: rgba(159,176,212,.65); font-weight:900; }
+
+    .hint{
+      color: rgba(233,240,255,.78);
+      font-size:12px;
+      font-weight:850;
+      line-height:1.45;
+    }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:12px 18px;
+      background: linear-gradient(180deg, var(--btn), var(--btn2));
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow: 0 10px 26px rgba(0,0,0,.30);
+      min-width: 190px;
+      position:relative;
+    }
+    .btnGhost{
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:14px;
+      padding:12px 18px;
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:1000;
+      cursor:pointer;
+      min-width: 190px;
+    }
+    .btn:disabled{ opacity:.7; cursor:not-allowed; box-shadow:none; }
+
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+    .loading{ pointer-events:none; opacity:.88; }
+    .loading::after{
+      content:"";
+      position:absolute;
+      top:50%;
+      right:12px;
+      width:16px;
+      height:16px;
+      margin-top:-8px;
+      border-radius:999px;
+      border:2px solid rgba(255,255,255,.25);
+      border-top-color: rgba(255,255,255,.95);
+      animation: spin .9s linear infinite;
+    }
+
+    .status{
+      margin-top:10px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+      font-weight:950;
+      font-size:13px;
+      white-space:pre-line;
+      display:none;
+    }
+    .status.show{ display:block; }
+    .status.ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.10); }
+    .status.bad{ border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.10); }
+    .status.warn{ border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.10); }
+
+    /* auth modal */
+    .authModalBackdrop{
+      position:fixed; inset:0; z-index:9999;
+      display:none; align-items:center; justify-content:center;
+      padding:16px;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+    }
+    .authModalCard{
+      width:100%; max-width:440px;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(15, 26, 48, 0.86);
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      padding:14px;
+    }
+    .authModalTitle{ font-weight:1000; font-size:16px; margin-bottom:6px; }
+    .authModalText{ color: rgba(233,240,255,.82); font-weight:850; font-size:13px; line-height:1.45; }
+    .authModalActions{ display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; margin-top:12px; }
+  </style>
+</head>
+
+<body>
+  <div class="overlay"></div>
+
+  <div class="page">
+    <div class="wrap">
+      <div class="card">
+        <div class="top">
+          <div class="title">Кошелёк</div>
+          <a class="back" href="./buy.html">← Назад</a>
+        </div>
+
+        <div class="section">
+          <div class="sectionTitle">
+            <span>Данные сделки</span>
+          </div>
+
+          <div class="row">
+            <div>
+              <div class="hint" style="margin-bottom:6px;">Сумма к оплате (RUB)</div>
+              <input id="amountRubView" disabled />
+            </div>
+            <div>
+              <div class="hint" style="margin-bottom:6px;">Курс</div>
+              <input id="rateView" disabled />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <div class="hint" style="margin-bottom:6px;">Вы получите (USDT)</div>
+              <input id="usdtView" disabled />
+            </div>
+            <div>
+              <div class="hint" style="margin-bottom:6px;">ID заявки</div>
+              <input id="idView" disabled />
+            </div>
+          </div>
+
+          <div class="sectionTitle" style="margin-top:4px;">
+            <span>Введите адрес / UID</span>
+          </div>
+
+          <div class="row">
+            <div>
+              <div class="hint" style="margin-bottom:6px;">Сеть / тип кошелька</div>
+              <select id="walletType">
+                <option value="TRC20">TRC20</option>
+                <option value="ERC20">ERC20</option>
+                <option value="BEP20">BEP20</option>
+                <option value="HTX_UID">HTX UID</option>
+                <option value="BYBIT_UID">BYBIT UID</option>
+              </select>
+            </div>
+            <div>
+              <div class="hint" style="margin-bottom:6px;">Адрес / UID</div>
+              <input id="walletInput" placeholder="Введите..." />
+            </div>
+          </div>
+
+          <div class="hint">
+            После нажатия “Продолжить” вы перейдёте на страницу оплаты.
+          </div>
+
+          <div class="actions">
+            <button class="btnGhost" id="cancelBtn" type="button">Отмена</button>
+            <button class="btn" id="nextBtn" type="button" disabled>Продолжить</button>
+          </div>
+
+          <div class="status warn" id="statusBox">—</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- auth modal -->
+  <div class="authModalBackdrop" id="authModal">
+    <div class="authModalCard">
+      <div class="authModalTitle">Нужен аккаунт</div>
+      <div class="authModalText" id="authModalText">Чтобы продолжить, нужно зарегистрироваться / войти.</div>
+      <div class="authModalActions">
+        <button class="btn" id="authGoBtn" type="button">Перейти в аккаунт</button>
+        <button class="btnGhost" id="authCloseBtn" type="button">Отмена</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const WORKER_BASE = String(
+    localStorage.getItem("worker_base") ||
+    localStorage.getItem("WORKER_BASE") ||
+    "https://rapira-rates-proxy.kireeshka73.workers.dev"
+  ).replace(/\/+$/, "");
+
+  
+  const USER_TOKEN = localStorage.getItem("CF_USER_TOKEN") || localStorage.getItem("user_token") || localStorage.getItem("cf_user_token") || "";
+  const AUTH_HEADERS = USER_TOKEN ? { "Authorization": "Bearer " + USER_TOKEN } : {};
+// ===== AUTH (account required) =====
+  function getUserToken(){
+    try{
+      return (
+        localStorage.getItem("user_token") ||
+        localStorage.getItem("userToken") ||
+        localStorage.getItem("auth_token") ||
+        localStorage.getItem("authToken") ||
+        localStorage.getItem("crossflag_user_token") ||
+        localStorage.getItem("crossflag_auth_token") ||
+        localStorage.getItem("X_AUTH_TOKEN") ||
+        localStorage.getItem("X_USER_TOKEN") ||
+        sessionStorage.getItem("user_token") ||
+        sessionStorage.getItem("userToken") ||
+        sessionStorage.getItem("auth_token") ||
+        sessionStorage.getItem("authToken") ||
+        sessionStorage.getItem("crossflag_user_token") ||
+        sessionStorage.getItem("crossflag_auth_token") ||
+        ""
+      ).trim();
+    }catch{ return ""; }
+  }
+
+  function showAuthModal(message, redirectAfter){
+    const modal = document.getElementById("authModal");
+    const txt = document.getElementById("authModalText");
+    if (txt) txt.textContent = message || "Чтобы продолжить, нужно зарегистрироваться / войти.";
+
+    const go = document.getElementById("authGoBtn");
+    const close = document.getElementById("authCloseBtn");
+
+    if (go){
+      go.onclick = () => {
+        try{ sessionStorage.setItem("post_auth_redirect", redirectAfter || location.href); }catch{}
+        location.href = "./account.html";
+      };
+    }
+    if (close){
+      close.onclick = () => { if (modal) modal.style.display = "none"; };
+    }
+    if (modal) modal.style.display = "flex";
+  }
+
+  function requireAuthOrPrompt(redirectAfter){
+    const tok = getUserToken();
+    if (tok) return tok;
+    showAuthModal("Чтобы продолжить, нужно зарегистрироваться / войти в аккаунт.", redirectAfter || location.href);
+    return "";
+  }
+
+  function jsonHeadersWithAuth(){
+    const h = { "Content-Type":"application/json" };
+    const tok = getUserToken();
+    if (tok){
+      h["X-User-Token"] = tok;
+      h["X-Auth-Token"] = tok;
+      h["Authorization"] = "Bearer " + tok;
+    }
+    return h;
+  }
+
+  function getParam(name){
+    try { return new URL(location.href).searchParams.get(name) || ""; }
+    catch { return ""; }
+  }
+
+  // ✅ читаем все данные сделки из URL
+  const id = (getParam("id") || getParam("offerId") || "").trim();
+  let reserveId = (getParam("reserveId") || getParam("reservedId") || "").trim();
+  const amountRub = Number(getParam("amountRub") || 0);
+  const rate = Number(getParam("rate") || 0);
+
+  const walletType = document.getElementById("walletType");
+  const walletInput = document.getElementById("walletInput");
+  const cancelBtn = document.getElementById("cancelBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  const statusBox = document.getElementById("statusBox");
+
+  // ✅ поля отображения сделки
+  const amountRubView = document.getElementById("amountRubView");
+  const rateView = document.getElementById("rateView");
+  const usdtView = document.getElementById("usdtView");
+  const idView = document.getElementById("idView");
+
+  function fmtRub(n){ return Number(n).toLocaleString("ru-RU") + " ₽"; }
+  function fmtRate(n){ return Number(n).toLocaleString("ru-RU", { maximumFractionDigits: 2 }) + ""; }
+  function fmtUsdt(n){ return Number(n).toLocaleString("ru-RU", { maximumFractionDigits: 6 }) + ""; }
+
+  function fillDealInfo(){
+    if (amountRubView) amountRubView.value = amountRub > 0 ? fmtRub(amountRub) : "—";
+    if (rateView) rateView.value = rate > 0 ? fmtRate(rate) : "—";
+    if (usdtView){
+      const usdt = (amountRub > 0 && rate > 0) ? (amountRub / rate) : 0;
+      usdtView.value = usdt > 0 ? fmtUsdt(usdt) : "—";
+    }
+    if (idView) idView.value = id || "—";
+  }
+
+  function setStatus(text, kind){
+    statusBox.textContent = text;
+    statusBox.className = "status show " + (kind || "warn");
+  }
+  function setLoading(btn, on){
+    if (!btn) return;
+    if (on){
+      btn.classList.add("loading");
+      btn.dataset._txt = btn.textContent;
+      btn.textContent = "Отправка…";
+      btn.disabled = true;
+    }else{
+      btn.classList.remove("loading");
+      btn.textContent = btn.dataset._txt || btn.textContent;
+      btn.disabled = false;
+    }
+  }
+
+  function validate(){
+    const v = (walletInput.value || "").trim();
+    // ✅ теперь требуем ещё amountRub и rate чтобы не было пустых страниц
+    nextBtn.disabled = !(v && id && amountRub > 0 && rate > 0);
+
+  }
+
+  walletInput.addEventListener("input", validate);
+  walletType.addEventListener("change", validate);
+
+  cancelBtn.onclick = async () => {
+    try{
+      if (!id) return location.href = "./buy.html";
+if (reserveId){
+  await fetch(WORKER_BASE + "/api/public/cancel_reserve", {
+    method:"POST",
+    headers: jsonHeadersWithAuth(),
+    body: JSON.stringify({ id, reserveId })
+  });
+}
+
+    }catch(e){}
+    location.href = "./buy.html";
+  };
+async function reserveOffer(){
+  const res = await fetch(WORKER_BASE + "/api/public/reserve_offer", {
+    method:"POST",
+    headers: jsonHeadersWithAuth(),
+    body: JSON.stringify({ id })
+  });
+
+  const text = await res.text();
+  let j;
+  try { j = JSON.parse(text); } catch {
+    throw new Error("Ответ не JSON: " + text.slice(0,200));
+  }
+
+  if (!res.ok || !j.ok){
+    throw new Error(j.error || ("HTTP " + res.status));
+  }
+  return j; // { reserveId, expiresAt, ... }
+}
+
+function persistReserveIdToUrl(rid){
+  try{
+    const u = new URL(location.href);
+    u.searchParams.set("reserveId", rid);
+    history.replaceState(null, "", u.toString());
+  }catch{}
+}
+  
+  nextBtn.onclick = async () => {
+    const _tok = requireAuthOrPrompt(location.href);
+    if (!_tok) return;
+
+    const walletValue = (walletInput.value || "").trim();
+
+    if (!id){
+  setStatus("Ошибка: нет параметров заявки.", "bad");
+  return;
+}
+    if (!(amountRub > 0) || !(rate > 0)){
+      setStatus("Ошибка: нет суммы/курса. Вернитесь назад и выберите заявку заново.", "bad");
+      return;
+    }
+    if (!walletValue){
+      setStatus("Введите адрес/UID.", "warn");
+      return;
+    }
+
+    try{
+      setLoading(nextBtn, true);
+
+      // ✅ 1) Бронируем заявку только сейчас (после ввода кошелька)
+if (!reserveId){
+  setStatus("Бронируем заявку…", "warn");
+  const r = await reserveOffer();
+  reserveId = String(r.reserveId || "").trim();
+  if (!reserveId) throw new Error("Не удалось получить reserveId");
+  persistReserveIdToUrl(reserveId);
+}
+
+      
+      const res = await fetch(WORKER_BASE + "/api/public/set_wallet", {
+        method:"POST",
+        headers: jsonHeadersWithAuth(),
+        body: JSON.stringify({
+          id,
+          reserveId,
+          walletType: String(walletType.value || "").trim(),
+          walletValue
+        })
+      });
+
+      const txt = await res.text();
+      let j;
+      try{ j = JSON.parse(txt); }catch{ throw new Error("Ответ не JSON: " + txt.slice(0,200)); }
+      if (!res.ok || !j.ok) throw new Error(j.error || ("HTTP " + res.status));
+
+      // ✅ правильный переход на оплату с параметрами
+      location.href =
+  "./crossflag-buy-order.html?id=" + encodeURIComponent(id) +
+  "&reserveId=" + encodeURIComponent(reserveId) +
+  "&amountRub=" + encodeURIComponent(amountRub) +
+  "&rate=" + encodeURIComponent(rate);
+
+
+
+    }catch(e){
+      setStatus("Ошибка: " + (e.message || String(e)), "bad");
+    }finally{
+      setLoading(nextBtn, false);
+      validate();
+    }
+  };
+
+  fillDealInfo();
+  validate();
+</script>
+</body>
+</html>

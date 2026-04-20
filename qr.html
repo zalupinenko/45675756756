@@ -1,0 +1,2793 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Crossflag · Кошелёк</title>
+
+  <style>
+    :root{
+      --bg:#071022;
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+
+      --card: rgba(15, 26, 48, 0.55);
+      --border: rgba(255,255,255,.12);
+
+      --blue:#2d5bff;
+      --blue2:#1f3fb3;
+
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+
+      --shadow: 0 18px 50px rgba(0,0,0,.45);
+      --radius: 22px;
+
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+
+    .videoBg{
+  position:fixed;
+  inset:0;
+  z-index:-4;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  opacity:.18;
+  filter: saturate(.9) contrast(1.02) brightness(.55);
+  pointer-events:none;
+  background:#071022;
+}
+
+    body{
+      margin:0;
+      color:var(--text);
+      background:var(--bg);
+      overflow-x:hidden;
+      overflow-y:auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+    }
+
+    .overlay{
+      position:fixed;
+      inset:0;
+      z-index:-2;
+      background:
+        radial-gradient(980px 620px at 50% -120px, rgba(45,91,255,.18), rgba(0,0,0,0) 64%),
+        radial-gradient(920px 620px at 85% 90%, rgba(34,197,94,.08), rgba(0,0,0,0) 58%),
+        linear-gradient(180deg, rgba(7,16,34,.56), rgba(7,16,34,.78));
+      pointer-events:none;
+    }
+
+    .wrap{
+      max-width: 520px;
+      margin:0 auto;
+      padding:
+        calc(10px + env(safe-area-inset-top))
+        14px
+        calc(92px + env(safe-area-inset-bottom))
+        14px;
+    }
+
+    .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+
+    .topLeft{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+
+    .avatarBtn{
+      width:36px;height:36px;border-radius:999px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 12px 30px rgba(0,0,0,.25);
+      overflow:hidden;
+      flex:0 0 auto;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease;
+    }
+    .avatarBtn:hover,
+    .avatarBtn:focus-visible{
+      transform: translateY(-2px);
+      background: rgba(255,255,255,.09);
+      border-color: rgba(255,255,255,.18);
+    }
+    .avatarBtn:active{ transform: translateY(1px); }
+
+    .avatarInner{
+      width:100%;
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:1000;
+      font-size:14px;
+      color: rgba(233,240,255,.92);
+    }
+
+    .avatarInner.icon{ font-size:0; }
+    .avatarInner.icon::before{
+      content:"";
+      width:18px;
+      height:18px;
+      display:block;
+      background: rgba(233,240,255,.85);
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12 12a4 4 0 1 0-4-4a4 4 0 0 0 4 4m0 2c-4.42 0-8 2-8 4.5V21h16v-2.5C20 16 16.42 14 12 14'/%3E%3C/svg%3E") center / contain no-repeat;
+              mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12 12a4 4 0 1 0-4-4a4 4 0 0 0 4 4m0 2c-4.42 0-8 2-8 4.5V21h16v-2.5C20 16 16.42 14 12 14'/%3E%3C/svg%3E") center / contain no-repeat;
+      opacity:.92;
+    }
+
+    .titleBlock{ min-width:0; }
+    .titleRow{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      font-weight:1000;
+      letter-spacing:.2px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .badge{
+      width:14px;height:14px; flex:0 0 auto;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:999px;
+      background: rgba(45,91,255,.18);
+      border: 1px solid rgba(45,91,255,.35);
+    }
+    .badge svg{ width:10px;height:10px; opacity:.95; }
+
+    .sub{
+      margin-top:2px;
+      font-size:12px;
+      font-weight:850;
+      color: rgba(233,240,255,.65);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .topRight{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex:0 0 auto;
+    }
+
+    .dotsBtn{
+      width:34px;height:34px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: rgba(233,240,255,.92);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease;
+    }
+    .dotsBtn:hover,
+    .dotsBtn:focus-visible{
+      transform: translateY(-2px);
+      background: rgba(255,255,255,.09);
+      border-color: rgba(255,255,255,.18);
+    }
+    .dotsBtn:active{ transform: translateY(1px); }
+
+    .balanceCard{
+      position:relative;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--card);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      overflow:hidden;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .balanceCard::before{
+      content:"";
+      position:absolute;
+      inset:-60px;
+      background:
+        radial-gradient(520px 220px at 30% 20%, rgba(45,91,255,.16), rgba(0,0,0,0) 60%),
+        radial-gradient(520px 220px at 70% 90%, rgba(34,197,94,.10), rgba(0,0,0,0) 60%);
+      filter: blur(18px);
+      pointer-events:none;
+      z-index:0;
+    }
+    .balanceCard > *{ position:relative; z-index:1; }
+
+    .balanceLabel{
+      text-align:center;
+      font-weight:900;
+      font-size:12px;
+      color: rgba(233,240,255,.65);
+      margin-top:2px;
+    }
+    .balanceValue{
+      text-align:center;
+      font-weight:1000;
+      letter-spacing:.2px;
+      font-size: 44px;
+      line-height:1.05;
+      margin-top:6px;
+    }
+    .balanceValue span{
+      font-size: 26px;
+      opacity:.85;
+      margin-left:4px;
+      font-weight:1000;
+    }
+
+    .balanceUsdt{
+      text-align:center;
+      margin-top: 6px;
+      font-weight: 950;
+      font-size: 13px;
+      letter-spacing: .2px;
+      color: rgba(233,240,255,.62);
+    }
+
+    .actions{
+      margin-top: 14px;
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding: 10px 2px 0 2px;
+    }
+
+    .act{
+      text-align:center;
+      cursor:pointer;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform .18s ease, filter .18s ease;
+    }
+
+    .actIco{
+      width:52px;height:52px;
+      margin:0 auto 8px auto;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      box-shadow: 0 14px 34px rgba(0,0,0,.22);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background .22s ease;
+      animation: menuFloat 3.8s ease-in-out infinite;
+      animation-delay: var(--floatDelay, 0s);
+      will-change: transform;
+    }
+
+    .actIco.primary{
+      background: linear-gradient(180deg, rgba(45,91,255,.50), rgba(31,63,179,.38));
+      border-color: rgba(45,91,255,.35);
+    }
+
+    .act svg{ width:24px;height:24px; opacity:.95; transition: transform .2s ease; }
+    .act:hover .actIco,
+    .act:focus-visible .actIco{
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 18px 40px rgba(0,0,0,.28);
+      border-color: rgba(255,255,255,.18);
+    }
+    .act:hover svg,
+    .act:focus-visible svg{ transform: scale(1.08); }
+    .actTxt{
+      font-size:12px;
+      font-weight:950;
+      color: rgba(233,240,255,.85);
+    }
+    .act:active .actIco{ transform: translateY(1px); }
+
+        .banner{
+      margin-top: 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(125, 211, 252, .28);
+      background:
+        linear-gradient(135deg, rgba(56,189,248,.22), rgba(96,165,250,.18) 55%, rgba(14,165,233,.14)),
+        rgba(255,255,255,.03);
+      padding: 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      overflow:hidden;
+      box-shadow:
+        0 16px 36px rgba(0,0,0,.20),
+        inset 0 1px 0 rgba(255,255,255,.05);
+    }
+    .bannerTitle{
+      font-weight:1000;
+      font-size:13px;
+      line-height:1.2;
+      color: rgba(240,249,255,.98);
+    }
+    .bannerSub{
+      font-weight:950;
+      font-size:12px;
+      color: rgba(186,230,253,.96);
+      margin-top:4px;
+    }
+    .bannerBtn{
+      border:1px solid rgba(186,230,253,.30);
+      background: linear-gradient(180deg, rgba(56,189,248,.28), rgba(59,130,246,.18));
+      color:#f0f9ff;
+      font-weight:1000;
+      border-radius: 14px;
+      padding:10px 12px;
+      cursor:pointer;
+      white-space:nowrap;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+      box-shadow: 0 10px 24px rgba(2,132,199,.18);
+    }
+    .bannerBtn:hover,
+    .bannerBtn:focus-visible{
+      transform: translateY(-2px);
+      box-shadow: 0 14px 30px rgba(2,132,199,.24);
+      border-color: rgba(186,230,253,.42);
+      background: linear-gradient(180deg, rgba(56,189,248,.36), rgba(59,130,246,.24));
+    }
+
+    @keyframes menuFloat{
+      0%, 100%{ transform: translateY(0); }
+      50%{ transform: translateY(-3px); }
+    }
+
+    .actions .act:nth-child(1) .actIco{ --floatDelay: 0s; }
+    .actions .act:nth-child(2) .actIco{ --floatDelay: .2s; }
+    .actions .act:nth-child(3) .actIco{ --floatDelay: .4s; }
+    .actions .act:nth-child(4) .actIco{ --floatDelay: .6s; }
+
+    @media (prefers-reduced-motion: reduce){
+      .act, .actIco, .bannerBtn, .navItem, .outerBtn, .dotsBtn, .avatarBtn{
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+
+    html, body{
+      height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar{
+      width: 0;
+      height: 0;
+      display: none;
+    }
+
+    .bannerBtn:active{ transform: translateY(1px); }
+
+    .list{
+      margin-top: 10px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(15, 26, 48, 0.42);
+      overflow:hidden;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 12px 40px rgba(0,0,0,.28);
+    }
+
+    .asset{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 12px;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .assetLeft{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width:0;
+    }
+
+    .coin{
+      width:40px;height:40px;border-radius:999px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:1000;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      flex:0 0 auto;
+      box-shadow: 0 12px 28px rgba(0,0,0,.22);
+    }
+    .coin.usdt{
+      background: rgba(45,91,255,.14);
+      border-color: rgba(45,91,255,.28);
+    }
+
+    .assetName{
+      font-weight:1000;
+      font-size:14px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .assetSub{
+      margin-top:2px;
+      font-size:12px;
+      font-weight:900;
+      color: rgba(233,240,255,.65);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .assetRight{
+      text-align:right;
+      flex:0 0 auto;
+    }
+    .assetVal{
+      font-weight:1000;
+      font-size:14px;
+    }
+    .assetValSub{
+      margin-top:2px;
+      font-size:12px;
+      font-weight:900;
+      color: rgba(233,240,255,.70);
+    }
+
+    .deskOnly{ display:none; }
+    .sectionTitle{
+      display:none;
+      margin: 0;
+      padding: 18px 20px 8px;
+      font-size: 12px;
+      font-weight: 1000;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: rgba(233,240,255,.48);
+    }
+
+    .heroTop{
+      display:none;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      margin-bottom: 8px;
+    }
+
+    .heroEyebrow{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+
+    .heroChip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      min-height: 34px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      color: rgba(233,240,255,.86);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: .02em;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+    }
+
+    .heroChipDot{
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background: #22c55e;
+      box-shadow: 0 0 0 6px rgba(34,197,94,.12);
+      flex:0 0 auto;
+    }
+
+    .heroGridDesktop{ display:block; }
+    .heroAsideDesktop{ display:none; }
+    .heroAsideTitle{
+      font-size: 14px;
+      font-weight: 1000;
+      color: rgba(233,240,255,.94);
+    }
+    .heroAsideText{
+      margin-top: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+      font-weight: 900;
+      color: rgba(233,240,255,.62);
+    }
+    .heroAsideStats{
+      margin-top: 16px;
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 12px;
+    }
+    .heroStat{
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+    }
+    .heroStatLabel{
+      font-size: 11px;
+      font-weight: 950;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: rgba(233,240,255,.46);
+    }
+    .heroStatValue{
+      margin-top: 8px;
+      font-size: 15px;
+      font-weight: 1000;
+      color: rgba(233,240,255,.92);
+      line-height: 1.25;
+    }
+
+    .deskStandWrap{ display:none; }
+
+    .bottomNav{
+      position:fixed;
+      left:0; right:0;
+      bottom:0;
+      z-index:999;
+      padding:
+        10px 14px
+        calc(10px + env(safe-area-inset-bottom))
+        14px;
+      background: linear-gradient(180deg, rgba(7,16,34,0), rgba(7,16,34,.72) 35%, rgba(7,16,34,.92));
+    }
+
+    .navBar{
+      max-width:520px;
+      margin:0 auto;
+      border-radius: 22px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(15,26,48,.62);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      padding: 8px 8px;
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .navItem{
+      border-radius: 18px;
+      padding: 10px 8px;
+      text-align:center;
+      cursor:pointer;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      color: rgba(233,240,255,.74);
+      font-weight:950;
+      font-size:12px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:6px;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease, color .18s ease;
+    }
+    .navItem svg{ width:20px;height:20px; opacity:.95; }
+    .navItem.active{
+      background: linear-gradient(180deg, rgba(45,91,255,.35), rgba(31,63,179,.22));
+      border: 1px solid rgba(45,91,255,.30);
+      color: rgba(233,240,255,.95);
+    }
+    .navItem:hover,
+    .navItem:focus-visible{
+      transform: translateY(-2px);
+      background: rgba(255,255,255,.04);
+      color: rgba(233,240,255,.92);
+    }
+    .navItem:active{ transform: translateY(1px); }
+
+    .gate{
+      position:fixed;
+      inset:0;
+      z-index: 9998;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 16px;
+      background: rgba(0,0,0,.58);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .gate.show{ display:flex; }
+    .gateCard{
+      width: min(520px, 100%);
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(8, 15, 30, .88);
+      box-shadow: 0 18px 60px rgba(0,0,0,.65);
+      padding: 14px;
+    }
+    .gateTitle{ font-weight:1000; font-size:16px; }
+    .gateText{ margin-top:8px; font-weight:900; font-size:12px; color: rgba(233,240,255,.78); line-height:1.45; }
+    .gateBtns{
+      margin-top:12px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .gBtn{
+      border:0;
+      border-radius:14px;
+      padding:12px 16px;
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow: 0 10px 26px rgba(0,0,0,.30);
+    }
+    .gBtn.primary{
+      background: linear-gradient(180deg, rgba(45,91,255,.85), rgba(31,63,179,.72));
+      color:#fff;
+      min-width: 190px;
+    }
+    .gBtn.ghost{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      min-width: 160px;
+    }
+    .gBtn:active{ transform: translateY(1px); }
+
+    .modal{
+      position:fixed;
+      inset:0;
+      z-index:9999;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:
+        calc(12px + env(safe-area-inset-top))
+        12px
+        calc(12px + env(safe-area-inset-bottom))
+        12px;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .modal.show{ display:flex; }
+
+    #scanModal.modal{
+      padding: 0;
+      background: #000;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      align-items: stretch;
+      justify-content: stretch;
+    }
+
+    .scanBox{
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+      border: 0;
+      background: #000;
+      box-shadow: none;
+      overflow: hidden;
+      transform: none;
+      opacity: 1;
+      animation: none;
+      display:flex;
+      flex-direction:column;
+    }
+
+    .scanTop{
+      position: relative;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:
+        calc(12px + env(safe-area-inset-top))
+        14px
+        12px
+        14px;
+      border-bottom: 0;
+      background: rgba(0,0,0,.6);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 2;
+    }
+
+    .scanTitle{
+      font-weight: 1000;
+      font-size: 18px;
+      letter-spacing: .2px;
+      color: rgba(233,240,255,.96);
+      text-align:center;
+      max-width: 70%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .scanLiveDot{ display:none; }
+
+    .scanClose{
+      position:absolute;
+      left: 10px;
+      top: calc(10px + env(safe-area-inset-top));
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      border: 0;
+      background: transparent;
+      color: rgba(233,240,255,.95);
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .scanClose:active{ transform: translateY(1px); }
+
+    .scanArea{
+      position: relative;
+      flex: 1 1 auto;
+      background: #000;
+      overflow: hidden;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding: 22px 16px calc(90px + env(safe-area-inset-bottom));
+      gap: 18px;
+    }
+    #cam{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      filter: brightness(.62) contrast(1.15) saturate(1.05);
+      transform: scale(1.02);
+    }
+    .scanDim{
+      position:absolute;
+      inset:0;
+      background: radial-gradient(1200px 800px at 50% 40%, rgba(0,0,0,.10) 0%, rgba(0,0,0,.68) 60%, rgba(0,0,0,.86) 100%);
+      z-index: 0;
+      pointer-events:none;
+    }
+
+    .scanCenterText{
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 0 12px;
+    }
+    .scanH1{
+      font-weight: 1000;
+      font-size: 34px;
+      line-height: 1.05;
+      color: rgba(233,240,255,.98);
+      text-shadow: 0 10px 30px rgba(0,0,0,.55);
+    }
+    .scanH2{
+      margin-top: 8px;
+      font-weight: 900;
+      font-size: 15px;
+      color: rgba(233,240,255,.62);
+    }
+
+    .frame{
+      position: relative;
+      z-index: 1;
+      width: min(78vw, 320px);
+      aspect-ratio: 1 / 1;
+      border-radius: 22px;
+      border: 0;
+      box-shadow: none;
+      overflow: visible;
+      background: rgba(0,0,0,.12);
+    }
+
+    .corners{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+    }
+    .corner{
+      position:absolute;
+      width:56px;height:56px;
+      border:4px solid rgba(255,255,255,.92);
+      border-radius: 18px;
+      filter: drop-shadow(0 8px 18px rgba(0,0,0,.55));
+    }
+    .c1{ left:0; top:0; border-right:0;border-bottom:0; border-radius: 18px 0 0 0; }
+    .c2{ right:0; top:0; border-left:0;border-bottom:0; border-radius: 0 18px 0 0; }
+    .c3{ left:0; bottom:0; border-right:0;border-top:0; border-radius: 0 0 0 18px; }
+    .c4{ right:0; bottom:0; border-left:0;border-top:0; border-radius: 0 0 18px 0; }
+
+    .scanLine{ display:none; }
+    .scanHint{ display:none; }
+
+    .torchBtn{
+      position: absolute;
+      left: 50%;
+      bottom: calc(18px + env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      width: 56px;
+      height: 56px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color: rgba(233,240,255,.92);
+      cursor:pointer;
+      z-index: 2;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .torchBtn.on{
+      background: rgba(255,255,255,.12);
+      border-color: rgba(255,255,255,.18);
+      box-shadow: 0 12px 40px rgba(0,0,0,.45);
+    }
+    .torchBtn:active{ transform: translateX(-50%) translateY(1px); }
+
+    .scanStatus{
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: calc(86px + env(safe-area-inset-bottom));
+      margin: 0;
+      z-index: 2;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.38);
+      font-size: 12px;
+      font-weight: 900;
+      color: rgba(233,240,255,.92);
+      display:none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .scanStatus.show{ display:block; }
+    .scanStatus.bad{ border-color: rgba(239,68,68,.45); background: rgba(239,68,68,.14); }
+    .scanStatus.ok{ border-color: rgba(34,197,94,.40); background: rgba(34,197,94,.12); }
+
+    .outerActions{
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .channelBtn{
+      background: linear-gradient(180deg, rgba(32,85,255,.22), rgba(12,26,58,.82));
+      border-color: rgba(72,126,255,.24);
+    }
+    .channelBtn:hover{
+      background: linear-gradient(180deg, rgba(38,97,255,.28), rgba(14,30,66,.88));
+    }
+    .outerBtn{
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 18px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: var(--card);
+      box-shadow: 0 18px 50px rgba(0,0,0,.35);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: rgba(233,240,255,.95);
+      font-weight: 1000;
+      font-size: 16px;
+      cursor:pointer;
+      position:relative;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+    }
+    .outerBtn:hover,
+    .outerBtn:focus-visible{
+      transform: translateY(-2px);
+      background: rgba(15, 26, 48, 0.62);
+      border-color: rgba(255,255,255,.16);
+      box-shadow: 0 22px 54px rgba(0,0,0,.40);
+    }
+    .outerBtn:active{ transform: translateY(1px); }
+
+    #activeDealsDot{
+      display:none;
+      width:8px;
+      height:8px;
+      margin-left:8px;
+      border-radius:50%;
+      background:#ef4444;
+      vertical-align:middle;
+      animation: activeDealPulse 1.2s infinite;
+    }
+    #activeDealsDot.on{ display:inline-block; }
+    @keyframes activeDealPulse{
+      0%{ box-shadow:0 0 0 0 rgba(239,68,68,.6); }
+      70%{ box-shadow:0 0 0 8px rgba(239,68,68,0); }
+      100%{ box-shadow:0 0 0 0 rgba(239,68,68,0); }
+    }
+
+    .scanInfoBox{
+      position: relative;
+      width: min(420px, 92vw);
+      background: rgba(15, 26, 48, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.55);
+      padding: 18px 18px 16px;
+      backdrop-filter: blur(12px);
+    }
+
+    .scanMenuBox{
+      position: relative;
+      width: min(420px, 92vw);
+      background: rgba(15, 26, 48, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.55);
+      padding: 16px 16px 14px;
+      backdrop-filter: blur(12px);
+    }
+    .scanMenuHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .scanMenuTitle{
+      font-weight: 1000;
+      font-size: 18px;
+      color: rgba(233,240,255,.95);
+    }
+    .scanMenuX{
+      width:34px; height:34px;
+      border-radius: 12px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer;
+      flex: 0 0 auto;
+    }
+    .scanMenuList{
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      border-radius: 18px;
+      overflow:hidden;
+    }
+    .scanMenuItem{
+      width:100%;
+      display:flex;
+      align-items:center;
+      gap: 12px;
+      padding: 14px 14px;
+      background: transparent;
+      border: 0;
+      color: rgba(233,240,255,.95);
+      cursor:pointer;
+      text-align:left;
+    }
+    .scanMenuItem:hover{ background: rgba(255,255,255,.04); }
+    .scanMenuDivider{ height:1px; background: rgba(255,255,255,.10); margin:0 12px; }
+    .scanMenuIco{
+      width:38px; height:38px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      display:flex; align-items:center; justify-content:center;
+      flex: 0 0 auto;
+    }
+    .scanMenuIco.primary{
+      background: rgba(45,91,255,.18);
+      border-color: rgba(45,91,255,.35);
+    }
+    .scanMenuIco svg{ width:18px; height:18px; }
+    .scanMenuTxt{ min-width: 0; }
+    .scanMenuT{ font-weight: 1000; font-size: 16px; line-height: 1.15; }
+    .scanMenuS{ color: rgba(233,240,255,.62); font-size: 13px; margin-top: 2px; line-height: 1.25; }
+    .scanMenuBottom{
+      width:100%;
+      margin-top: 12px;
+      padding: 14px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: rgba(233,240,255,.95);
+      font-weight: 1000;
+      cursor:pointer;
+    }
+    .scanMenuBottom:hover{ background: rgba(255,255,255,.08); }
+    .scanInfoClose{
+      position:absolute; top:12px; right:12px;
+      width:34px; height:34px;
+      border-radius: 12px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer;
+    }
+    .scanInfoIcons{
+      display:flex; justify-content:center; gap:10px;
+      margin-top: 6px;
+      margin-bottom: 10px;
+    }
+    .sIco{
+      width:58px; height:58px;
+      border-radius: 999px;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:1000;
+      box-shadow: 0 10px 25px rgba(0,0,0,.35);
+      user-select:none;
+    }
+    .sIco.a{ background: rgba(45,91,255,.18); border:1px solid rgba(45,91,255,.35); color: rgba(233,240,255,.95); }
+    .sIco.b{ background: rgba(233,240,255,.92); border:1px solid rgba(255,255,255,.18); }
+    .sIco.b svg{ width:30px; height:30px; }
+    .sIco.c{ background: rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.16); color: rgba(233,240,255,.92); font-size:18px; }
+
+    .sIco svg{ width:30px; height:30px; }
+    .sIco.c svg{ width:44px; height:44px; }
+    .sIco.a svg{ width:32px; height:32px; }
+
+    .sIco.qrAnim{ position:relative; }
+    .sIco.qrAnim::after{
+      content:"";
+      position:absolute; inset:-6px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.10);
+      opacity:.0;
+      animation: qrRing 1.6s infinite;
+      pointer-events:none;
+    }
+    .sIco.b.qrAnim{ animation: qrPulse 1.6s infinite; }
+
+    @keyframes qrPulse{
+      0%{ transform: scale(1); box-shadow: 0 10px 25px rgba(0,0,0,.35); }
+      50%{ transform: scale(1.05); box-shadow: 0 14px 34px rgba(0,0,0,.45); }
+      100%{ transform: scale(1); box-shadow: 0 10px 25px rgba(0,0,0,.35); }
+    }
+    @keyframes qrRing{
+      0%{ transform: scale(.92); opacity:0; }
+      30%{ opacity:.55; }
+      100%{ transform: scale(1.14); opacity:0; }
+    }
+
+    .scanInfoTitle{
+      text-align:center;
+      font-weight:1000;
+      font-size: 22px;
+      margin-top: 6px;
+    }
+    .scanInfoDesc{
+      text-align:center;
+      color: var(--muted);
+      margin-top: 6px;
+      line-height:1.35;
+    }
+    .scanInfoHow{
+      margin-top: 16px;
+      font-weight: 1000;
+      color: rgba(233,240,255,.92);
+    }
+    .scanInfoSteps{ margin-top: 8px; display:flex; flex-direction:column; gap:12px; }
+    .scanInfoSteps .step{ display:flex; gap:12px; }
+    .scanInfoSteps .stepIco{
+      width:40px; height:40px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      display:flex; align-items:center; justify-content:center;
+      flex: 0 0 auto;
+    }
+    .scanInfoSteps .stepIco svg{ width:22px; height:22px; }
+    .stepT{ font-weight: 1000; }
+    .stepS{ color: var(--muted); margin-top: 2px; font-size: 12.5px; line-height:1.25; }
+
+    .scanInfoBtn{
+      margin-top: 14px;
+      width: 100%;
+      border: none;
+      background: linear-gradient(180deg, var(--blue) 0%, var(--blue2) 100%);
+      color: #fff;
+      border-radius: 16px;
+      padding: 12px 14px;
+      font-weight: 1000;
+      cursor: pointer;
+    }
+
+    .cf-net-toast{
+      position: fixed;
+      left: 14px;
+      right: 14px;
+      top: calc(12px + env(safe-area-inset-top));
+      z-index: 99999;
+
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+
+      padding: 10px 12px;
+      border-radius: 14px;
+
+      background: rgba(239, 68, 68, .14);
+      border: 1px solid rgba(239, 68, 68, .28);
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+
+      color: rgba(233,240,255,.95);
+
+      transform: translateY(-12px);
+      opacity: 0;
+      pointer-events: none;
+
+      transition: transform .22s ease, opacity .22s ease;
+    }
+
+    .cf-net-toast.is-open{
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .cf-net-ico{
+      flex: 0 0 auto;
+      width: 22px;
+      height: 22px;
+      margin-top: 1px;
+      opacity: .95;
+      filter: drop-shadow(0 8px 18px rgba(0,0,0,.30));
+    }
+
+    .cf-net-body{
+      flex: 1 1 auto;
+      min-width: 0;
+      line-height: 1.25;
+    }
+
+    .cf-net-title{
+      font-weight: 1000;
+      font-size: 13px;
+      margin: 0 0 2px 0;
+      letter-spacing: .2px;
+    }
+
+    .cf-net-text{
+      font-weight: 850;
+      font-size: 12px;
+      color: rgba(233,240,255,.78);
+      margin: 0;
+    }
+
+    .cf-net-close{
+      flex: 0 0 auto;
+      width: 28px;
+      height: 28px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
+      color: rgba(233,240,255,.90);
+      cursor: pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:0;
+      margin-left: 2px;
+    }
+    .cf-net-close:active{ transform: translateY(1px); }
+
+    /* =========================
+       DESKTOP / LAPTOP LAYOUT
+       ========================= */
+    @media (min-width: 980px) {
+      html, body {
+        min-height: 100%;
+        overflow-y: auto;
+      }
+
+      body {
+  background:
+    radial-gradient(980px 620px at 14% 6%, rgba(45,91,255,.05), transparent 54%),
+    radial-gradient(760px 520px at 86% 92%, rgba(34,197,94,.03), transparent 50%),
+    linear-gradient(180deg, #06101f 0%, #071426 100%);
+}
+
+      .videoBg{
+  opacity: .12;
+  filter: saturate(.82) contrast(.98) brightness(.42);
+}
+
+      .overlay{
+  background:
+    radial-gradient(1000px 620px at 18% 0%, rgba(45,91,255,.08), rgba(0,0,0,0) 58%),
+    radial-gradient(760px 460px at 90% 100%, rgba(34,197,94,.03), rgba(0,0,0,0) 54%),
+    linear-gradient(180deg, rgba(4,10,22,.72), rgba(5,12,24,.86));
+}
+
+      .wrap{
+        max-width: 1180px;
+        min-height: auto;
+        padding: 14px 18px 110px;
+        display: grid;
+        grid-template-columns: minmax(620px, 1fr) minmax(280px, 330px);
+        grid-template-areas:
+          "top top"
+          "balance sideTop"
+          "balance sideBottom";
+        gap: 12px;
+        align-items: start;
+      }
+
+      .top{
+        grid-area: top;
+        margin-bottom: 0;
+        padding: 2px 2px 0;
+      }
+
+      .topLeft{ gap: 12px; }
+
+      .avatarBtn{
+        width: 44px;
+        height: 44px;
+        border-radius: 16px;
+        background: rgba(255,255,255,.05);
+        border: 1px solid rgba(255,255,255,.10);
+      }
+
+      .avatarInner{ font-size: 16px; }
+
+      .titleRow{
+        font-size: 23px;
+        font-weight: 1000;
+        gap: 8px;
+      }
+
+      .sub{
+        font-size: 14px;
+        margin-top: 4px;
+        color: rgba(233,240,255,.58);
+      }
+
+      .dotsBtn{
+        width: 42px;
+        height: 42px;
+        border-radius: 16px;
+      }
+
+      .balanceCard{
+        grid-area: balance;
+        min-height: 0;
+        padding: 16px 18px 14px;
+        border-radius: 28px;
+        background: linear-gradient(135deg, rgba(15,28,54,.90), rgba(10,20,40,.88) 58%, rgba(9,18,35,.96));
+        border: 1px solid rgba(255,255,255,.09);
+        box-shadow: 0 24px 64px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.04);
+      }
+
+      .balanceCard::before{
+        inset: -80px;
+        background:
+          radial-gradient(680px 260px at 14% 8%, rgba(45,91,255,.24), rgba(0,0,0,0) 60%),
+          radial-gradient(500px 210px at 82% 90%, rgba(34,197,94,.08), rgba(0,0,0,0) 58%);
+        filter: blur(24px);
+      }
+
+      .deskOnly{ display:block; }
+      .sectionTitle{
+        display:block;
+        padding: 14px 16px 6px;
+      }
+
+      .heroTop{
+        display:flex;
+        margin-bottom: 6px;
+        align-items:center;
+      }
+
+      .heroTop .heroChip:last-child{ display:none; }
+
+      .heroGridDesktop{
+        display:block;
+      }
+
+      .heroMainDesktop{
+        position: relative;
+        z-index: 2;
+        max-width: 100%;
+        min-width: 0;
+      }
+
+      .heroAsideDesktop{ display:none !important; }
+
+      .balanceLabel{
+        text-align: left;
+        font-size: 14px;
+        letter-spacing: .2px;
+        margin-top: 0;
+      }
+
+      .balanceValue{
+        text-align: left;
+        font-size: 58px;
+        line-height: 1;
+        margin-top: 8px;
+        letter-spacing: -.8px;
+      }
+
+      .balanceValue span{
+        font-size: 24px;
+        margin-left: 8px;
+      }
+
+      .balanceUsdt{
+        text-align: left;
+        margin-top: 8px;
+        font-size: 15px;
+        color: rgba(233,240,255,.58);
+      }
+      .deskStandWrap,
+      .deskStandGlow,
+      .deskStandImg{ display:none !important; }
+
+      .actions{
+        margin-top: 14px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+        max-width: calc(100% - 26px);
+        padding-top: 0;
+        padding-right: 8px;
+      }
+
+      .act{
+        padding: 12px 10px;
+        border-radius: 20px;
+        border: 1px solid rgba(255,255,255,.08);
+        background: rgba(255,255,255,.035);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+        transition: transform .18s ease, border-color .18s ease, background .18s ease;
+        min-height: 94px;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        text-align:center;
+      }
+
+      .actIco{
+        width: 52px;
+        height: 52px;
+        margin: 0 auto 8px;
+        border-radius: 18px;
+        box-shadow: 0 14px 30px rgba(0,0,0,.22);
+      }
+
+      .act svg{
+        width: 24px;
+        height: 24px;
+      }
+
+      .actTxt{
+        width: 100%;
+        text-align: center;
+        font-size: 14px;
+        line-height: 1.2;
+        color: rgba(233,240,255,.92);
+      }
+
+      .act:hover{
+        transform: translateY(-2px);
+        border-color: rgba(255,255,255,.14);
+        background: rgba(255,255,255,.05);
+      }
+
+            .banner{
+        margin-top: 10px;
+        min-height: 78px;
+        max-width: calc(100% - 26px);
+        border-radius: 20px;
+        padding: 13px 15px;
+        background:
+          linear-gradient(135deg, rgba(56,189,248,.24), rgba(96,165,250,.18) 58%, rgba(14,165,233,.12)),
+          rgba(255,255,255,.03);
+        border: 1px solid rgba(125,211,252,.26);
+        align-items: center;
+        box-shadow:
+          0 14px 34px rgba(0,0,0,.18),
+          inset 0 1px 0 rgba(255,255,255,.04);
+      }
+
+      .bannerTitle{
+        font-size: 16px;
+        line-height: 1.18;
+        color: rgba(240,249,255,.98);
+      }
+
+      .bannerSub{
+        font-size: 12px;
+        margin-top: 5px;
+        color: rgba(186,230,253,.96);
+      }
+
+      .bannerBtn{
+        padding: 10px 14px;
+        border-radius: 14px;
+        font-size: 14px;
+        background: linear-gradient(180deg, rgba(56,189,248,.30), rgba(59,130,246,.20));
+        border: 1px solid rgba(186,230,253,.28);
+        color: #f0f9ff;
+      }
+
+      .list{
+        grid-area: sideTop;
+        margin-top: 0;
+        border-radius: 20px;
+        background: linear-gradient(180deg, rgba(15,26,48,.68), rgba(12,21,40,.80));
+        border: 1px solid rgba(255,255,255,.10);
+        box-shadow: 0 18px 48px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.03);
+        overflow: hidden;
+        align-self: start;
+      }
+
+      .asset{
+        display:grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items:center;
+        gap: 12px;
+        padding: 14px 16px;
+        min-height: 72px;
+      }
+
+      .assetLeft{
+        display: contents;
+      }
+
+      .coin{
+        width: 44px;
+        height: 44px;
+        font-size: 16px;
+      }
+
+      .assetName{
+        font-size: 17px;
+        line-height: 1.08;
+      }
+
+      .assetSub{
+        margin-top: 4px;
+        font-size: 12px;
+      }
+
+      .assetRight{
+        min-width: 128px;
+        text-align: right;
+      }
+
+      .assetVal{
+        font-size: 17px;
+        line-height: 1.08;
+      }
+
+      .assetValSub{
+        margin-top: 4px;
+        font-size: 12px;
+      }
+
+      .outerActions{
+        grid-area: sideBottom;
+        margin-top: 0;
+        gap: 10px;
+        align-self: start;
+        padding: 0;
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .outerBtn{
+        padding: 0 16px;
+        min-height: 54px;
+        border-radius: 16px;
+        font-size: 15px;
+        justify-content: center;
+        text-align: center;
+        background: linear-gradient(180deg, rgba(15,26,48,.62), rgba(12,21,40,.78));
+        border: 1px solid rgba(255,255,255,.10);
+      }
+
+      .outerBtn:hover{
+        background: linear-gradient(180deg, rgba(18,31,58,.72), rgba(14,24,45,.82));
+      }
+
+      .deskStandWrap{ display:none; }
+
+    .bottomNav{ display: block; padding: 12px 18px calc(12px + env(safe-area-inset-bottom)) 18px; background: linear-gradient(180deg, rgba(7,16,34,0), rgba(7,16,34,.30) 30%, rgba(7,16,34,.78)); }
+      .navBar{ max-width: 1180px; }
+
+      .cf-net-toast{
+        left: 24px;
+        right: auto;
+        width: 430px;
+        top: 24px;
+      }
+    }
+
+    @media (min-width: 980px) and (max-width: 1180px) {
+      .wrap{
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+          "top"
+          "balance"
+          "sideTop"
+          "sideBottom";
+      }
+
+      .heroMainDesktop,
+      .actions,
+      .banner{
+        max-width: 100%;
+        padding-right: 0;
+      }
+
+      .list,
+      .outerActions{
+        grid-area: auto;
+      }
+    }
+  </style>
+
+  <style id="cfPageTransitionStyle">
+    html.cfPageEntering body{
+      opacity:0;
+      transform:translateY(8px);
+    }
+    html.cfPageEntering body.cfPageReady{
+      opacity:1;
+      transform:none;
+      transition:opacity .22s ease, transform .22s ease;
+    }
+    body.cfPageLeaving{
+      opacity:0;
+      transform:translateY(8px);
+      transition:opacity .18s ease, transform .18s ease;
+      pointer-events:none;
+    }
+    @media (prefers-reduced-motion: reduce){
+      html.cfPageEntering body,
+      html.cfPageEntering body.cfPageReady,
+      body.cfPageLeaving{
+        opacity:1 !important;
+        transform:none !important;
+        transition:none !important;
+      }
+    }
+  </style>
+
+</head>
+
+
+<script>
+(function initCrossflagPageTransition(){
+  try { document.documentElement.classList.add('cfPageEntering'); } catch(e) {}
+  const markReady = () => {
+    try { document.body.classList.add('cfPageReady'); } catch(e) {}
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(markReady), { once:true });
+  } else {
+    requestAnimationFrame(markReady);
+  }
+  window.cfNavigate = function(href){
+    if (!href) return;
+    if (window.__cfNavigating) return;
+    window.__cfNavigating = true;
+    try { document.body.classList.add('cfPageLeaving'); } catch(e) {}
+    window.setTimeout(() => { location.href = href; }, 170);
+  };
+})();
+</script>
+
+<body>
+  <video class="videoBg" autoplay muted loop playsinline preload="auto" aria-hidden="true">
+    <source src="bg.mp4" type="video/mp4">
+  </video>
+  <div class="overlay"></div>
+
+  <div id="cf-net-toast" class="cf-net-toast" role="status" aria-live="polite">
+    <svg class="cf-net-ico" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M2.5 8.8C6.9 5.1 17.1 5.1 21.5 8.8" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+      <path d="M5.6 12.1C8.4 9.8 15.6 9.8 18.4 12.1" stroke="rgba(233,240,255,.78)" stroke-width="2" stroke-linecap="round"/>
+      <path d="M8.9 15.3C10.5 14.1 13.5 14.1 15.1 15.3" stroke="rgba(233,240,255,.65)" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="12" cy="18.2" r="1.3" fill="rgba(233,240,255,.92)"/>
+      <path d="M4 4L20 20" stroke="rgba(239,68,68,.95)" stroke-width="2.2" stroke-linecap="round"/>
+    </svg>
+
+    <div class="cf-net-body">
+      <div class="cf-net-title">Плохое соединение</div>
+      <p class="cf-net-text">Если сайт плохо грузит — включи VPN. Crossflag работает только с VPN.</p>
+    </div>
+
+    <button id="cf-net-close" class="cf-net-close" type="button" aria-label="Закрыть">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M6 6L18 18" stroke="rgba(233,240,255,.9)" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M18 6L6 18" stroke="rgba(233,240,255,.9)" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="gate" id="authGate" aria-hidden="true">
+    <div class="gateCard">
+      <div class="gateTitle">Вход обязателен</div>
+      <div class="gateText">
+        Чтобы пользоваться кошельком и P2P, нужно войти в аккаунт.<br>
+        Нажми “Войти/Регистрация”.
+      </div>
+      <div class="gateBtns">
+        <button class="gBtn ghost" id="gateClose" type="button">Закрыть</button>
+        <button class="gBtn primary" id="gateGoAuth" type="button">Войти / Регистрация</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="top">
+      <div class="topLeft">
+        <button class="avatarBtn" id="avatarBtn" type="button" aria-label="Аккаунт">
+          <span class="avatarInner" id="avatarInner"></span>
+        </button>
+
+        <div class="titleBlock">
+          <div class="titleRow">
+            <span id="topTitle">@username</span>
+            <span class="badge" id="verifiedBadge" title="Verified" style="display:none;">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M9.2 12.3 11 14.1 15.2 9.9" stroke="rgba(233,240,255,.95)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+          </div>
+          <div class="sub" id="subLine">Crossflag Wallet · USDT</div>
+        </div>
+      </div>
+
+      <div class="topRight">
+        <button class="dotsBtn" id="menuBtn" type="button" aria-label="Регламент">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" stroke="rgba(233,240,255,.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M14 2v6h6" stroke="rgba(233,240,255,.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16 13H8M16 17H8M10 9H8" stroke="rgba(233,240,255,.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="balanceCard">
+      <div class="heroTop deskOnly">
+        <div class="heroEyebrow">
+          <div class="heroChip">Crossflag Wallet</div>
+          <div class="heroChip"><span class="heroChipDot"></span>Онлайн</div>
+        </div>
+        <div class="heroChip">Desktop dashboard</div>
+      </div>
+
+      <div class="heroGridDesktop">
+        <div class="heroMainDesktop">
+          <div class="balanceLabel">Баланс</div>
+          <div class="balanceValue" id="balMain">0,00 <span>₽</span></div>
+          <div class="balanceUsdt" id="balUsdt">≈ 0.00 USDT</div>
+
+          <div class="actions">
+        <div class="act" id="actWithdraw">
+          <div class="actIco">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 5v10" stroke="rgba(233,240,255,.92)" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M8.5 8.8 12 5.3l3.5 3.5" stroke="rgba(233,240,255,.92)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M5 19h14" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="actTxt">Вывести</div>
+        </div>
+
+        <div class="act" id="actTopup">
+          <div class="actIco primary">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 5v14" stroke="rgba(233,240,255,.95)" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M5 12h14" stroke="rgba(233,240,255,.95)" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="actTxt">Пополнить</div>
+        </div>
+
+        <div class="act" id="actScan">
+          <div class="actIco primary">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 8V6a2 2 0 0 1 2-2h2" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+              <path d="M20 8V6a2 2 0 0 0-2-2h-2" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+              <path d="M4 16v2a2 2 0 0 0 2 2h2" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+              <path d="M20 16v2a2 2 0 0 1-2 2h-2" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+              <path d="M7 12h10" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="actTxt">Скан</div>
+        </div>
+
+        <div class="act" id="actP2P">
+          <div class="actIco">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 7h13" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+              <path d="M14 4l3 3-3 3" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M20 17H7" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+              <path d="M10 20l-3-3 3-3" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="actTxt">P2P</div>
+        </div>
+      </div>
+
+          <div class="banner" id="banner">
+        <div>
+          <div class="bannerTitle">Доступно для QR</div>
+          <div class="bannerSub" id="cashbackSub">Загрузка…</div>
+        </div>
+        <button class="bannerBtn" id="bannerGo" type="button">Потратить</button>
+          </div>
+        </div>
+
+        <div class="heroAsideDesktop deskOnly">
+          <div class="heroAsideTitle">Единый центр управления</div>
+          <div class="heroAsideText">Пополняй, выводи, сканируй QR и переходи в P2P из одного экрана. На ПК главный экран сделан как полноценная панель управления, но без изменения текущей логики кошелька.</div>
+
+          <div class="heroAsideStats">
+            <div class="heroStat">
+              <div class="heroStatLabel">Единый баланс</div>
+              <div class="heroStatValue">Кошелёк, P2P и QR в одном месте</div>
+            </div>
+            <div class="heroStat">
+              <div class="heroStatLabel">Быстрые действия</div>
+              <div class="heroStatValue">Пополнение, вывод, скан и P2P без лишних переходов</div>
+            </div>
+            <div class="heroStat">
+              <div class="heroStatLabel">Интерфейс</div>
+              <div class="heroStatValue">Акцент на баланс, статус и основные сценарии</div>
+            </div>
+            <div class="heroStat">
+              <div class="heroStatLabel">Telegram</div>
+              <div class="heroStatValue">Готово для Mini App и десктопного браузера</div>
+            </div>
+          </div>
+        </div>
+      </div>
+</div>
+
+    <div class="list" id="assetsList">
+      <div class="sectionTitle deskOnly">Активы</div>
+      <div class="asset" id="assetTon">
+        <div class="assetLeft">
+          <div class="coin usdt">◈</div>
+          <div style="min-width:0;">
+            <div class="assetName">USDT</div>
+            <div class="assetSub" id="tonRate">USDT · — ₽</div>
+          </div>
+        </div>
+        <div class="assetRight">
+          <div class="assetVal" id="tonRub">0,00 ₽</div>
+          <div class="assetValSub" id="tonAmt">0.00 USDT</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Full-screen resume modal -->
+    <div id="resumeOverlay" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,.82); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px;">
+      <div style="width:100%; max-width:400px; background:rgba(15,26,48,.95); border:1px solid rgba(255,255,255,.14); border-radius:24px; padding:28px 22px; box-shadow:0 30px 80px rgba(0,0,0,.6); text-align:center;">
+        <div style="width:64px;height:64px;margin:0 auto 18px;border-radius:50%;background:rgba(239,68,68,.15);border:2px solid rgba(239,68,68,.3);display:flex;align-items:center;justify-content:center;">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div style="font-weight:1000;font-size:20px;color:#fff;margin-bottom:6px;">У вас есть активная сделка</div>
+        <div id="resumeType" style="font-size:14px;color:rgba(255,255,255,.55);margin-bottom:22px;">Вернитесь, чтобы завершить её</div>
+        <button id="resumeGo" type="button" style="width:100%;border:none;border-radius:16px;padding:16px;font-weight:1000;font-size:16px;background:linear-gradient(180deg,#ff6b6b,#ef4444);color:#fff;box-shadow:0 12px 30px rgba(239,68,68,.3);cursor:pointer;margin-bottom:10px;">Вернуться к сделке</button>
+        <button id="resumeStay" type="button" style="width:100%;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:14px;font-weight:900;font-size:14px;background:rgba(255,255,255,.04);color:rgba(255,255,255,.5);cursor:pointer;">Я хочу остаться</button>
+      </div>
+    </div>
+
+    <div class="outerActions" id="p2pLinks">
+      <div class="sectionTitle deskOnly">Быстрые переходы</div>
+      <button class="outerBtn" id="accountBtn" type="button">
+        Аккаунт
+        <span id="activeDealsDot"></span>
+      </button>
+      <button class="outerBtn" type="button" onclick="window.open('https://t.me/CrossFlag','_blank')">
+        Связаться с поддержкой
+      </button>
+      <button class="outerBtn" type="button" onclick="window.open('https://t.me/crossflag_chat','_blank')">
+        Чат в телеграмм
+      </button>
+      <button class="outerBtn channelBtn" type="button" onclick="window.open('https://t.me/CrossflagEx','_blank')">
+        Официальный канал
+      </button>
+    </div>
+  </div>
+
+  <div class="bottomNav">
+    <div class="navBar">
+      <div class="navItem active" id="navWallet">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4.5 8.5h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-14a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2Z" stroke="rgba(233,240,255,.92)" stroke-width="2"/>
+          <path d="M16 13h3" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Кошелёк
+      </div>
+
+      <div class="navItem" id="navTrade">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 7h13" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+          <path d="M14 4l3 3-3 3" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M20 17H7" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+          <path d="M10 20l-3-3 3-3" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        P2P
+      </div>
+
+      <div class="navItem" id="navBonus">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 2.8c3 2.1 5.8 2.1 9.2 0v9.3c0 6.2-4.4 9.3-9.2 9.3S2.8 18.3 2.8 12.1V2.8c3.4 2.1 6.2 2.1 9.2 0Z" stroke="rgba(233,240,255,.92)" stroke-width="2"/>
+          <path d="M9.2 12.1 11 14l4.8-5" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Бонусы
+      </div>
+
+      <div class="navItem" id="navHistory">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 8v5l3 2" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+          <path d="M21 12a9 9 0 1 1-3-6.7" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        История
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="scanMenuModal" role="dialog" aria-modal="true">
+    <div class="scanMenuBox">
+      <div class="scanMenuHead">
+        <div class="scanMenuTitle">Выберите способ оплаты</div>
+        <button class="scanMenuX" id="scanMenuClose" type="button" aria-label="Закрыть">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M6 6L18 18" stroke="rgba(233,240,255,.9)" stroke-width="2.6" stroke-linecap="round"/>
+            <path d="M18 6L6 18" stroke="rgba(233,240,255,.9)" stroke-width="2.6" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="scanMenuList">
+        <button class="scanMenuItem" id="scanMenuHow" type="button">
+          <div class="scanMenuIco" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 17h.01" stroke="rgba(233,240,255,.92)" stroke-width="3" stroke-linecap="round"/>
+              <path d="M10 10a2 2 0 1 1 4 0c0 2-2 2-2 4" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="rgba(233,240,255,.22)" stroke-width="2"/>
+            </svg>
+          </div>
+          <div class="scanMenuTxt">
+            <div class="scanMenuT">Как это работает?</div>
+            <div class="scanMenuS">Инструкция по оплатам по QR-коду</div>
+          </div>
+        </button>
+
+        <div class="scanMenuDivider" aria-hidden="true"></div>
+
+        <button class="scanMenuItem" id="scanMenuScan" type="button">
+          <div class="scanMenuIco primary" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 8V6a2 2 0 0 1 2-2h2" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+              <path d="M20 8V6a2 2 0 0 0-2-2h-2" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+              <path d="M4 16v2a2 2 0 0 0 2 2h2" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+              <path d="M20 16v2a2 2 0 0 1-2 2h-2" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+              <path d="M7 12h10" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="scanMenuTxt">
+            <div class="scanMenuT">Сканировать QR-код</div>
+            <div class="scanMenuS">Откроется камера и начнётся распознавание</div>
+          </div>
+        </button>
+      </div>
+
+      <button class="scanMenuBottom" id="scanMenuBottomClose" type="button">Закрыть</button>
+    </div>
+  </div>
+
+  <div class="modal" id="scanInfoModal" role="dialog" aria-modal="true">
+    <div class="scanInfoBox">
+      <button class="scanInfoClose" id="scanInfoClose" type="button" aria-label="Закрыть">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M6 6L18 18" stroke="rgba(233,240,255,.9)" stroke-width="2" stroke-linecap="round"/>
+          <path d="M18 6L6 18" stroke="rgba(233,240,255,.9)" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <div class="scanInfoIcons">
+        <div class="sIco a" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M7 7h11l-2.2-2.2" stroke="rgba(233,240,255,.95)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M17 17H6l2.2 2.2" stroke="rgba(233,240,255,.95)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M7 7l2.4 2.4" stroke="rgba(233,240,255,.65)" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M17 17l-2.4-2.4" stroke="rgba(233,240,255,.65)" stroke-width="2.2" stroke-linecap="round"/>
+          </svg>
+        </div>
+
+        <div class="sIco b qrAnim" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M7 3h2M15 3h2M7 21h2M15 21h2" stroke="rgba(7,16,34,.9)" stroke-width="2" stroke-linecap="round"/>
+            <path d="M3 7v2M3 15v2M21 7v2M21 15v2" stroke="rgba(7,16,34,.9)" stroke-width="2" stroke-linecap="round"/>
+            <path d="M8 8h8v8H8z" stroke="rgba(7,16,34,.9)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+
+        <div class="sIco c sbp" aria-hidden="true">
+          <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+            <rect x="6" y="10" width="52" height="44" rx="16" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)" stroke-width="2"/>
+            <text x="32" y="40" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="18" font-weight="900" fill="rgba(233,240,255,.94)">СБП</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="scanInfoTitle">Оплата по QR-коду</div>
+      <div class="scanInfoDesc">Оплачивайте любые покупки с помощью криптовалюты.</div>
+
+      <div class="scanInfoHow">Как это работает</div>
+
+      <div class="scanInfoSteps">
+        <div class="step">
+          <div class="stepIco">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 8V6a2 2 0 0 1 2-2h2" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+              <path d="M20 8V6a2 2 0 0 0-2-2h-2" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+              <path d="M4 16v2a2 2 0 0 0 2 2h2" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+              <path d="M20 16v2a2 2 0 0 1-2 2h-2" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="stepTxt">
+            <div class="stepT">Отсканируйте код</div>
+            <div class="stepS">Используйте камеру для сканирования QR-кода.</div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="stepIco">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M7 12h10" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+              <path d="M12 7v10" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+              <path d="M4 12a8 8 0 1 1 16 0" stroke="rgba(233,240,255,.25)" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="stepTxt">
+            <div class="stepT">Нажмите «Оплатить»</div>
+            <div class="stepS">QR-код будет обработан, и сделка создастся автоматически.</div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="stepIco">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M6 12l4 4 8-8" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="stepTxt">
+            <div class="stepT">Готово</div>
+            <div class="stepS">Вы получите уведомление об успешной оплате.</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="scanInfoBtn" id="scanInfoStart" type="button">Отсканировать QR-код</button>
+    </div>
+  </div>
+
+  <div class="modal" id="scanModal" role="dialog" aria-modal="true">
+    <div class="scanBox">
+      <div class="scanTop">
+        <button class="scanClose" id="scanClose" type="button" aria-label="Назад">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" stroke="rgba(233,240,255,.95)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <div class="scanTitle">Сканировать QR-код</div>
+      </div>
+
+      <div class="scanArea">
+        <video id="cam" playsinline muted></video>
+        <div class="scanDim" aria-hidden="true"></div>
+
+        <div class="scanCenterText" aria-hidden="true">
+          <div class="scanH1">Сканировать QR-код</div>
+          <div class="scanH2">Наведите на QR-код для оплаты</div>
+        </div>
+
+        <div class="frame" aria-hidden="true">
+          <div class="corners">
+            <div class="corner c1"></div>
+            <div class="corner c2"></div>
+            <div class="corner c3"></div>
+            <div class="corner c4"></div>
+          </div>
+        </div>
+
+        <button class="torchBtn" id="torchBtn" type="button" aria-label="Фонарик" style="display:none">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M9 3h6l-1 8v1l2 2v2H8v-2l2-2v-1L9 3Z" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M10 21h4" stroke="rgba(233,240,255,.92)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+
+        <div class="scanHint" id="scanHint">Наведи камеру на QR-код СБП — распознавание произойдёт автоматически.</div>
+        <div class="scanStatus" id="scanStatus"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./active-deals.js"></script>
+  <script src="./resume-helper.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+  <script>
+    (function initTelegramWebApp() {
+      try {
+        const tg = window.Telegram && window.Telegram.WebApp;
+        if (!tg) return;
+        tg.ready();
+        tg.expand();
+        tg.disableVerticalSwipes?.();
+        tg.setHeaderColor?.('#071022');
+        tg.setBackgroundColor?.('#071022');
+      } catch (_) {}
+    })();
+
+    const WORKER_BASE = "https://api.crossflag.org";
+    const EXCHANGE_HOME = "./trade.html";
+    const WITHDRAW_URL = "./withdraw.html";
+    const AUTH_URL = "./auth.html";
+    const QR_REDIRECT_BASE = "./qr_pay.html?payload=";
+
+    const QR_DESKTOP_URL = "./qr_desktop.html";
+
+function isDesktopScanMode(){
+  return window.matchMedia("(min-width: 980px)").matches;
+}
+
+    (function(){
+      const toast = document.getElementById("cf-net-toast");
+      const closeBtn = document.getElementById("cf-net-close");
+      if (!toast) return;
+
+      toast.classList.remove("is-open");
+
+      let failCount = 0;
+      let dismissedUntilOk = false;
+
+      function show(){
+        if (dismissedUntilOk) return;
+        toast.classList.add("is-open");
+      }
+      function hide(){
+        toast.classList.remove("is-open");
+      }
+
+      function withTimeout(promise, ms){
+        let t;
+        const timeout = new Promise((_, rej) => { t = setTimeout(() => rej(new Error("timeout")), ms); });
+        return Promise.race([promise, timeout]).finally(() => clearTimeout(t));
+      }
+
+      async function ping(){
+        const url = WORKER_BASE + "/api/public/quotes?__ping=1";
+        try{
+          const res = await withTimeout(fetch(url, { cache: "no-store" }), 1800);
+          if (!res.ok) throw new Error("http_" + res.status);
+          await res.json().catch(()=> ({}));
+          return true;
+        }catch{
+          return false;
+        }
+      }
+
+      async function check(){
+        if (!navigator.onLine){
+          failCount = Math.min(99, failCount + 1);
+          show();
+          return;
+        }
+
+        const ok = await ping();
+        if (ok){
+          failCount = 0;
+          dismissedUntilOk = false;
+          hide();
+        } else {
+          failCount = Math.min(99, failCount + 1);
+          if (failCount >= 1) show();
+        }
+      }
+
+      closeBtn && closeBtn.addEventListener("click", () => {
+        dismissedUntilOk = true;
+        hide();
+      });
+
+      window.addEventListener("offline", () => { failCount = 1; show(); });
+      window.addEventListener("online", () => { dismissedUntilOk = false; check(); });
+
+      check();
+      setInterval(check, 6000);
+    })();
+
+    const USER_TOKEN_KEY = "user_token";
+
+    function getUserToken(){
+      try {
+        const t = (
+          localStorage.getItem(USER_TOKEN_KEY) ||
+          localStorage.getItem("CF_USER_TOKEN") ||
+          localStorage.getItem("X_AUTH_TOKEN") ||
+          localStorage.getItem("AUTH_TOKEN") ||
+          localStorage.getItem("userToken") ||
+          ""
+        ).trim();
+        if (t && !localStorage.getItem(USER_TOKEN_KEY)) {
+          try { localStorage.setItem(USER_TOKEN_KEY, t); } catch(_){}
+        }
+        return t;
+      } catch {
+        return "";
+      }
+    }
+
+    async function authMe(){
+      const tok = getUserToken();
+      if (!tok) return null;
+      try{
+        const res = await fetch(WORKER_BASE + "/api/public/auth/me", {
+          method: "GET",
+          headers: { "X-User-Token": tok }
+        });
+        const j = await res.json().catch(()=>null);
+        if (!res.ok || !j || !j.ok) return null;
+        return j.user || null;
+      }catch{
+        return null;
+      }
+    }
+
+    function goAuth(returnUrl){
+      const back = returnUrl || (location.pathname + location.search);
+      try { sessionStorage.setItem("auth_return", back); } catch {}
+      location.href = AUTH_URL + "?return=" + encodeURIComponent(back);
+    }
+
+    function setGate(open){
+      const g = document.getElementById("authGate");
+      if (!g) return;
+      g.classList.toggle("show", !!open);
+      g.setAttribute("aria-hidden", open ? "false" : "true");
+    }
+
+    function setTopUser(user){
+      const topTitle = document.getElementById("topTitle");
+      const badge = document.getElementById("verifiedBadge");
+      const sub = document.getElementById("subLine");
+      if (!topTitle || !badge || !sub) return;
+
+      if (!user){
+        topTitle.textContent = "Войти";
+        badge.style.display = "none";
+        sub.textContent = "Требуется авторизация";
+        return;
+      }
+
+      const uname = String(user.username || "").trim();
+      topTitle.textContent = uname ? (uname.startsWith("@") ? uname : ("@" + uname)) : "Пользователь";
+      badge.style.display = "inline-flex";
+      sub.textContent = "Crossflag Wallet · USDT";
+    }
+
+    function setAvatar(user){
+      const el = document.getElementById("avatarInner");
+      if (!el) return;
+
+      if (!user){
+        el.className = "avatarInner icon";
+        el.textContent = "";
+        return;
+      }
+
+      const uname = String(user.username || "").replace(/^@/,"").trim();
+      if (uname){
+        el.className = "avatarInner";
+        el.textContent = uname[0].toUpperCase();
+        return;
+      }
+
+      el.className = "avatarInner icon";
+      el.textContent = "";
+    }
+
+    let _authed = false;
+
+    async function requireAuthOrGate(){
+      const u = await authMe();
+      _authed = !!u;
+      if (!_authed) setGate(true);
+      setAvatar(u);
+      setTopUser(u);
+      return _authed;
+    }
+
+    document.getElementById("gateGoAuth").onclick = () => goAuth(location.pathname + location.search);
+    document.getElementById("gateClose").onclick = () => setGate(false);
+
+    document.getElementById("avatarBtn").onclick = async () => {
+      try{
+        const u = await authMe();
+        if (u) location.href = "./account.html";
+        else goAuth("./account.html");
+      }catch{
+        goAuth("./account.html");
+      }
+    };
+
+    function fmtRub(n){
+      const v = Number(n);
+      if (!Number.isFinite(v)) return "0,00 ₽";
+      return v.toLocaleString("ru-RU", { minimumFractionDigits:2, maximumFractionDigits:2 }) + " ₽";
+    }
+
+    function fmtUsdt2(n){
+      const v = Number(n);
+      if (!Number.isFinite(v)) return "0.00";
+      return v.toFixed(2);
+    }
+
+    async function fetchUsdtRateRub(){
+      const urls = [
+        WORKER_BASE + "/api/public/rapira_rate",
+        WORKER_BASE + "/api/public/quotes",
+        WORKER_BASE + "/rates?symbol=USDT/RUB",
+      ];
+
+      for (const url of urls){
+        try{
+          const r = await fetch(url, { cache: "no-store" });
+          const j = await r.json().catch(()=>null);
+          if (!r.ok || !j) continue;
+
+          if (j.rate != null) {
+            const num = Number(j.rate);
+            if (Number.isFinite(num) && num > 0) return num;
+          }
+
+          if (j.adjusted && j.adjusted.buy != null) {
+            const num = Number(j.adjusted.buy);
+            if (Number.isFinite(num) && num > 0) return num;
+          }
+
+          if (j.ask != null) {
+            const num = Number(j.ask);
+            if (Number.isFinite(num) && num > 0) return num;
+          }
+        }catch{}
+      }
+
+      return 0;
+    }
+
+    async function logAttempt(kind, data){
+      try{
+        await fetch(WORKER_BASE + "/api/public/log_attempt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kind, data })
+        });
+      }catch(_){}
+    }
+
+    async function fetchWalletBalance(){
+      const tok = getUserToken();
+      if (!tok) return null;
+
+      const urls = [
+        WORKER_BASE + "/api/public/wallet/balance",
+        WORKER_BASE + "/api/public/balance",
+        WORKER_BASE + "/api/public/wallet"
+      ];
+
+      for (const url of urls){
+        try{
+          const res = await fetch(url, {
+            method: "GET",
+            cache: "no-store",
+            headers: { "X-User-Token": tok }
+          });
+          const j = await res.json().catch(()=>null);
+          if (!res.ok || !j) continue;
+
+          const raw =
+            (j.usdt_trc20 ?? j.usdt ??
+             (j.balance && (j.balance.usdt_trc20 ?? j.balance.usdt)) ??
+             (j.data && (j.data.usdt_trc20 ?? j.data.usdt)));
+
+          const rawCashback =
+            (j.cashback_usdt ?? j.cashback ??
+             (j.balance && (j.balance.cashback_usdt ?? j.balance.cashback)) ??
+             (j.data && (j.data.cashback_usdt ?? j.data.cashback)));
+
+          if (raw == null) {
+            if (j.ok) return { usdt: 0, cashbackUsdt: 0, qrSpendableUsdt: 0 };
+            continue;
+          }
+
+          let usdt = 0;
+          if (typeof raw === "string") usdt = Number(raw.replace(",", "."));
+          else if (typeof raw === "number") usdt = raw;
+          else usdt = Number(raw);
+
+          let cashbackUsdt = 0;
+          if (typeof rawCashback === "string") cashbackUsdt = Number(rawCashback.replace(",", "."));
+          else if (typeof rawCashback === "number") cashbackUsdt = rawCashback;
+          else if (rawCashback != null) cashbackUsdt = Number(rawCashback);
+
+          if (usdt > 1e7) usdt = usdt / 1e6;
+          if (cashbackUsdt > 1e7) cashbackUsdt = cashbackUsdt / 1e6;
+          if (!Number.isFinite(usdt)) usdt = 0;
+          if (!Number.isFinite(cashbackUsdt)) cashbackUsdt = 0;
+
+          return { usdt, cashbackUsdt, qrSpendableUsdt: usdt + cashbackUsdt };
+        }catch{}
+      }
+      return null;
+    }
+
+    let _lastUsdtBalance = 0;
+
+        function renderBalance(usdt, rateRub, cashbackUsdt){
+      const amount = Number(usdt) || 0;
+      const rate = Number(rateRub) || 0;
+      const rub = rate ? (amount * rate) : 0;
+
+      const cashback = Number(cashbackUsdt) || 0;
+      const qrSpendable = amount + cashback;
+      const qrSpendableRub = rate ? (qrSpendable * rate) : 0;
+
+      _lastUsdtBalance = amount;
+      try { localStorage.setItem("CF_WALLET_USDT", String(amount)); } catch(_){}
+
+      document.getElementById("tonAmt").textContent = fmtUsdt2(amount) + " USDT";
+      document.getElementById("tonRate").textContent =
+        "USDT · " + (rate ? rate.toLocaleString("ru-RU",{ maximumFractionDigits:2 }) : "—") + " ₽";
+      document.getElementById("tonRub").textContent = rate ? fmtRub(rub) : "—";
+
+      document.getElementById("balMain").innerHTML =
+        (rate ? rub.toLocaleString("ru-RU", { minimumFractionDigits:2, maximumFractionDigits:2 }) : "0,00")
+        + " <span>₽</span>";
+
+      document.getElementById("balUsdt").textContent = "≈ " + fmtUsdt2(amount) + " USDT";
+
+      const cashbackSub = document.getElementById("cashbackSub");
+      if (cashbackSub) {
+        cashbackSub.textContent =
+          (rate ? qrSpendableRub.toLocaleString("ru-RU", { minimumFractionDigits:2, maximumFractionDigits:2 }) : "0,00")
+          + " ₽ На оплату через QR";
+      }
+    }
+
+    async function refreshBalance(){
+      if (!(await requireAuthOrGate())) return;
+      const bal = await fetchWalletBalance();
+      if (!bal) return;
+      const rateRub = await fetchUsdtRateRub();
+      renderBalance(bal.usdt, rateRub, bal.cashbackUsdt || 0);
+    }
+
+    const actWithdraw = document.getElementById("actWithdraw");
+    const actTopup = document.getElementById("actTopup");
+    const actScan = document.getElementById("actScan");
+    const actP2P = document.getElementById("actP2P");
+    const bannerGo = document.getElementById("bannerGo");
+
+    actWithdraw.onclick = async () => {
+      if (!(await requireAuthOrGate())) return;
+      try { localStorage.setItem("CF_WITHDRAW_AVAILABLE_USDT", String(_lastUsdtBalance || 0)); } catch(_){}
+      location.href = WITHDRAW_URL;
+    };
+
+    actTopup.onclick = async () => {
+      if (!(await requireAuthOrGate())) return;
+      location.href = "./topup.html";
+    };
+
+    actP2P.onclick = async () => {
+      if (!(await requireAuthOrGate())) return;
+      if (window.cfNavigate) return window.cfNavigate(EXCHANGE_HOME);
+      location.href = EXCHANGE_HOME;
+    };
+
+    actScan.onclick = async () => {
+      if (!(await requireAuthOrGate())) return;
+      openScanEntry();
+    };
+    bannerGo.onclick = async () => {
+      if (!(await requireAuthOrGate())) return;
+      openScanEntry();
+    };
+
+    document.getElementById("menuBtn").onclick = async () => {
+      if (!(await requireAuthOrGate())) return;
+      location.href = "./reglament.html";
+    };
+
+    document.getElementById("navTrade").onclick = async () => {
+      if (!(await requireAuthOrGate())) return;
+      if (window.cfNavigate) return window.cfNavigate(EXCHANGE_HOME);
+      location.href = EXCHANGE_HOME;
+    };
+
+    document.getElementById("navBonus").onclick = async () => {
+      if (!(await requireAuthOrGate())) return;
+      const wb = encodeURIComponent(WORKER_BASE);
+      const nextHref = "./bonuses.html?wb=" + wb + "&return=" + encodeURIComponent(location.pathname + location.search);
+      if (window.cfNavigate) return window.cfNavigate(nextHref);
+      location.href = nextHref;
+    };
+
+    document.getElementById("navHistory").onclick = async () => {
+      if (!(await requireAuthOrGate())) return;
+      const nextHref = "./history.html" + (WORKER_BASE ? ("?wb=" + encodeURIComponent(WORKER_BASE)) : "");
+      if (window.cfNavigate) return window.cfNavigate(nextHref);
+      location.href = nextHref;
+    };
+
+    const modal = document.getElementById("scanModal");
+    const closeBtn = document.getElementById("scanClose");
+    const statusEl = document.getElementById("scanStatus");
+    const video = document.getElementById("cam");
+    const scanCanvas = document.createElement("canvas");
+    const scanCtx = scanCanvas.getContext("2d", { willReadFrequently: true });
+    const scanInfoModal = document.getElementById("scanInfoModal");
+    const scanInfoClose = document.getElementById("scanInfoClose");
+    const scanInfoStart = document.getElementById("scanInfoStart");
+
+    const scanMenuModal = document.getElementById("scanMenuModal");
+    const scanMenuClose = document.getElementById("scanMenuClose");
+    const scanMenuBottomClose = document.getElementById("scanMenuBottomClose");
+    const scanMenuHow = document.getElementById("scanMenuHow");
+    const scanMenuScan = document.getElementById("scanMenuScan");
+
+    const SCAN_INFO_SEEN_KEY = "CF_SCAN_INFO_SEEN_V1";
+
+    let stream = null;
+    let rafId = null;
+    let detector = null;
+    let busy = false;
+    let lastFoundAt = 0;
+
+    const torchBtn = document.getElementById("torchBtn");
+    let videoTrack = null;
+    let torchOn = false;
+
+    async function setTorch(on){
+      try{
+        if (!videoTrack) return false;
+        const caps = videoTrack.getCapabilities ? videoTrack.getCapabilities() : null;
+        if (!caps || !caps.torch) return false;
+        await videoTrack.applyConstraints({ advanced: [{ torch: !!on }] });
+        torchOn = !!on;
+        if (torchBtn){
+          torchBtn.classList.toggle('on', torchOn);
+          torchBtn.style.display = '';
+        }
+        return true;
+      }catch(_){
+        return false;
+      }
+    }
+
+    function updateTorchAvailability(){
+      try{
+        if (!torchBtn) return;
+        if (!videoTrack || !videoTrack.getCapabilities) { torchBtn.style.display='none'; return; }
+        const caps = videoTrack.getCapabilities();
+        torchBtn.style.display = (caps && caps.torch) ? '' : 'none';
+        torchBtn.classList.toggle('on', !!torchOn);
+      }catch(_){
+        if (torchBtn) torchBtn.style.display='none';
+      }
+    }
+
+    torchBtn && torchBtn.addEventListener('click', async ()=>{
+      const ok = await setTorch(!torchOn);
+      if (!ok) setScanStatus('Фонарик недоступен на этом устройстве.', 'bad');
+    });
+
+    function setScanStatus(text, kind){
+      statusEl.textContent = text;
+      statusEl.className = "scanStatus show " + (kind || "");
+    }
+    function hideScanStatus(){
+      statusEl.className = "scanStatus";
+      statusEl.textContent = "";
+    }
+
+    function stopScan(){
+      try{ if (rafId) cancelAnimationFrame(rafId); }catch{}
+      rafId = null;
+      try{
+        if (stream){
+          for (const t of stream.getTracks()) t.stop();
+        }
+      }catch{}
+      try{ torchOn = false; videoTrack = null; if (torchBtn) { torchBtn.classList.remove('on'); torchBtn.style.display='none'; } }catch(_){}
+      stream = null;
+      busy = false;
+    }
+
+    function closeModal(){
+      modal.classList.remove("show");
+      stopScan();
+      hideScanStatus();
+    }
+    closeBtn.addEventListener("click", closeModal);
+    modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+
+    function safeEnc(s){ return encodeURIComponent(String(s || "")); }
+
+    async function onFound(payload){
+      const now = Date.now();
+      if (now - lastFoundAt < 1200) return;
+      lastFoundAt = now;
+
+      try { navigator.vibrate && navigator.vibrate(60); } catch {}
+
+      setScanStatus("QR найден ✅ Открываю…", "ok");
+      logAttempt("QR_FOUND", { payload });
+
+      try { sessionStorage.setItem("qr_payload", String(payload || "")); } catch(_){}
+      try { sessionStorage.setItem("qr_payload_at", String(Date.now())); } catch(_){}
+
+      setTimeout(() => {
+        closeModal();
+        location.href = QR_REDIRECT_BASE + safeEnc(payload);
+      }, 350);
+    }
+
+    async function tick(){
+      rafId = requestAnimationFrame(tick);
+      if (!video || busy) return;
+      if (video.readyState < 2) return;
+
+      busy = true;
+      try{
+        if (detector) {
+          const barcodes = await detector.detect(video);
+          if (barcodes && barcodes.length){
+            const raw = barcodes[0].rawValue || "";
+            if (raw) { await onFound(raw); return; }
+          }
+        }
+
+        const w = video.videoWidth || 0;
+        const h = video.videoHeight || 0;
+        if (w && h) {
+          scanCanvas.width = w;
+          scanCanvas.height = h;
+          scanCtx.drawImage(video, 0, 0, w, h);
+
+          const img = scanCtx.getImageData(0, 0, w, h);
+          const code = window.jsQR ? window.jsQR(img.data, w, h, { inversionAttempts: "attemptBoth" }) : null;
+
+          if (code && code.data) {
+            await onFound(code.data);
+            return;
+          }
+        }
+      }catch(e){
+      }finally{
+        busy = false;
+      }
+    }
+
+    function hasScanInfoSeen(){
+      try{ return localStorage.getItem(SCAN_INFO_SEEN_KEY) === "1"; }catch(_){ return false; }
+    }
+    function markScanInfoSeen(){
+      try{ localStorage.setItem(SCAN_INFO_SEEN_KEY, "1"); }catch(_){}
+    }
+
+    function openScanMenu(){
+      try{ scanMenuModal && scanMenuModal.classList.add("show"); }catch(_){}
+    }
+    function closeScanMenu(){
+      try{ scanMenuModal && scanMenuModal.classList.remove("show"); }catch(_){}
+    }
+
+    function openScanInfo(){
+      markScanInfoSeen();
+      closeScanMenu();
+      try{ scanInfoModal.classList.add("show"); }catch(_){}
+    }
+    function closeScanInfo(){
+      try{ scanInfoModal.classList.remove("show"); }catch(_){}
+    }
+
+    function openScanEntry(){
+  if (isDesktopScanMode()) {
+    location.href = QR_DESKTOP_URL;
+    return;
+  }
+
+  if (!hasScanInfoSeen()) openScanInfo();
+  else openScanMenu();
+}
+
+    try{
+      scanInfoClose && (scanInfoClose.onclick = closeScanInfo);
+      scanInfoModal && scanInfoModal.addEventListener("click", (e)=>{ if (e.target === scanInfoModal) closeScanInfo(); });
+      scanInfoStart && (scanInfoStart.onclick = async ()=>{ closeScanInfo(); await openModalAndScan(); });
+
+      scanMenuClose && (scanMenuClose.onclick = closeScanMenu);
+      scanMenuBottomClose && (scanMenuBottomClose.onclick = closeScanMenu);
+      scanMenuModal && scanMenuModal.addEventListener("click", (e)=>{ if (e.target === scanMenuModal) closeScanMenu(); });
+      scanMenuHow && (scanMenuHow.onclick = ()=>{ closeScanMenu(); openScanInfo(); });
+      scanMenuScan && (scanMenuScan.onclick = async ()=>{ closeScanMenu(); await openModalAndScan(); });
+    }catch(_){}
+
+    async function openModalAndScan(){
+      modal.classList.add("show");
+      hideScanStatus();
+
+      if (!("mediaDevices" in navigator) || !navigator.mediaDevices.getUserMedia) {
+        setScanStatus("Браузер не поддерживает доступ к камере.", "bad");
+        return;
+      }
+      if (!("BarcodeDetector" in window) && !window.jsQR) {
+        setScanStatus("Сканер QR не загрузился. Проверь интернет/блокировку CDN.", "bad");
+        return;
+      }
+
+      detector = null;
+      if ("BarcodeDetector" in window) {
+        try { detector = new BarcodeDetector({ formats: ["qr_code"] }); } catch {}
+      }
+
+      try{
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        });
+
+        video.srcObject = stream;
+
+        try{ videoTrack = stream.getVideoTracks ? (stream.getVideoTracks()[0] || null) : null; }catch(_){ videoTrack = null; }
+        try{ updateTorchAvailability(); }catch(_){}
+        await video.play();
+        tick();
+      }catch(e){
+        setScanStatus("Нет доступа к камере. Разреши доступ и открой страницу по https.", "bad");
+        stopScan();
+      }
+    }
+
+    (async () => {
+      await requireAuthOrGate();
+      await refreshBalance();
+      setInterval(refreshBalance, 10000);
+    })();
+
+    (function initP2PLinks(){
+      const accountBtn = document.getElementById('accountBtn');
+      if (accountBtn){
+        accountBtn.addEventListener('click', async () => {
+          try{
+            const u = await authMe();
+            if (u) location.href = './account.html';
+            else goAuth('./account.html');
+          }catch{
+            goAuth('./account.html');
+          }
+        });
+      }
+
+      const dot = document.getElementById('activeDealsDot');
+      try{
+        if (dot && typeof hasActiveDeals === 'function' && hasActiveDeals()){
+          dot.classList.add('on');
+        }
+      }catch{}
+    })();
+
+    // Resume active deal — full-screen modal, shows INSTANTLY from localStorage
+    (function(){
+      if (sessionStorage.getItem("cf_resume_dismissed")) return;
+      const CR = window.CrossflagResume;
+      if (!CR) return;
+
+      const overlay = document.getElementById("resumeOverlay");
+      const goBtn   = document.getElementById("resumeGo");
+      const stayBtn = document.getElementById("resumeStay");
+      const typeEl  = document.getElementById("resumeType");
+      if (!overlay || !goBtn || !stayBtn) return;
+
+      // 1. Synchronous read — show modal IMMEDIATELY if there's a deal
+      const deals = CR.read();
+      const now = Date.now();
+      const TTL = 24 * 60 * 60 * 1000;
+      const fresh = deals.filter(d => d && d.ts && (now - Number(d.ts) <= TTL) && d.url);
+      fresh.sort((a,b) => Number(b.ts||0) - Number(a.ts||0));
+      const rec = fresh[0];
+      if (!rec) return;
+
+      const dealType = String(rec.type || "").toUpperCase();
+      typeEl.textContent = dealType === "SELL"
+        ? "У вас активная сделка на продажу"
+        : "У вас активная сделка на покупку";
+
+      overlay.style.display = "flex";
+
+      goBtn.onclick = () => {
+        if (CR.open) return CR.open(rec);
+        location.href = rec.url;
+      };
+      stayBtn.onclick = () => {
+        overlay.style.display = "none";
+        sessionStorage.setItem("cf_resume_dismissed", "1");
+      };
+
+      // 2. Background validation — dismiss if deal is actually finished
+      (async () => {
+        try {
+          const v = dealType === "SELL"
+            ? await CR.validateSell(rec)
+            : await CR.validateBuy(rec);
+          if (v && v.remove) {
+            overlay.style.display = "none";
+            if (dealType === "SELL") CR.removeSell(rec.id);
+            else CR.removeBuy(rec.id);
+          }
+        } catch(_){}
+      })();
+    })();
+  </script>
+</body>
+</html>

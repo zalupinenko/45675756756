@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Crossflag — Вход</title>
+</head>
+<body>
+
+<h2>Вход в Crossflag</h2>
+
+<input id="username" placeholder="Telegram username" />
+<button id="requestCode">Получить код</button>
+
+<br><br>
+
+<input id="code" placeholder="Код из Telegram" />
+<button id="confirmCode">Войти</button>
+
+<script>
+const API = "https://ТВОЙ_WORKER_URL"; // ← сюда URL воркера
+
+document.getElementById("requestCode").onclick = async () => {
+  const username = document.getElementById("username").value.trim();
+  if (!username) return alert("Введите username");
+
+  const res = await fetch(API + "/api/public/auth/request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username })
+  });
+
+  const data = await res.json();
+  if (!data.ok) alert(data.error || "Ошибка");
+  else alert("Код отправлен в Telegram");
+};
+
+document.getElementById("confirmCode").onclick = async () => {
+  const username = document.getElementById("username").value.trim();
+  const code = document.getElementById("code").value.trim();
+
+  const res = await fetch(API + "/api/public/auth/confirm", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, code })
+  });
+
+  const data = await res.json();
+
+  if (!data.ok || !data.token) {
+    alert(data.error || "Ошибка входа");
+    return;
+  }
+
+  // 🔐 сохраняем авторизацию
+  localStorage.setItem("authToken", data.token);
+
+  // ➜ дальше в приложение
+  window.location.href = "/index.html";
+};
+</script>
+
+</body>
+</html>

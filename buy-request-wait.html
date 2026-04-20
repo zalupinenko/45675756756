@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>P2P · Ожидание решения</title>
+  <style>
+    :root{
+      --text:#e9f0ff;
+      --muted:#9fb0d4;
+
+      --card: rgba(15, 26, 48, 0.52);
+      --border: rgba(255,255,255,.12);
+
+      --btn:#2d5bff;
+      --btn2:#1f3fb3;
+
+      --bad:#ffb4b4;
+      --ok:#c7ffd7;
+      --warn:#ffe6a6;
+
+
+      --accent: rgba(45,91,255,.45);
+      --accent2: rgba(120,170,255,.35);
+
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+    html,body{ height:100%; }
+    body{ margin:0; color:var(--text); overflow-x:hidden; background:#071022; }
+
+    .bg{ position:fixed; inset:0; z-index:-3; overflow:hidden; background:#071022; }
+    .bg video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform: scale(1.02); }
+    .overlay{
+      position:fixed; inset:0; z-index:-2;
+      background:
+        radial-gradient(900px 600px at 50% 20%, rgba(60,120,255,.18), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, rgba(7,16,34,.82), rgba(7,16,34,.90));
+      pointer-events:none;
+    }
+
+    .page{
+      min-height:100svh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:
+        calc(16px + env(safe-area-inset-top))
+        16px
+        calc(22px + env(safe-area-inset-bottom))
+        16px;
+      box-sizing:border-box;
+    }
+    .wrap{ width:100%; max-width:560px; }
+
+    .card{
+      position: relative;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow:hidden;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:14px 14px 10px;
+    }
+    .back{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:#fff;
+      font-weight:950;
+      padding:10px 12px;
+      border-radius:999px;
+      cursor:pointer;
+      text-decoration:none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      white-space:nowrap;
+    }
+
+    .content{ padding: 0 14px 16px; }
+    .title{
+      font-weight:1000;
+      font-size:18px;
+      letter-spacing:.2px;
+      margin: 6px 0 6px;
+    }
+    .sub{
+      color: rgba(233,240,255,.78);
+      font-weight:850;
+      font-size:13px;
+      line-height:1.35;
+      margin: 0 0 12px;
+    }
+
+    /* animated status card */
+    .statusCard{
+      position: relative;
+      overflow:hidden;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.14);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(45,91,255,.08));
+      padding:14px;
+      box-shadow: 0 14px 36px rgba(0,0,0,.28);
+    }
+    .statusCard::before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background:
+        radial-gradient(520px 180px at 20% 30%, rgba(45,91,255,.22), rgba(0,0,0,0) 60%),
+        radial-gradient(520px 180px at 80% 70%, rgba(120,170,255,.18), rgba(0,0,0,0) 60%);
+      opacity:.85;
+      pointer-events:none;
+      transform: translateZ(0);
+      animation: cfGlowMove 5.4s ease-in-out infinite;
+    }
+    .statusCard::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: linear-gradient(110deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.10) 35%, rgba(255,255,255,0) 70%);
+      transform: translateX(-120%) translateZ(0);
+      pointer-events:none;
+      opacity:.55;
+      animation: cfShimmer 3.2s ease-in-out infinite;
+    }
+    @keyframes cfGlowMove{
+      0%{ transform: translate3d(0,0,0) scale(1); }
+      50%{ transform: translate3d(0,-6px,0) scale(1.02); }
+      100%{ transform: translate3d(0,0,0) scale(1); }
+    }
+    @keyframes cfShimmer{
+      0%{ transform: translateX(-120%) translateZ(0); }
+      55%{ transform: translateX(120%) translateZ(0); }
+      100%{ transform: translateX(120%) translateZ(0); }
+    }
+
+    .row{
+      position:relative;
+      z-index:1;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      font-weight:1000;
+      font-size:12px;
+      letter-spacing:.2px;
+      white-space:nowrap;
+    }
+    .pill.pending{ color: var(--warn); }
+    .pill.approved{ color: var(--ok); }
+    .pill.rejected{ color: var(--bad); }
+
+    .bigText{
+      position:relative;
+      z-index:1;
+      margin-top:10px;
+      font-weight:1000;
+      font-size:16px;
+      letter-spacing:.2px;
+    }
+    .muted{
+      position:relative;
+      z-index:1;
+      margin-top:6px;
+      font-weight:850;
+      font-size:12px;
+      color: rgba(233,240,255,.75);
+      line-height:1.35;
+    }
+
+    .loader{
+      width:18px; height:18px;
+      border-radius:50%;
+      border:2px solid rgba(255,255,255,.22);
+      border-top-color: rgba(255,255,255,.75);
+      animation: spin 0.9s linear infinite;
+      flex: 0 0 auto;
+    }
+    @keyframes spin{ to{ transform: rotate(360deg); } }
+
+    .actions{ margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; }
+    .btn{
+      flex:1 1 160px;
+      border:0;
+      border-radius:14px;
+      padding:12px 14px;
+      font-weight:1000;
+      cursor:pointer;
+      color:#fff;
+      background: linear-gradient(180deg, var(--btn), var(--btn2));
+      box-shadow: 0 12px 30px rgba(0,0,0,.32);
+      text-decoration:none;
+      text-align:center;
+    }
+    .btn.ghost{
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow: none;
+    }
+
+    
+    .hint{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px dashed rgba(255,255,255,.16);
+      background: rgba(255,255,255,.04);
+      color: rgba(233,240,255,.74);
+      font-weight:850;
+      font-size:12px;
+      line-height:1.35;
+    }
+    .offerBox{
+      margin-top:10px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(6,12,26,.45);
+      padding:12px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+      display:none;
+    }
+    .offerGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px 12px;
+      margin-top:10px;
+    }
+    .kv{
+      padding:10px 10px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+    }
+    .k{
+      font-size:11px;
+      color: rgba(233,240,255,.62);
+      font-weight:900;
+      letter-spacing:.2px;
+      margin-bottom:4px;
+      text-transform:uppercase;
+    }
+    .v{
+      font-size:14px;
+      font-weight:1000;
+      color: rgba(233,240,255,.92);
+      line-height:1.2;
+      word-break:break-word;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      font-weight:1000;
+      font-size:12px;
+      margin-top:8px;
+      width:fit-content;
+    }
+    .badge b{ font-weight:1100; }
+
+
+    @media (prefers-reduced-motion: reduce) {
+      .statusCard::before,
+      .statusCard::after,
+      .loader{ animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg">
+    <video id="bgVideo" autoplay muted loop playsinline preload="auto" poster="./buy-bg.jpg">
+      <source src="./buy-bg.mp4" type="video/mp4">
+    </video>
+  </div>
+  <div class="overlay"></div>
+
+  <div class="page">
+    <div class="wrap">
+      <div class="card">
+        <div class="topbar">
+          <a class="back" href="./buy.html">← Назад</a>
+        </div>
+
+        <div class="content">
+          <div class="title">Ожидание решения</div>
+          <p class="sub">Мы уже получили ваш запрос и ищем подходящие предложения в стакане. Статус обновится автоматически — можно просто оставить эту страницу открытой.</p>
+
+          <div class="statusCard">
+            <div class="row">
+              <div class="pill pending" id="pill">⏳ На рассмотрении</div>
+              <div class="loader" id="loader" title="Обновление"></div>
+            </div>
+            <div class="bigText" id="mainText">Проверяем запрос…</div>
+
+            <div class="muted" id="descText">Обычно это занимает немного времени. Не закрывайте страницу — статус появится здесь.</div>
+
+            <div class="offerBox" id="offerBox">
+              <div class="badge" id="offerBadge">🎯 <b>Подходящее предложение найдено</b></div>
+              <div class="offerGrid">
+                <div class="kv"><div class="k">Сумма</div><div class="v" id="oAmount">—</div></div>
+                <div class="kv"><div class="k">Курс</div><div class="v" id="oRate">—</div></div>
+                <div class="kv"><div class="k">Метод</div><div class="v" id="oMethod">—</div></div>
+                <div class="kv"><div class="k">Банк</div><div class="v" id="oBank">—</div></div>
+                <div class="kv" style="grid-column:1/-1;"><div class="k">ID заявки</div><div class="v" id="oId">—</div></div>
+              </div>
+            </div>
+
+            <div class="hint" id="hintBox" style="display:none;"></div>
+
+          </div>
+
+          <div class="actions" id="actions" style="display:none;">
+            <a class="btn" id="btnBack" href="./buy.html">Вернуться в стакан</a>
+            <a class="btn ghost" id="btnNew" href="./buy-request.html">Новый запрос</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const WORKER_BASE = new URLSearchParams(location.search).get("wb") || "https://api.crossflag.org";
+  const WB_RAW = new URLSearchParams(location.search).get("wb") || "";
+  const id = new URLSearchParams(location.search).get("id") || "";
+
+  // сохраняем wb при переходах (если он был передан)
+  (function bindLinks(){
+    if (!WB_RAW) return;
+    const q = "?wb=" + encodeURIComponent(WB_RAW);
+    const back = document.querySelector(".back");
+    const btnBack = document.getElementById("btnBack");
+    const btnNew = document.getElementById("btnNew");
+    if (back) back.href = "./buy.html" + q;
+    if (btnBack) btnBack.href = "./buy.html" + q;
+    if (btnNew) btnNew.href = "./buy-request.html" + q;
+  })();
+
+  function getUserToken(){
+    return (
+      localStorage.getItem("CF_USER_TOKEN") ||
+      localStorage.getItem("X_AUTH_TOKEN") ||
+      localStorage.getItem("AUTH_TOKEN") ||
+      localStorage.getItem("userToken") ||
+      localStorage.getItem("user_token") ||
+      ""
+    ).trim();
+  }
+
+  const pill = document.getElementById("pill");
+  const loader = document.getElementById("loader");
+  const mainText = document.getElementById("mainText");
+  const descText = document.getElementById("descText");
+  const actions = document.getElementById("actions");
+  const offerBox = document.getElementById("offerBox");
+  const hintBox = document.getElementById("hintBox");
+  const oAmount = document.getElementById("oAmount");
+  const oRate = document.getElementById("oRate");
+  const oMethod = document.getElementById("oMethod");
+  const oBank = document.getElementById("oBank");
+  const oId = document.getElementById("oId");
+
+
+  function setPending(createdAt){
+    pill.className = "pill pending";
+    pill.textContent = "⏳ Ищем предложение";
+    loader.style.display = "block";
+    mainText.textContent = "Запрос принят, ищем подходящую заявку";
+    // мини‑таймер до 10 минут
+    let left = "";
+    if (createdAt){
+      const msLeft = Math.max(0, 10*60*1000 - (Date.now() - createdAt));
+      const m = Math.floor(msLeft/60000);
+      const s = Math.floor((msLeft%60000)/1000);
+      left = ` ⏱ Осталось примерно ${m}:${String(s).padStart(2,"0")}`;
+    }
+    descText.textContent =
+      "Мы сверяем ваш диапазон со свежими заявками в стакане. " +
+      "Как только появится совпадение — страница обновится, а в боте придёт уведомление 🤝" + left;
+    renderOffer(null);
+    showHint("Совет: если ждёте долго — расширьте диапазон на 5–10% и шанс совпадения станет выше 🙂");
+    actions.style.display = "none";
+  }
+  function setApproved(){
+    pill.className = "pill approved";
+    pill.textContent = "✅ Готово";
+    loader.style.display = "none";
+    mainText.textContent = "Можно переходить в стакан";
+    descText.textContent = "Запрос обработан. Открой стакан и выбери лучшее предложение — там всё обновляется в реальном времени 🚀";
+    renderOffer(null);
+    showHint("");
+    renderOffer(null);
+    showHint("");
+    actions.style.display = "flex";
+  }
+  function setRejected(){
+    pill.className = "pill rejected";
+    pill.textContent = "❌ Отклонено";
+    loader.style.display = "none";
+    mainText.textContent = "Запрос отклонён";
+    descText.textContent = "Такое бывает, если диапазон слишком узкий или сейчас нет ликвидности. Попробуй изменить сумму/курс и отправить новый запрос 🙏";
+    renderOffer(null);
+    showHint("Подсказка: часто помогает увеличить максимальную сумму или слегка поднять/опустить желаемый курс.");
+    actions.style.display = "flex";
+  }
+
+  function setFound(offer){
+    pill.className = "pill approved";
+    pill.textContent = "🎯 Найдено";
+    loader.style.display = "none";
+    mainText.textContent = "Нашлась подходящая заявка в стакане";
+    descText.textContent =
+      "Отлично! Мы нашли предложение, которое попадает в ваш диапазон. " +
+      "Нажмите «Открыть стакан», чтобы сразу перейти к покупке и продолжить сделку ✅";
+    renderOffer(offer);
+    showHint("Важно: предложения в P2P могут быстро разбираться. Если не успели — просто вернитесь назад и обновите стакан 🙂");
+    actions.style.display = "flex";
+    const b = document.getElementById("btnBack"); if (b) b.textContent = "Открыть стакан";
+    const n = document.getElementById("btnNew"); if (n) n.textContent = "Новый запрос";
+  }
+  function setWiden(){
+    pill.className = "pill pending";
+    pill.textContent = "⏳ Пока нет";
+    loader.style.display = "none";
+    mainText.textContent = "Подходящей заявки пока не появилось";
+    descText.textContent =
+      "Прошло 10 минут — в выбранном диапазоне заявок не нашлось 😕 " +
+      "Чтобы быстрее получить совпадение, расширьте диапазон и отправьте запрос ещё раз.";
+    renderOffer(null);
+    showHint("Рекомендация: расширьте диапазон на 2–5 тыс. ₽ или чуть ослабьте курс — так шанс совпадения будет заметно выше 💡");
+    actions.style.display = "flex";
+    const b = document.getElementById("btnBack"); if (b) b.textContent = "Открыть стакан";
+    const n = document.getElementById("btnNew"); if (n) n.textContent = "Расширить диапазон";
+  }
+
+  function fmtRub(n){
+    const x = Math.round(Number(n) || 0);
+    return x.toLocaleString("ru-RU") + " ₽";
+  }
+  function showHint(text){
+    if (!hintBox) return;
+    if (!text) { hintBox.style.display = "none"; hintBox.textContent = ""; return; }
+    hintBox.style.display = "block";
+    hintBox.textContent = text;
+  }
+  function renderOffer(offer){
+    if (!offerBox) return;
+    if (!offer){ offerBox.style.display = "none"; return; }
+    offerBox.style.display = "block";
+    const amt = offer.amountRub != null ? fmtRub(offer.amountRub) : "—";
+    const rate = offer.rate != null && String(offer.rate).trim() ? (String(offer.rate).trim() + " ₽/USDT") : "—";
+    const method = offer.method ? String(offer.method) : "—";
+    const bank = offer.payBank ? String(offer.payBank) : "—";
+    const oid = offer.id ? String(offer.id) : "—";
+    if (oAmount) oAmount.textContent = amt;
+    if (oRate) oRate.textContent = rate;
+    if (oMethod) oMethod.textContent = method;
+    if (oBank) oBank.textContent = bank;
+    if (oId) oId.textContent = oid;
+  }
+
+
+  function setError(msg){
+    pill.className = "pill rejected";
+    pill.textContent = "⚠️ Ошибка";
+    loader.style.display = "none";
+    mainText.textContent = "Не удалось получить статус";
+    descText.textContent = msg || "Попробуйте обновить страницу.";
+    actions.style.display = "flex";
+  }
+
+  async function poll(){
+    try{
+      if (!id) { setError("Нет id запроса."); return; }
+
+      const tok = getUserToken();
+      if (!tok) { setError("Нужна авторизация. Войдите в аккаунт."); return; }
+
+      const res = await fetch(WORKER_BASE + "/api/public/buy_amount_request_status?id=" + encodeURIComponent(id), {
+        method: "GET",
+        headers: { "X-User-Token": tok }
+      });
+
+      const j = await res.json().catch(()=>null);
+      if (!res.ok || !j || !j.ok) throw new Error((j && j.error) ? j.error : ("HTTP " + res.status));
+
+      const st = String(j.status || "PENDING").toUpperCase();
+      const createdAt = Number(j.createdAt || 0);
+
+      // Если админ уже создал подходящую заявку, DO уведомит в боте,
+      // но для этой страницы проверяем стакан напрямую.
+      async function checkOffers(minRub, maxRub){
+        try{
+          const r = await fetch(WORKER_BASE + "/api/public/buy_offers", { method: "GET" });
+          const jj = await r.json().catch(()=>null);
+          if (!r.ok || !jj || !jj.ok || !Array.isArray(jj.offers)) return null;
+          const min = Number(minRub), max = Number(maxRub);
+          let best = null;
+          let bestScore = Infinity;
+          const mid = (min + max) / 2;
+          for (const o of jj.offers) {
+            const a = Number(o && o.amountRub);
+            if (!Number.isFinite(a)) continue;
+            if (a < min || a > max) continue;
+            const score = Math.abs(a - mid);
+            if (score < bestScore) { bestScore = score; best = o; }
+          }
+          return best;
+          return null;
+        }catch{ return null; }
+      }
+
+      if (st === "APPROVED") { setApproved(); return; }
+      if (st === "REJECTED") { setRejected(); return; }
+
+      // PENDING branch
+      const found = await checkOffers(j.minRub, j.maxRub);
+      if (found) { setFound(found); return; }
+
+      if (createdAt && Date.now() - createdAt >= 10 * 60 * 1000) { setWiden(); return; }
+
+      setPending(createdAt);
+    }catch(e){
+      setError(String(e && e.message ? e.message : e));
+    }
+  }
+
+  setPending(0);
+  poll();
+  setInterval(poll, 5000);
+</script>
+</body>
+</html>
