@@ -391,7 +391,7 @@ var index_default = {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const origin = request.headers.get("Origin") || "";
-    const allowedOriginsList = env.ALLOWED_ORIGINS ? JSON.parse(env.ALLOWED_ORIGINS) : ["https://crossflag.org", "https://www.crossflag.org", "https://api.crossflag.org"];
+    const allowedOriginsList = env.ALLOWED_ORIGINS ? JSON.parse(env.ALLOWED_ORIGINS) : ["https://crossflag.org", "https://www.crossflag.org", "https://api.crossflag.org", "https://zalupinenko.github.io"];
     const allowed = /* @__PURE__ */ new Set(allowedOriginsList);
     const allowOrigin = allowed.has(origin) ? origin : null;
     const corsHeaders = {

@@ -645,7 +645,7 @@
 
       els.refMyCode.textContent = code || "—";
       const linkEl = document.getElementById("refMyLink");
-      if (linkEl) linkEl.textContent = code ? ("https://crossflag.org/register.html?ref=" + code) : "—";
+      if (linkEl) linkEl.textContent = code ? ("https://zalupinenko.github.io/45675756756/register.html?ref=" + code) : "—";
       els.refBalance.textContent = fmtUsdt(bal);
 
       const pendingCode = getPendingRef();
@@ -719,7 +719,7 @@
   if (refCopyLinkBtn) refCopyLinkBtn.onclick = async () => {
     const code = String(els.refMyCode?.textContent || "").trim();
     if(!code || code === "—"){ setRefMsg("Сначала войдите в аккаунт.", "err"); return; }
-    const link = "https://crossflag.org/register.html?ref=" + code;
+    const link = "https://zalupinenko.github.io/45675756756/register.html?ref=" + code;
     try{
       await navigator.clipboard.writeText(link);
       setRefMsg("Ссылка скопирована.", "ok");

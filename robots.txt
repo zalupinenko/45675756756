@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://crossflag.org/sitemap.xml
+Sitemap: https://zalupinenko.github.io/45675756756/sitemap.xml
