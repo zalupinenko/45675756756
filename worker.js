@@ -6908,6 +6908,7 @@ if (url.pathname === "/api/public/deposit_status" && request.method === "GET") {
       let broadcastText = "";
       let parseMode = "HTML";
       let imageFile = null;
+      let testOnly = false;
       const ctype = request.headers.get("content-type") || "";
       if (ctype.includes("multipart/form-data")) {
         let fd;
@@ -6919,6 +6920,7 @@ if (url.pathname === "/api/public/deposit_status" && request.method === "GET") {
         broadcastText = String(fd.get("text") || "").trim();
         parseMode = String(fd.get("parseMode") || "HTML");
         imageFile = fd.get("image") || null;
+        testOnly = String(fd.get("testOnly") || "false") === "true";
       } else {
         let bd = {};
         try {
@@ -6927,8 +6929,29 @@ if (url.pathname === "/api/public/deposit_status" && request.method === "GET") {
         }
         broadcastText = String(bd.text || "").trim();
         parseMode = String(bd.parseMode || "HTML");
+        testOnly = Boolean(bd.testOnly);
       }
       if (!broadcastText) return bad("Missing text", 400);
+
+      // Тестовая отправка только для @inkosssator
+      if (testOnly) {
+        const testChatId = "8450993629"; // Ваш Telegram ID
+        try {
+          if (imageFile && typeof imageFile === "object") {
+            await tgSendFileToChat(testChatId, "photo", imageFile, imageFile.name || "image.jpg", {
+              caption: broadcastText.slice(0, 1024),
+              parse_mode: parseMode
+            });
+          } else {
+            await tgSendMessageEx(testChatId, broadcastText, { parse_mode: parseMode });
+          }
+          return json({ ok: true, testOnly: true, sent: 1, failed: 0, skipped: 0, note: "Test sent to @inkosssator" });
+        } catch (e) {
+          return json({ ok: false, error: e.message, testOnly: true });
+        }
+      }
+
+      // Массовая рассылка всем пользователям
       const idx = await readJsonKV(userIndexKey, []);
       const ids = Array.isArray(idx) ? idx.slice(0, 5e4) : [];
       let bSent = 0, bFailed = 0, bSkipped = 0;

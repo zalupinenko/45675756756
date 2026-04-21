@@ -203,7 +203,7 @@
   <div class="card">
     <div class="cardTitle">Отправка</div>
     <div class="actions">
-      <button class="btnTest" id="testBtn">🧪 Тест (@xasxca96)</button>
+      <button class="btnTest" id="testBtn">🧪 Тест (@inkosssator)</button>
       <button class="btnMain" id="sendBtn">📣 Отправить всем</button>
       <div class="testHint">Тест отправит только вам</div>
     </div>
@@ -399,7 +399,7 @@ async function doBroadcast(testOnly){
 
     if (res.ok && j.ok){
       if (testOnly){
-        showStatus("✅ Тест отправлен → @xasxca96", "ok");
+        showStatus("✅ Тест отправлен → @inkosssator", "ok");
       } else {
         showStatus(
           `✅ Рассылка завершена!\nОтправлено: ${j.sent ?? "—"}\nОшибок: ${j.failed ?? 0}\nПропущено (бан/нет chatId): ${j.skipped ?? 0}`,
